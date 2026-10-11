@@ -1,6 +1,7 @@
 // Daten laden, zwischenspeichern und für alle Bildschirme bereitstellen.
 // Angemeldet als Betreiber: alles (über geprüfte Datenbank-Funktionen). Sonst: nur, was auch die öffentliche Fassung zeigt.
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Haptics from "expo-haptics";
 import type { Session } from "@supabase/supabase-js";
 import { Platform } from "react-native";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
@@ -199,6 +200,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       } else raw = await loadPublic();
       if (my !== token.current) return;
       setData(toData(raw)); setError(null); setOffline(false); setLoadedAt(Date.now());
+      // Kurzes Antippen spürbar machen, wenn Ziehen-zum-Aktualisieren fertig ist
+      if (isRefresh && Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       AsyncStorage.setItem(CACHE(uid), JSON.stringify({ at: Date.now(), uid, raw })).catch(() => {});
     } catch (e: any) {
       if (my !== token.current) return;

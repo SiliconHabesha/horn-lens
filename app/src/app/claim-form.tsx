@@ -9,6 +9,9 @@ import { sb } from "../lib/supabase";
 import { font, radius, space, useTheme } from "../lib/theme";
 
 type Src = { title: string; url: string };
+const validDay = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s || "") && new Date(s + "T12:00:00Z").toISOString().slice(0, 10) === s;
+// Datum vor n Tagen (Berliner Kalender) als JJJJ-MM-TT
+const dayMinus = (n: number) => { const [y, m, d] = todayBerlin().split("-").map(Number); return new Date(Date.UTC(y, m - 1, d - n)).toISOString().slice(0, 10); };
 // Außerhalb des Formulars, damit Eingabefelder beim Tippen nicht neu entstehen und den Fokus verlieren
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <View style={{ gap: 6 }}><T v="smallStrong">{label}</T>{children}</View>;
@@ -113,7 +116,14 @@ export default function ClaimForm() {
                 </View>
               </Field>
             ) : null}
-            <Field label="Zuerst gemeldet (JJJJ-MM-TT)"><TextInput style={input} value={first} onChangeText={setFirst} placeholder="2026-10-11" placeholderTextColor={t.faint} autoCapitalize="none" /></Field>
+            <Field label="Zuerst gemeldet">
+              <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+                {[0, 1, 2].map((n) => { const d = dayMinus(n); return <Chip key={n} label={n === 0 ? "Heute" : n === 1 ? "Gestern" : "Vorgestern"} active={first === d} onPress={() => setFirst(d)} />; })}
+              </View>
+              <TextInput style={input} value={first} onChangeText={setFirst} placeholder="2026-10-11" placeholderTextColor={t.faint} autoCapitalize="none"
+                accessibilityLabel="Datum, Jahr-Monat-Tag" keyboardType="numbers-and-punctuation" />
+              {!validDay(first) ? <T v="caption" color={t.warn}>Bitte als Jahr-Monat-Tag schreiben, z. B. {todayBerlin()}.</T> : null}
+            </Field>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
               <T v="body">Von einer Konfliktpartei behauptet</T>
               <Switch value={party} onValueChange={(v) => { tap(); setParty(v); }} />

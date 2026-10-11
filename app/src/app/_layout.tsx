@@ -43,6 +43,8 @@ export default function Root() {
         }}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false, title: "Horn Lens" }} />
           <Stack.Screen name="item/[id]" options={{ title: "Meldung" }} />
+          <Stack.Screen name="place/[id]" options={{ title: "Ort" }} />
+          <Stack.Screen name="places" options={{ title: "Orte" }} />
           <Stack.Screen name="claim/[id]" options={{ title: "Behauptung" }} />
           <Stack.Screen name="claim-form" options={{ title: "Behauptung", presentation: "modal" }} />
           <Stack.Screen name="report/[date]" options={{ title: "Tagesbericht" }} />

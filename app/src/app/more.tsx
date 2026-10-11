@@ -82,6 +82,8 @@ export default function More() {
         <Divider />
         <Row icon="book-outline" title="Einführung und Legende" sub="Farben der Quellen, Stufen der Behauptungen" onPress={() => router.push("/welcome")} />
         <Divider />
+        <Row icon="location-outline" title="Orte" sub="Asmara, Assab, Adigrat und mehr: was Horn Lens zu jedem Ort hat" onPress={() => router.push("/places")} />
+        <Divider />
         <Row icon="bookmark-outline" title="Gemerkte Meldungen" sub="Nur auf diesem Gerät" onPress={() => router.navigate(`/news?mode=saved&k=${Date.now()}`)} />
         <Divider />
         <Row icon="compass-outline" title="So arbeitet Horn Lens" sub="Regeln, Grenzen, Nachweise" onPress={() => router.push("/method")} />

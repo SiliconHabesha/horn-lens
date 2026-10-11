@@ -2,11 +2,11 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { Pressable, View } from "react-native";
+import { Pressable, StyleSheet, TextInput, View } from "react-native";
 import { Card, Chip, ChipRow, Empty, IconButton, Screen, StatusPill, T, tap } from "../../components/ui";
 import { fmtDate, fmtWhen, REGIONS, STATUS, STATUS_ORDER } from "../../lib/de";
 import { useData } from "../../lib/data";
-import { space, useTheme } from "../../lib/theme";
+import { font, radius, space, useTheme } from "../../lib/theme";
 
 export default function Claims() {
   const t = useTheme();
@@ -15,10 +15,22 @@ export default function Claims() {
   const [legend, setLegend] = useState(false);
   const claims = data?.claims || [];
   const counts = useMemo(() => Object.fromEntries(STATUS_ORDER.map((k) => [k, claims.filter((c) => c.status === k).length])), [claims]);
-  const list = st ? claims.filter((c) => c.status === st) : claims;
+  const [q, setQ] = useState("");
+  const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const list = claims.filter((c) => (!st || c.status === st)
+    && words.every((w) => `${c.statement} ${c.raw?.statement || ""} ${c.claimant} ${c.disputed_by || ""} ${REGIONS[c.region] || ""}`.toLowerCase().includes(w)));
   return (
     <Screen title="Behauptungen" sub="Einzelne Aussagen und wie gut jede belegt ist. Jede Änderung bleibt mit Datum und Quellen im Verlauf."
       right={data?.owner ? <IconButton icon="add" label="Behauptung hinzufügen" onPress={() => router.push("/claim-form?mode=add")} /> : undefined}>
+      {claims.length > 4 ? (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: t.card, borderRadius: radius.m, paddingHorizontal: 12, height: 44,
+          borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule, marginBottom: space.m }}>
+          <Ionicons name="search" size={17} color={t.faint} />
+          <TextInput value={q} onChangeText={setQ} placeholder="Behauptungen durchsuchen" placeholderTextColor={t.faint} autoCorrect={false}
+            style={{ flex: 1, fontFamily: font.regular, fontSize: 16, color: t.ink, height: 42 }} accessibilityLabel="Behauptungen durchsuchen" />
+          {q ? <Pressable onPress={() => setQ("")} hitSlop={10} accessibilityRole="button" accessibilityLabel="Suche löschen"><Ionicons name="close-circle" size={18} color={t.faint} /></Pressable> : null}
+        </View>
+      ) : null}
       <ChipRow>
         <Chip label="Alle" count={claims.length} active={!st} onPress={() => setSt(null)} />
         {STATUS_ORDER.filter((k) => counts[k]).map((k) => (
@@ -64,7 +76,7 @@ export default function Claims() {
             </Card>
           );
         })}
-        {!list.length ? <Empty icon="checkmark-done-circle-outline" text={claims.length ? "Keine Behauptung mit dieser Stufe." : "Noch keine Behauptungen erfasst."} /> : null}
+        {!list.length ? <Empty icon="checkmark-done-circle-outline" text={claims.length ? (q ? "Keine Behauptung passt zur Suche." : "Keine Behauptung mit dieser Stufe.") : "Noch keine Behauptungen erfasst."} /> : null}
       </View>
     </Screen>
   );

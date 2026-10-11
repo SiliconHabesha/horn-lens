@@ -9,6 +9,7 @@ import MAP from "../data/map.json";
 import REG from "../data/regions.json";
 import { fmtCap, fmtCapDay, fmtFull, num, plural } from "../lib/de";
 import { font, radius, useTheme } from "../lib/theme";
+import { PLACES } from "../lib/places";
 import type { Data } from "../lib/types";
 import { tap } from "./ui";
 
@@ -23,18 +24,11 @@ export const boxOf = (north: number, west: number, south: number, east: number):
   return [x0, y0, x1 - x0, y1 - y0];
 };
 
-const PLACES: [string, number, number, boolean, boolean][] = [ // Name, Breite, Länge, Beschriftung links, auch in der kleinen Karte
-  ["Asmara", 15.333, 38.933, false, true], ["Massawa", 15.609, 39.45, false, true], ["Assab", 13.009, 42.739, true, true],
-  ["Tesseney", 15.11, 36.657, false, false], ["Badme", 14.726, 37.803, false, false], ["Zalambessa", 14.517, 39.383, true, false],
-  ["Adigrat", 14.277, 39.462, false, false], ["Mekelle", 13.497, 39.475, false, true], ["Shire", 14.104, 38.284, false, false],
-  ["Humera", 14.297, 36.617, false, false], ["Alamata", 12.416, 39.554, false, false], ["Semera", 11.792, 41.006, false, false],
-  ["Sawa", 15.699, 36.974, false, false], ["Bure", 12.601, 42.27, true, false], ["Bab el-Mandeb", 12.583, 43.333, false, false],
-  ["Mokka", 13.32, 43.25, false, false], ["Hudaida", 14.798, 42.954, false, false], ["Port Sudan", 19.616, 37.216, false, true], ["Dschibuti", 11.588, 43.145, false, true],
-];
+const MINI_NAMES = new Set(["asmara", "massawa", "assab", "mekelle", "portsudan", "djibouti"]);
 const LABELS: [string, number, number][] = [["ERITREA", 15.9, 38.2], ["ÄTHIOPIEN", 11.3, 37.6], ["SUDAN", 17.6, 35.4], ["JEMEN", 15.6, 44.6], ["SAUDI-ARABIEN", 19.3, 41.9], ["DSCHIBUTI", 11.15, 42.3]];
 
 export type Layers = { fire: boolean; quake: boolean; ship: boolean; sat: boolean };
-export type Mark = { x: number; y: number; kind: string; at: number; when: string; text: string; place?: string; url?: string | null; src?: string; sat?: string };
+export type Mark = { x: number; y: number; kind: string; at: number; when: string; text: string; place?: string; url?: string | null; src?: string; sat?: string; pid?: string; name?: string; minor?: boolean };
 
 /** Alle antippbaren Markierungen mit Beschreibung und Herkunft */
 export function marksOf(data: Data, layers: Layers): Mark[] {
@@ -47,6 +41,8 @@ export function marksOf(data: Data, layers: Layers): Mark[] {
     place: "Ort ungefähr, wie von UKMTO angegeben", url: m.url || "https://www.ukmto.org/recent-incidents", src: "UKMTO" }); }
   if (layers.sat) for (const p of data.sat.filter((p) => p.images.length)) { const [x, y] = proj(p.lat, p.lon); out.push({ x, y, kind: "Satelliten-Ort", at: +new Date(p.images[0].t),
     when: `neuestes Bild vom ${fmtCap(p.images[0].t)}`, text: `${p.name}: ${plural(p.images.length, "klares Bild", "klare Bilder")}, das neueste vom ${fmtCapDay(p.images[0].t)}.`, sat: p.id }); }
+  // Orte zuletzt: Messwerte haben beim Antippen Vorrang, weil sie näher gesucht werden
+  for (const p of PLACES) { const [x, y] = proj(p.lat, p.lon); out.push({ x, y, kind: "Ort", at: 0, when: p.country, text: "", pid: p.id, name: p.name, minor: !p.major }); }
   return out;
 }
 
@@ -85,7 +81,7 @@ export function MapSvg({ data, layers, box, w, h, sel, since, mini }: {
         return <Circle key={`q${i}`} cx={x} cy={y} r={(4 + 2 * Math.max(0, (q.mag || 2.5) - 2.5)) * k} fill="none" stroke={t.quake} strokeWidth={2 * k} opacity={old(q.t) ? 0.25 : 1} />; })}
       {layers.sat && data.sat.filter((p) => p.images.length).map((p) => { const [x, y] = proj(p.lat, p.lon); const s = 9 * k;
         return <Rect key={p.id} x={x - s / 2} y={y - s / 2} width={s} height={s} fill="none" stroke={t.accent} strokeWidth={1.6 * k} />; })}
-      {PLACES.filter((p) => !mini || p[4]).map(([n, la, lo, left]) => { const [x, y] = proj(la, lo); return (
+      {PLACES.filter((p) => (mini ? MINI_NAMES.has(p.id) : p.major || box[2] < 260)).map(({ name: n, lat: la, lon: lo, left }) => { const [x, y] = proj(la, lo); return (
         <G key={n}>
           <Circle cx={x} cy={y} r={2.2 * k} fill={t.ink} />
           <SvgText fontFamily={font.semibold} x={left ? x - 5 * k : x + 5 * k} y={y + 4 * k} fontSize={(mini ? 10 : 11) * k} fill={t.ink} textAnchor={left ? "end" : "start"}>{n}</SvgText>
@@ -146,7 +142,7 @@ export function ZoomMap({ data, layers, w, h, box, onBox, sel, onSelect, since }
     const k = b[2] / W;
     const x = b[0] + qx * k, y = b[1] + qy * k;
     let best: Mark | null = null, bd = (22 * k) ** 2;
-    for (const m of M) { const d = (m.x - x) ** 2 + (m.y - y) ** 2; if (d < bd) { bd = d; best = m; } }
+    for (const m of M) { if (m.minor && b[2] >= 260) continue; const d = ((m.x - x) ** 2 + (m.y - y) ** 2) * (m.pid ? 1.6 : 1); if (d < bd) { bd = d; best = m; } }
     if (best) tap();
     live.current.onSelect(best);
   };

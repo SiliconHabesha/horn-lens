@@ -1,12 +1,14 @@
 // Eine Behauptung im Detail: wer sagt es, wer bestreitet es, Belege und der ganze Verlauf.
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import React from "react";
-import { Pressable, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { Button, Card, Empty, openLink, Screen, StatusPill, T, tap } from "../../components/ui";
 import { endDot, fmtDate, fmtIsoDay, REGIONS, STATUS } from "../../lib/de";
+import { ItemRow } from "../../components/items";
 import { useData } from "../../lib/data";
+import { related } from "../../lib/stories";
 import { space, useTheme } from "../../lib/theme";
-import type { ClaimEvent, Ref } from "../../lib/types";
+import type { Claim, ClaimEvent, Ref } from "../../lib/types";
 
 const sourcesOf = (e: ClaimEvent): Ref[] => [
   ...(e.source_url ? [{ title: e.source_title, url: e.source_url }] : []),
@@ -69,6 +71,8 @@ export default function ClaimDetail() {
         </View>
       ) : null}
 
+      {data?.owner ? <Related c={c} /> : null}
+
       <T v="h2" style={{ marginTop: space.xl, marginBottom: space.m }}>Verlauf</T>
       <View>
         {c.events.map((e, i) => (
@@ -89,5 +93,28 @@ export default function ClaimDetail() {
         ))}
       </View>
     </Screen>
+  );
+}
+
+// Neue Meldungen, die zur Behauptung passen könnten: Anlass, die Stufe zu prüfen
+function Related({ c }: { c: Claim }) {
+  const t = useTheme();
+  const { data, seenBefore } = useData();
+  const known = new Set(c.events.flatMap((e) => sourcesOf(e).map((s) => s.url)));
+  const list = data ? related(`${c.raw?.statement || ""} ${c.statement}`, data, 6).filter((r) => !known.has(r.it.url)).slice(0, 4) : [];
+  if (!list.length) return null;
+  return (
+    <>
+      <T v="h2" style={{ marginTop: space.xl }}>Ähnliche Meldungen, 72 Std.</T>
+      <T v="small" style={{ marginTop: 2, marginBottom: space.s }}>Automatisch über gemeinsame Wörter gefunden. Prüfen, ob sie die Behauptung stützen, widerlegen oder nur erwähnen.</T>
+      <Card style={{ paddingVertical: space.s }}>
+        {list.map(({ it, shared }, i) => (
+          <View key={it.id} style={i ? { borderTopWidth: StyleSheet.hairlineWidth, borderColor: t.rule } : undefined}>
+            <ItemRow it={it} isNew={new Date(it.fetched_at).getTime() > seenBefore} />
+            <T v="caption" style={{ marginTop: -8, marginBottom: 10, marginLeft: 15 }}>Gemeinsam: {shared.slice(0, 4).join(", ")}</T>
+          </View>
+        ))}
+      </Card>
+    </>
   );
 }

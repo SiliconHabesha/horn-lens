@@ -10,7 +10,8 @@ import { Banner, Button, Card, Empty, IconButton, openLink, Screen, SectionHead,
 import { ago, fmtCapDay, fmtDay, fmtIsoDay, fmtWhen, num, plural } from "../../lib/de";
 import { useData } from "../../lib/data";
 import { BELES_URL, CLAUDE_PAGE, feedState, lastFailed, noData } from "../../lib/feeds";
-import { storiesOf } from "../../lib/stories";
+import { PLACES, mentions } from "../../lib/places";
+import { poolOf, storiesOf } from "../../lib/stories";
 import { radius, space, useTheme } from "../../lib/theme";
 
 const KIND: Record<string, [string, string]> = {
@@ -113,8 +114,9 @@ export default function Lage() {
         ))}
       </View>
 
-      {/* Kleine Karte */}
+      {/* Kleine Karte und Orte, die gerade genannt werden */}
       <MiniMap />
+      <HotPlaces />
 
       {/* Eritrea */}
       {data.owner ? (
@@ -265,5 +267,37 @@ function MiniMap() {
         <Ionicons name="chevron-forward" size={18} color={t.faint} />
       </View>
     </Card>
+  );
+}
+
+// Orte, die Schlagzeilen der letzten 24 Stunden nennen, meistgenannte zuerst
+function HotPlaces() {
+  const t = useTheme();
+  const { data } = useData();
+  const list = useMemo(() => {
+    if (!data) return [];
+    const day = dedupe(poolOf(data).filter((i) => Date.now() - new Date(itemTime(i)).getTime() < 24 * 3600e3));
+    return PLACES.map((p) => ({ p, n: day.filter((i) => mentions(p, i.title)).length })).filter((x) => x.n > 0).sort((a, b) => b.n - a.n).slice(0, 8);
+  }, [data]);
+  return (
+    <View style={{ marginTop: space.m }}>
+      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
+        <T v="smallStrong" color={t.muted}>{list.length ? "Genannte Orte, 24 Std." : "Orte"}</T>
+        <Pressable onPress={() => { tap(); router.push("/places"); }} hitSlop={10} accessibilityRole="button"><T v="smallStrong" color={t.accent}>Alle Orte</T></Pressable>
+      </View>
+      {list.length ? (
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: space.s }}>
+          {list.map(({ p, n }) => (
+            <Pressable key={p.id} onPress={() => { tap(); router.push(`/place/${p.id}`); }} accessibilityRole="button" accessibilityLabel={`${p.name}, in ${n} Schlagzeilen genannt`}
+              style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, minHeight: 36, borderRadius: 999, backgroundColor: t.card,
+                borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule, opacity: pressed ? 0.6 : 1 })}>
+              <Ionicons name="location-outline" size={14} color={t.ink} />
+              <T v="smallStrong">{p.name}</T>
+              <T v="caption">{n}</T>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+    </View>
   );
 }

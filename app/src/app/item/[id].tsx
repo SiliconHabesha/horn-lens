@@ -7,6 +7,7 @@ import { shareItem, titleStyle, Voices, whenOf } from "../../components/items";
 import { Button, Card, Empty, openLink, Screen, T, tap } from "../../components/ui";
 import { fmtWhen, REGIONS, TYPE_NOTE, TYPE_ORDER, TYPES } from "../../lib/de";
 import { useData } from "../../lib/data";
+import { placesIn } from "../../lib/places";
 import { storiesOf, VOICE_TYPES } from "../../lib/stories";
 import { radius, space, useTheme } from "../../lib/theme";
 import type { Item } from "../../lib/types";
@@ -59,6 +60,18 @@ export default function ItemDetail() {
             <Pressable key={r} onPress={() => { tap(); router.navigate(`/news?region=${r}&k=${Date.now()}`); }} accessibilityRole="button" accessibilityLabel={`Alle Meldungen zu ${REGIONS[r]}`}
               hitSlop={8} style={({ pressed }) => ({ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: t.cardAlt, opacity: pressed ? 0.6 : 1 })}>
               <T v="caption" color={t.ink}>{REGIONS[r]}</T>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+
+      {placesIn(it.title).length ? (
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: space.s, alignItems: "center" }}>
+          <Ionicons name="location-outline" size={15} color={t.muted} />
+          {placesIn(it.title).map((pl) => (
+            <Pressable key={pl.id} onPress={() => { tap(); router.push(`/place/${pl.id}`); }} accessibilityRole="button" accessibilityLabel={`Mehr zu ${pl.name}`} hitSlop={8}
+              style={({ pressed }) => ({ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule, backgroundColor: t.card, opacity: pressed ? 0.6 : 1 })}>
+              <T v="caption" color={t.ink}>{pl.name}</T>
             </Pressable>
           ))}
         </View>

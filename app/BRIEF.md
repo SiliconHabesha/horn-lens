@@ -39,3 +39,9 @@ Umgesetzt nach Recherche (Ground News, Particle, Bellingcat, ACLED, Flightradar2
 - Karte: zoomen (zwei Finger, Doppeltipp, Mausrad, Knöpfe), verschieben, Zeitraum, Detailkarte über der Karte, Genauigkeit des Ortes.
 - Einführung (3 Seiten, überspringbar, unter „Mehr“ erneut), Merkliste, Lade-Platzhalter, größere Tippflächen, Impressum wie BELES, Kontakt.
 Offen: Behauptung verfolgen mit eigener Benachrichtigung (braucht Server-Änderung), Übersetzung von Tigrinya/Amharisch für die Zuordnung.
+
+## Stand nach Runde 3 (11. Oktober 2026, abends)
+- Orte: 29 Orte mit Seite (Schlagzeilen, die den Ort nennen, Messwerte im Umkreis, Satellitenbilder, Behauptungen, Orte in der Nähe); Schreibweisen lateinisch und in Ge'ez-Schrift; mehrdeutige Namen (Sawa, Bure, Keren, Assab, Shire, Mocha) zählen nur mit passendem Zusammenhangswort; umstrittene Gebiete als umstritten bezeichnet.
+- Karte: Orte antippbar, kleinere Orte erscheinen beim Zoomen; Lage zeigt die heute genannten Orte.
+- Behauptungen: Suche, ähnliche Meldungen der letzten 72 Std. in jeder Behauptung, Datum per Heute/Gestern/Vorgestern und Prüfung auf gültiges Datum.
+- Technik: iOS- und Android-Bündel bauen fehlerfrei; Lint eingerichtet (verbleibende Hinweise betreffen den nicht genutzten React Compiler); spürbare Rückmeldung nach dem Aktualisieren.

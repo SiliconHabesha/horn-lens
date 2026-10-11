@@ -35,6 +35,7 @@ export default function Satellite() {
   const place = places.find((x) => x.id === placeId) || places[0];
   const nearest = (target: number) => place.images.reduce((best, i) => (Math.abs(new Date(i.t).getTime() - target) < Math.abs(new Date(best.t).getTime() - target) ? i : best), place.images[0]);
   const [afterId, setAfterId] = useState<number | null>(null);
+  const [split, setSplit] = useState(0.5);
   const [beforeId, setBeforeId] = useState<number | null>(null);
   useEffect(() => {
     if (!place) return;
@@ -48,7 +49,6 @@ export default function Satellite() {
   const A = useUri(after), B = useUri(single ? undefined : before);
 
   const [w, setW] = useState(0);
-  const [split, setSplit] = useState(0.5);
   const wRef = useRef(0); wRef.current = w;
   const startRef = useRef(0.5);
   const splitRef = useRef(0.5); splitRef.current = split;

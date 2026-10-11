@@ -157,13 +157,15 @@ export function narrow(s: Story, keep: (it: Item) => boolean): Story | null {
 
 // ---------------------------------------------------------------- Für die Bildschirme
 
+/** Meldungen, die diese Ausgabe zeigt (offene Ausgabe: nur Rotes Meer) */
+export const poolOf = (data: Data) => (data.owner ? data.items : data.items.filter((i) => i.regions.length === 1 && i.regions[0] === "red_sea"));
+
 const memo = new WeakMap<Data, Story[]>();
 /** Alle Geschichten der letzten 72 Stunden (offene Ausgabe: nur Rotes Meer). Einmal je Datenstand berechnet. */
 export function storiesOf(data: Data): Story[] {
   let s = memo.get(data);
   if (!s) {
-    const pool = data.owner ? data.items : data.items.filter((i) => i.regions.length === 1 && i.regions[0] === "red_sea");
-    s = cluster(dedupe(pool));
+    s = cluster(dedupe(poolOf(data)));
     memo.set(data, s);
   }
   return s;
@@ -174,3 +176,28 @@ export function useStories() {
 }
 /** Quellenarten, die in Horn Lens eine Konfliktseite oder Außensicht vertreten: wer hat noch nicht berichtet? */
 export const VOICE_TYPES = ["government_er", "progov_er", "exile", "government_et", "progov_et", "ethiopian_independent", "tigray", "international", "un_ngo"];
+
+/** Meldungen, die zu einem Text (z. B. einer Behauptung) passen könnten: mindestens zwei gemeinsame seltene Wörter. Stärkste zuerst. */
+export function related(text: string, data: Data, limit = 5): { it: Item; shared: string[] }[] {
+  const pool = dedupe(poolOf(data));
+  const N = pool.length;
+  if (!N) return [];
+  const docs = pool.map((it) => ({ it, w: words(it.title) }));
+  const df = new Map<string, number>();
+  for (const d of docs) for (const x of d.w) df.set(x.stem, (df.get(x.stem) || 0) + 1);
+  const q = words(text);
+  const out: { it: Item; shared: string[]; score: number }[] = [];
+  for (const d of docs) {
+    const S = new Map(d.w.map((x) => [x.stem, x.word]));
+    let score = 0;
+    const shared: string[] = [];
+    for (const x of q) {
+      const n = df.get(x.stem) || 0;
+      if (!S.has(x.stem) || n > Math.max(3, N * 0.2)) continue;
+      score += Math.log((N + 1) / (n + 0.5));
+      shared.push(S.get(x.stem)!);
+    }
+    if (shared.length >= 2) out.push({ it: d.it, shared, score });
+  }
+  return out.sort((a, b) => b.score - a.score).slice(0, limit);
+}

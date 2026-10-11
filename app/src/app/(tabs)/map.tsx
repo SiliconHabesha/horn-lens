@@ -62,7 +62,7 @@ export default function MapScreen() {
   }
   const usgs = feedState(data, "usgs"), ukmto = feedState(data, "ukmto"), firms = feedState(data, "firms");
   const fireNote = data.firesError ? "Hitzepunkte nicht geladen" : !firms.ok ? noData(firms, "NASA FIRMS")
-    : data.firesTotal > data.fires.length ? `Die ${num(data.fires.length)} stärksten von ${num(data.firesTotal)} Hitzepunkten, 24 Std. (NASA FIRMS)` : `${plural(data.fires.length, "Hitzepunkt", "Hitzepunkte")}, 24 Std. (NASA FIRMS)`;
+    : data.firesTotal > data.fires.length ? `${num(data.fires.length)} von ${num(data.firesTotal)} Hitzepunkten, 24 Std. (NASA FIRMS)` : `${plural(data.fires.length, "Hitzepunkt", "Hitzepunkte")}, 24 Std. (NASA FIRMS)`;
   const quakesIn = data.quakes.filter((q) => +new Date(q.t) >= since).length, shipsIn = data.maritime.filter((m) => +new Date(m.t) >= since).length;
 
   return (
@@ -78,13 +78,14 @@ export default function MapScreen() {
               borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 10, shadowOffset: { width: 0, height: 2 }, elevation: 4 }}
               accessibilityLiveRegion="polite">
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                <T v="label" color={t.accent}>{sel.kind}{sel.src ? ` · ${sel.src}` : ""}</T>
+                <T v="label" color={t.accent}>{sel.pid ? sel.name : sel.kind}{sel.src ? ` · ${sel.src}` : ""}</T>
                 <Pressable onPress={() => setSel(null)} hitSlop={12} accessibilityRole="button" accessibilityLabel="Schließen"><Ionicons name="close" size={20} color={t.faint} /></Pressable>
               </View>
               <T v="caption" style={{ marginTop: 2 }}>{sel.when}{sel.place ? ` · ${sel.place}` : ""}</T>
-              <T v="small" color={t.ink} style={{ marginTop: 4 }} numberOfLines={4}>{sel.text}</T>
+              {sel.text ? <T v="small" color={t.ink} style={{ marginTop: 4 }} numberOfLines={4}>{sel.text}</T> : null}
               <View style={{ flexDirection: "row", gap: space.s, marginTop: space.s }}>
-                {sel.sat ? <Button label="Bilder vergleichen" icon="images-outline" onPress={() => router.push(`/satellite?place=${sel.sat}`)} />
+                {sel.pid ? <Button label={`Mehr zu ${sel.name}`} icon="location-outline" onPress={() => router.push(`/place/${sel.pid}`)} />
+                  : sel.sat ? <Button label="Bilder vergleichen" icon="images-outline" onPress={() => router.push(`/satellite?place=${sel.sat}`)} />
                   : sel.url ? <Button label={`Bei ${sel.src} öffnen`} icon="open-outline" kind="secondary" onPress={() => openLink(sel.url)} /> : null}
               </View>
             </View>

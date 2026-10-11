@@ -169,9 +169,15 @@ with sync_playwright() as p:
                 pg.get_by_label("Merken", exact=True).first.click(); pg.wait_for_timeout(400)
                 shot("saved", "/news?mode=saved", 1500)
                 R[f"{pre} saved text"] = pg.evaluate("document.body.innerText").replace("\n", " | ")[:200]
+                shot("place", "/place/assab", 1500)
+                R[f"{pre} place text"] = pg.evaluate("document.body.innerText").replace("\n", " | ")[:500]
+                if tag == "mob": scrolls("place", 2)
+                shot("places", "/places", 1200)
+                R[f"{pre} places text"] = pg.evaluate("document.body.innerText").replace("\n", " | ")[:300]
             if mode == "owner":
                 shot("claims", "/claims")
                 shot("claim", "/claim/4")
+                if tag == "mob": scrolls("claim", 2)
                 R[f"{pre} claim text"] = pg.evaluate("document.body.innerText").replace("\n", " | ")[:500]
                 shot("form", "/claim-form?mode=edit&id=4")
                 shot("report", "/report/2026-10-11")
