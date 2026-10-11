@@ -17,7 +17,8 @@
       },
       "infoPlist": {
         "CFBundleDevelopmentRegion": "de"
-      }
+      },
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "app.beles.hornlens",
@@ -67,7 +68,8 @@
           "color": "#0F6E74",
           "defaultChannel": "default"
         }
-      ]
+      ],
+      "expo-apple-authentication"
     ],
     "experiments": {
       "typedRoutes": false

@@ -3,11 +3,12 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import Constants from "expo-constants";
 import { router } from "expo-router";
 import React from "react";
-import { Pressable, View } from "react-native";
+import { Alert, Platform, Pressable, View } from "react-native";
 import { PushSettings } from "../components/PushSettings";
 import { Banner, Button, Card, Divider, openLink, Screen, T, tap } from "../components/ui";
 import { useData } from "../lib/data";
 import { BELES_URL, CLAUDE_PAGE, WEB_URL } from "../lib/feeds";
+import { deleteAccount } from "../lib/auth";
 import { refreshPushOwner } from "../lib/push";
 import { sb } from "../lib/supabase";
 import { space, useTheme } from "../lib/theme";
@@ -23,6 +24,18 @@ function Row({ icon, title, sub, onPress, external }: { icon: Icon; title: strin
       <Ionicons name={external ? "open-outline" : "chevron-forward"} size={17} color={t.faint} />
     </Pressable>
   );
+}
+
+// Konto endgültig löschen, nach Rückfrage
+function confirmDelete() {
+  const text = "Dein Konto wird endgültig gelöscht. Du kannst dich später neu anmelden; gespeicherte Einstellungen gehen verloren.";
+  const run = async () => {
+    const err = await deleteAccount();
+    await refreshPushOwner().catch(() => {});
+    if (err) { if (Platform.OS === "web") window.alert(err); else Alert.alert("Konto löschen", err); }
+  };
+  if (Platform.OS === "web") { if (window.confirm(`Konto löschen?\n\n${text}`)) run(); return; }
+  Alert.alert("Konto löschen?", text, [{ text: "Abbrechen", style: "cancel" }, { text: "Löschen", style: "destructive", onPress: run }]);
 }
 
 export default function More() {
@@ -47,11 +60,14 @@ export default function More() {
               // Benachrichtigungen sofort auf die offene Ausgabe umstellen
               await refreshPushOwner().catch(() => {});
             }} />
+            <Pressable onPress={() => confirmDelete()} accessibilityRole="button" style={{ alignSelf: "center", paddingVertical: 6 }} hitSlop={8}>
+              <T v="smallStrong" color={t.warn}>Konto löschen</T>
+            </Pressable>
           </>
         ) : (
           <>
             <T v="small">Ohne Anmeldung zeigt Horn Lens die offene Ausgabe: Messwerte, Satellitenbilder und Schifffahrtsmeldungen vom Roten Meer.</T>
-            <Button label="Als Betreiber anmelden" icon="log-in-outline" onPress={() => router.push("/login")} />
+            <Button label="Anmelden mit Apple, Google oder E-Mail" icon="log-in-outline" onPress={() => router.push("/login")} />
           </>
         )}
       </Card>

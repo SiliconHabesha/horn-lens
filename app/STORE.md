@@ -76,11 +76,13 @@ Für die Play-Einreichung braucht EAS einmal einen Google-Service-Account-Schlü
 ### Angaben für die Prüfung (App Review / Play Console)
 
 **Hinweis an Apple (Review Notes), auf Englisch:**
-> Horn Lens is a free, ad-free situation monitor for the Horn of Africa. Without signing in, the app shows its public edition: measured signals (NASA FIRMS heat detections, USGS earthquakes, UKMTO maritime incidents), Sentinel-2 satellite images with before/after comparison, and Red Sea shipping headlines that link to the original publishers. The sign-in is only for the app's operator to curate content; the app does not offer account registration. No account is required to review the app.
+> Horn Lens is a free, ad-free situation monitor for the Horn of Africa. Without signing in, the app shows its public edition: measured signals (NASA FIRMS heat detections, USGS earthquakes, UKMTO maritime incidents), Sentinel-2 satellite images with before/after comparison, and Red Sea shipping headlines that link to the original publishers. Signing in (Sign in with Apple, Google, or email) is optional; additional editorial tools are available only to the app's operator. Accounts can be deleted in the app under "Mehr" → "Konto löschen". No account is required to review the app.
 
 **Datenschutz-Angaben (App Store „App-Datenschutz“ / Play „Datensicherheit“):**
 - Kein Tracking, keine Werbung, keine Analyse.
-- Erhoben: E-Mail-Adresse (nur Betreiber-Konto, App-Funktion, nicht verknüpft mit Tracking); Geräte-Kennung für Benachrichtigungen (App-Funktion).
+- Erhoben: E-Mail-Adresse und ggf. Name (nur bei freiwilliger Anmeldung, App-Funktion, nicht für Tracking); Geräte-Kennung für Benachrichtigungen (App-Funktion).
+- Konto-Löschung: in der App (Mehr → Konto löschen). Für Google Play zusätzlich eine Web-Adresse angeben: `https://horn-lens.vercel.app/datenschutz.html` (Abschnitt 4 beschreibt die Löschung).
+- Anmeldung mit Google/Apple einrichten: siehe die Anleitung „Horn Lens: Anmeldung mit Google und Apple einrichten“.
 - Play Console: News-App-Erklärung ausfüllen (Herausgeber und Kontakt wie im Impressum).
 
 **Altersfreigabe:** Fragebogen ehrlich ausfüllen; die App enthält Nachrichten zu bewaffneten Konflikten (Text, keine Bilder von Gewalt).
