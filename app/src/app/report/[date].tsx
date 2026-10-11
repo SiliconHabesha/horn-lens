@@ -13,6 +13,7 @@ import { CLAUDE_PAGE } from "../../lib/feeds";
 import { radius, space, useTheme } from "../../lib/theme";
 import type { Item, Report } from "../../lib/types";
 
+const KIND_ICON: Record<string, string> = { outage: "wifi-outline", maritime: "boat-outline", quake: "pulse-outline", surge: "newspaper-outline" };
 const KIND: Record<string, string> = { outage: "Internetverbindung", maritime: "Vorfall auf See", quake: "Erdbeben", surge: "Viele Meldungen" };
 
 // Klartext zum Teilen: Zusammenfassung mit Quellen, Messwerte, wichtigste Schlagzeilen
@@ -160,7 +161,7 @@ export default function ReportScreen() {
             <>
               <Head title="Damalige Hinweise" />
               <Group>
-                {(p.alerts || []).map((a, i) => <ListRow key={i} first={i === 0} icon="alert-circle-outline" label={a.title} sub={`${KIND[a.kind] || "Hinweis"} · ${fmtFull(a.t)}`}
+                {(p.alerts || []).map((a, i) => <ListRow key={i} first={i === 0} icon={(KIND_ICON[a.kind] || "alert-circle-outline") as any} label={a.title} sub={`${KIND[a.kind] || "Hinweis"} · ${fmtFull(a.t)}`}
                   external={!!a.url} onPress={a.url ? () => openLink(a.url) : undefined} />)}
               </Group>
             </>

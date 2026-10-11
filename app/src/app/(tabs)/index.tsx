@@ -65,8 +65,8 @@ export default function Lage() {
   const warnedIn = (country: RegExp) => data.alerts.some((a) => a.kind === "outage" && country.test(a.title));
   const signals: { icon: Icon; label: string; hint: string; value: string; tone?: "alert" | "none"; to: string }[] = [];
   if (data.owner) {
-    signals.push({ icon: "wifi-outline", label: "Internet Eritrea", hint: "48 Std.", value: !ioda.ok ? "–" : er ? plural(er, "Auffälligkeit", "Auffälligkeiten") : "unauffällig", tone: !ioda.ok ? "none" : er && !warnedIn(/Eritrea/) ? "alert" : undefined, to: "/signal/internet" });
-    signals.push({ icon: "wifi-outline", label: "Internet Äthiopien", hint: "48 Std.", value: !ioda.ok ? "–" : et ? plural(et, "Auffälligkeit", "Auffälligkeiten") : "unauffällig", tone: !ioda.ok ? "none" : et && !warnedIn(/Äthiopien|Ethiopia/) ? "alert" : undefined, to: "/signal/internet" });
+    signals.push({ icon: "wifi-outline", label: "Internet Eritrea", hint: "48 Std.", value: !ioda.ok ? "–" : num(er), tone: !ioda.ok ? "none" : er && !warnedIn(/Eritrea/) ? "alert" : undefined, to: "/signal/internet" });
+    signals.push({ icon: "wifi-outline", label: "Internet Äthiopien", hint: "48 Std.", value: !ioda.ok ? "–" : num(et), tone: !ioda.ok ? "none" : et && !warnedIn(/Äthiopien|Ethiopia/) ? "alert" : undefined, to: "/signal/internet" });
   }
   signals.push({ icon: "flame-outline", label: "Hitzepunkte", hint: "24 Std.", value: data.firesError || !firms.ok ? "–" : `${data.firesCapped ? "≥ " : ""}${num(data.firesTotal)}`, tone: data.firesError || !firms.ok ? "none" : undefined, to: "/signal/fires" });
   signals.push({ icon: "boat-outline", label: "Vorfälle auf See", hint: "30 Tage", value: !ukmto.ok ? "–" : num(data.maritime.length),

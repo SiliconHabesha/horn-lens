@@ -23,7 +23,7 @@ export const TYPE_NOTE: Record<string, string> = {
   government_et: "Amtliche Erklärungen aus Äthiopien, einer Konfliktpartei. Sie zeigen die Haltung der Regierung, keine unabhängige Bestätigung.",
   progov_et: "Nah an Äthiopiens Regierungspartei. Ihre Berichte zum Konflikt wie die Aussage einer Konfliktpartei lesen.",
   ethiopian_independent: "Unabhängige äthiopische Medien; zusammen mit eritreischen und internationalen Quellen lesen.",
-  tigray: "Tigrayische Medien. Ihre Berichte zum Konflikt wie die Aussage einer Konfliktpartei lesen.",
+  tigray: "Medien aus Tigray, meist einer der Parteien dort nah. Ihre Berichte zum Konflikt wie die Aussage einer Konfliktpartei lesen.",
   international: "Nachrichtenagenturen, Sender und Fachpresse, die von außen berichten.",
   un_ngo: "Die UN, Menschenrechtsorganisationen und Konfliktforscher.",
   aggregator: "Von einer automatischen Nachrichtensuche gefunden. Das Medium ist genannt, aber noch nicht eingeordnet.",

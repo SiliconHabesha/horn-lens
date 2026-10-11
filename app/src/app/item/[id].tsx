@@ -30,7 +30,7 @@ export default function ItemDetail() {
         <Stack.Screen options={{ title: "Meldung" }} />
         {!data ? <Skeleton rows={4} />
           : !data.owner && data.items.some((x) => String(x.id) === String(id)) ? <Empty icon="lock-closed-outline" text="Diese Meldung gehört nicht zur offenen Ausgabe." />
-          : <Empty icon="newspaper-outline" text="Diese Meldung ist älter als 72 Stunden und nicht mehr abrufbar. Gemerkte Meldungen bleiben unter „Gemerkt“." />}
+          : <Empty icon="newspaper-outline" text={data.owner ? "Diese Meldung ist älter als 72 Stunden und nicht mehr abrufbar. Gemerkte Meldungen bleiben unter „Gemerkt“." : "Diese Meldung ist nicht verfügbar: älter als 72 Stunden oder nicht Teil der offenen Ausgabe."} />}
       </Screen>
     );
   }
@@ -51,10 +51,10 @@ export default function ItemDetail() {
     <Screen topInset={false} refresh={false}>
       <Stack.Screen options={{ title: story && story.items.length > 1 ? "Geschichte" : "Meldung" }} />
       <T v="title" style={titleStyle(it.title, true)} accessibilityRole="header">{it.title}</T>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 8, rowGap: 4, marginTop: space.s, alignItems: "center" }}>
-        <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: c }} />
+      <View style={{ flexDirection: "row", flexWrap: "wrap", rowGap: 4, marginTop: space.s, alignItems: "center" }}>
+        <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: c, marginRight: 8 }} />
         <T v="smallStrong" color={t.ink}>{srcName(it.origin_domain || it.source_name)}</T>
-        <T v="small">· {TYPES[it.source_type] || it.source_type} · {it.published_at ? whenOf(it) : `ohne Zeitangabe der Quelle, ${whenOf(it)}`}</T>
+        <T v="small">{" · "}{TYPES[it.source_type] || it.source_type} · {it.published_at ? whenOf(it) : `ohne Zeitangabe der Quelle, ${whenOf(it)}`}</T>
       </View>
       {placesIn(it.title).length ? (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: space.s, alignItems: "center" }}>

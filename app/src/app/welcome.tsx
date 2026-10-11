@@ -13,8 +13,8 @@ import { radius, space, useTheme } from "../lib/theme";
 
 export const WELCOME_KEY = "hl:welcome:v1";
 const VOICES: [string, string][] = [
-  ["government_er", "Amtliche Sicht Eritreas, einer Konfliktpartei"], ["exile", "Meist regierungskritisch, mit Quellen im Land"], ["government_et", "Amtliche Sicht Äthiopiens, einer Konfliktpartei"],
-  ["tigray", "Aus Tigray, einer Konfliktpartei"], ["international", "Agenturen und Sender von außen"], ["un_ngo", "Eigene Erhebungen, Berichte von außen"],
+  ["government_er", "Amtliche Sicht Eritreas, einer Konfliktpartei"], ["exile", "Meist regierungskritisch, mit Quellen im Land"], ["government_et", "Amtliche Sicht Äthiopiens, einer Konfliktpartei"], ["progov_et", "Nah an Äthiopiens Regierung"],
+  ["tigray", "Aus Tigray, oft einer Konfliktseite nah"], ["international", "Agenturen und Sender von außen"], ["un_ngo", "Eigene Erhebungen, Berichte von außen"],
 ];
 
 function Page({ w, icon, title, lead, children }: { w: number; icon: keyof typeof Ionicons.glyphMap; title: string; lead: string; children?: React.ReactNode }) {

@@ -148,7 +148,7 @@ export default function MapScreen() {
             </View>
           ))}
         </View>
-        <T v="caption" style={{ marginTop: 6 }}>{layers.fire ? `${fireNote.replace(/\.$/, "")}. ` : ""}Gestrichelt: Regionsgrenzen, West-Tigray/Welkait umstritten.</T>
+        <T v="caption" style={{ marginTop: 6 }}>{layers.fire ? `${fireNote.replace(/\.$/, "")}. ` : ""}Gestrichelt: Regionsgrenzen. Umstritten: West-Tigray/Welkait, Raya, Badme. Grenzen nach Natural Earth.</T>
 
         {layers.ship && data.maritime.length ? (
           <>

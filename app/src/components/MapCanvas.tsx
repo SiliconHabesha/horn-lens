@@ -87,7 +87,10 @@ export function MapSvg({ data, layers, box, w, h, sel, since, mini }: {
       {/* Auswahlring unter den Ortsnamen, damit er keinen Namen verdeckt */}
       {sel ? <Circle cx={sel.x} cy={sel.y} r={12 * k} fill="none" stroke={t.ink} strokeWidth={2.2 * k} /> : null}
       {PLACES.filter((p) => (mini ? MINI_NAMES.has(p.id) : p.major || box[2] < MINOR_W)).map(({ name: n, lat: la, lon: lo, left, dy = 0 }) => { const [x, y] = proj(la, lo);
-        const tx = left ? x - 5 * k : x + 5 * k, ty = y + (4 + dy) * k, fs = (mini ? 10 : 11) * k, anchor = left ? "end" : "start";
+        const fs = (mini ? 10 : 11) * k, ty = y + (4 + dy) * k, anchor = left ? "end" : "start";
+        // Am Kartenrand nicht abschneiden: Name so weit nach innen schieben, dass er ganz sichtbar bleibt (Breite grob geschätzt)
+        const wEst = n.length * fs * 0.56, pad = 4 * k;
+        const tx = left ? Math.max(x - 5 * k, box[0] + wEst + pad) : Math.min(x + 5 * k, box[0] + box[2] - wEst - pad);
         return (
         <G key={n}>
           <Circle cx={x} cy={y} r={2.2 * k} fill={t.ink} />

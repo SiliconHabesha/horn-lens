@@ -138,6 +138,7 @@ export default function News() {
             <>
               <T v="label" color={t.muted} style={{ marginTop: 4 }}>Quellenart</T>
               <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+                <Chip label="Alle" active={!type} onPress={() => setType(null)} />
                 {typesPresent.map((k) => <Chip key={k} label={TYPES[k]} color={t.type[k]} active={type === k} onPress={() => setType(type === k ? null : k)} />)}
               </View>
             </>

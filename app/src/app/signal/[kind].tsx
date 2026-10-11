@@ -6,7 +6,7 @@ import { Button, Empty, Group, Head, ListRow, openLink, Screen, T } from "../../
 import { fmtFull, num } from "../../lib/de";
 import { useData } from "../../lib/data";
 import { feedState } from "../../lib/feeds";
-import { nearest, RADIUS, seaMeta } from "../../lib/places";
+import { km, nearest, PLACES, RADIUS, seaMeta } from "../../lib/places";
 import { space } from "../../lib/theme";
 import { Skeleton } from "../../components/Skeleton";
 
@@ -29,19 +29,13 @@ export default function Signal() {
   const m = META[kind];
   const { data } = useData();
 
-  // Hitzepunkte nach nächstem Ort: wo häufen sie sich?
+  // Hitzepunkte je Ort, gezählt wie auf den Ortsseiten (alle Punkte im Umkreis); ein Punkt kann zu zwei Orten zählen
   const areas = useMemo(() => {
     if (!data || kind !== "fires") return [];
-    const by = new Map<string, { name: string; id: string; n: number }>();
-    for (const f of data.fires) {
-      const n = nearest(f.lat, f.lon);
-      // Gleicher Umkreis wie auf den Ortsseiten, damit die Zahlen übereinstimmen
-      const key = n.d <= RADIUS.fire ? n.p.id : "_far";
-      const cur = by.get(key) || { name: n.d <= RADIUS.fire ? n.p.name : `Weiter als ${RADIUS.fire} km von bekannten Orten`, id: key, n: 0 };
-      cur.n++;
-      by.set(key, cur);
-    }
-    return [...by.values()].sort((a, b) => (a.id === "_far" ? 1 : 0) - (b.id === "_far" ? 1 : 0) || b.n - a.n);
+    const list = PLACES.map((p) => ({ id: p.id, name: p.name, n: data.fires.filter((f) => km(p.lat, p.lon, f.lat, f.lon) <= RADIUS.fire).length })).filter((x) => x.n);
+    const far = data.fires.filter((f) => nearest(f.lat, f.lon).d > RADIUS.fire).length;
+    list.sort((a, b) => b.n - a.n);
+    return far ? [...list, { id: "_far", name: `Weiter als ${RADIUS.fire} km von bekannten Orten`, n: far }] : list;
   }, [data, kind]);
 
   if (!known) return <Screen topInset={false} refresh={false}><Stack.Screen options={{ title: "Messwerte" }} /><Empty text="Diese Seite gibt es nicht. Alle Messwerte stehen in der Lage." /></Screen>;
@@ -74,7 +68,7 @@ export default function Signal() {
       {kind === "fires" ? (
         <>
           <Head title={sample ? `${num(data.fires.length)} von ${data.firesCapped ? "mindestens " : ""}${num(data.firesTotal)} Hitzepunkten, nach Ort` : `${num(data.firesTotal)} in 24 Stunden, nach Ort`} />
-          {sample ? <T v="caption" style={{ marginBottom: space.s }}>Horn Lens lädt nur eine Auswahl. Die Verteilung nach Orten ist deshalb ungefähr; alle Punkte zeigt NASA FIRMS.</T> : null}
+          <T v="caption" style={{ marginBottom: space.s }}>{sample ? "Horn Lens lädt nur eine Auswahl, die Zahlen sind deshalb Mindestwerte; alle Punkte zeigt NASA FIRMS. " : ""}Ein Punkt kann zu zwei nahen Orten zählen.</T>
           {areas.length ? (
             <Group>{areas.map((a, i) => <ListRow key={a.id} first={i === 0} label={a.id === "_far" ? a.name : `Umkreis ${a.name}`} hint={a.id === "_far" ? undefined : `bis ${RADIUS.fire} km`} value={num(a.n)}
               onPress={a.id !== "_far" ? () => router.push(`/place/${a.id}`) : undefined} align />)}</Group>

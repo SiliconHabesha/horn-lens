@@ -82,7 +82,7 @@ export function ChipRow({ children }: { children: React.ReactNode }) {
 
 // Jede Stufe hat eine eigene Form, nicht nur eine Farbe (auch für Menschen mit Farbsehschwäche)
 const STATUS_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
-  confirmed: "checkmark-circle", likely: "ellipse", unconfirmed: "help-circle", disputed: "swap-horizontal", false: "close-circle",
+  confirmed: "checkmark-circle", likely: "checkmark-circle-outline", unconfirmed: "help-circle", disputed: "swap-horizontal", false: "close-circle",
 };
 export function StatusPill({ status, small }: { status: string; small?: boolean }) {
   const t = useTheme();
@@ -202,7 +202,7 @@ export function Button({ label, onPress, kind = "primary", icon, disabled }: { l
 /** Schalter in den Farben von Horn Lens (statt Systemgrün oder -türkis) */
 export function Toggle(props: SwitchProps) {
   const t = useTheme();
-  return <Switch trackColor={{ false: t.rule, true: t.accent }} thumbColor="#FFFFFF" {...({ activeThumbColor: "#FFFFFF" } as any)} ios_backgroundColor={t.rule} {...props} />;
+  return <Switch trackColor={{ false: t.dark ? "#5C7A84" : "#7F9396", true: t.accent }} thumbColor="#FFFFFF" {...({ activeThumbColor: "#FFFFFF" } as any)} ios_backgroundColor={t.dark ? "#5C7A84" : "#7F9396"} {...props} />;
 }
 
 /** Eine Zeile in einer gruppierten Liste (Messwerte, Weiter zu, Orte): Symbol, Text, Zusatz, Wert rechts, Pfeil */

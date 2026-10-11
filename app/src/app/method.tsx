@@ -23,7 +23,7 @@ export default function Method() {
         <B>Messwerte: Messungen von Satelliten und Sensoren. Sie zeigen, dass an einem Ort zu einer Zeit etwas geschah, nie wer es war oder warum.</B>
         <B>Satellitenbilder: Sentinel-2-Ausschnitte mit genauer Aufnahmezeit, nur mit höchstens 3 % Wolken.</B>
         <B>{`Zeiten sind Berliner Zeit (derzeit ${tzName()}), außer den Aufnahmezeiten der Satelliten in UTC.`}</B>
-        <B>Antwortet eine Messquelle drei Stunden lang nicht, steht dort ein Strich (–) statt einer Null. Erfunden wird nichts.</B>
+        <B>Antwortet eine Messquelle drei Stunden lang nicht, steht dort ein Strich (–) statt einer Null; ebenso, wenn Horn Lens nur eine Auswahl lädt und darin nichts liegt. Erfunden wird nichts.</B>
       </View>
       {data?.owner ? (
         <>
@@ -53,7 +53,7 @@ export default function Method() {
         <T v="small" color={t.ink}>Satellite images: Contains modified Copernicus Sentinel data, processed by Microsoft Planetary Computer.</T>
         <T v="small" color={t.ink}>Map outlines and regional boundaries: Made with Natural Earth.</T>
       </Card>
-      <T v="small" style={{ marginTop: space.m }}>Horn Lens ist weder mit NASA, USGS, UKMTO oder dem britischen Verteidigungsministerium, Georgia Tech, Microsoft, der ESA noch der Europäischen Union verbunden und wird von keiner dieser Stellen unterstützt.</T>
+      <T v="small" style={{ marginTop: space.m }}>Horn Lens ist weder mit NASA, USGS, UKMTO, dem britischen Verteidigungsministerium, Georgia Tech, Microsoft, der ESA noch der Europäischen Union verbunden und wird von keiner dieser Stellen unterstützt.</T>
     </Screen>
   );
 }
