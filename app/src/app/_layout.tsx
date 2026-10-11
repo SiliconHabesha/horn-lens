@@ -13,7 +13,8 @@ import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect } from "react";
-import { Platform } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { Platform, Pressable, Text } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { DataProvider, useData } from "../lib/data";
 import Login from "./login";
@@ -37,11 +38,13 @@ export default function Root() {
       <DataProvider>
         <StatusBar style={t.dark ? "light" : "dark"} />
         <Gate>
-        <Stack screenOptions={{
+        <Stack screenOptions={({ navigation }: any) => ({
           headerStyle: { backgroundColor: t.bg }, headerTintColor: t.ink, headerShadowVisible: false,
           headerTitleStyle: { fontFamily: font.semibold, fontSize: 16 }, headerBackTitle: "Zurück",
           contentStyle: { backgroundColor: t.bg },
-        }}>
+          // Direkt geöffnet (Link, Benachrichtigung): trotzdem ein Weg zurück zur Lage
+          ...(navigation.canGoBack() ? {} : { headerLeft: () => <HomeBack /> }),
+        })}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false, title: "Horn Lens" }} />
           <Stack.Screen name="item/[id]" options={{ title: "Meldung" }} />
           <Stack.Screen name="place/[id]" options={{ title: "Ort" }} />
@@ -75,6 +78,17 @@ function Gate({ children }: { children: React.ReactNode }) {
   if (!session) return <Login gate />;
   if (recovery) return <SetPassword />;
   return <>{children}</>;
+}
+
+function HomeBack() {
+  const t = useTheme();
+  return (
+    <Pressable onPress={() => router.replace("/")} accessibilityRole="button" accessibilityLabel="Zur Lage" hitSlop={10}
+      style={{ flexDirection: "row", alignItems: "center", gap: 2, paddingHorizontal: 8 }}>
+      <Ionicons name="chevron-back" size={22} color={t.ink} />
+      <Text style={{ fontFamily: font.medium, fontSize: 16, color: t.ink }}>Lage</Text>
+    </Pressable>
+  );
 }
 
 // Beim allerersten Start einmal die Einführung zeigen

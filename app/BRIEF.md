@@ -69,3 +69,13 @@ Offen: Behauptung verfolgen mit eigener Benachrichtigung (braucht Server-Änderu
 - Benachrichtigungen: robuste Schalter, Hinweis wenn im Handy ausgeschaltet (mit Weg zu den Einstellungen), Probe-Benachrichtigung, Tagesbericht nur für freigeschaltete Konten.
 - Quellen: Übersicht „x von y erreichbar“, gestörte zuerst; Lage zeigt gestörte Quellen.
 - Teilen einer Geschichte mit allen Medien; arabische Schlagzeilen werden gruppiert; Filter in Meldungen bleiben gemerkt; Karte-Liste folgt Ebenen und Zeitraum.
+
+## Auftrag Runde 7: deutlich übersichtlicher (11. Oktober 2026, 23 Uhr)
+Rückmeldung: „immer noch sehr unübersichtlich“. Ziel: jede Seite in 5 Sekunden erfassbar.
+Regeln:
+1. Eine Seite, eine Aufgabe. Lage = kurzes Briefing (Wichtig jetzt, wichtigste Geschichten, Messwerte, Weiter zu). Alles andere hat seine eigene Seite.
+2. Eine Zeilenform für alle Meldungen und Geschichten: Schlagzeile, darunter eine Zeile mit Farbpunkten der Quellenart, Medium oder „N Medien“, Zeit. Kein Balken, keine Teilen-Knöpfe, keine gemeinsamen Wörter in Listen (die stehen in der Detailseite).
+3. Erklärtexte nur einmal (Einführung, Detailseite). In Listen und Köpfen keine Absätze.
+4. Höchstens eine Zeile Filter sichtbar; der Rest hinter „Filter“.
+5. Gleiche Dinge sehen gleich aus: Zahlen rechts, Pfeil für „führt weiter“, Warnfarbe nur für Warnungen.
+Umgesetzt (Runde 7): einheitliche Zeilen (Meldung/Geschichte, Messwert, Vorfall auf See) überall; Lage als Briefing ohne Balken und Absätze; Meldungen ohne Umschalter (Gemerkt oben rechts, Zusammenfassen im Filter); Behauptungen als Zeilen; Karte mit „Ebenen“-Knopf; Detailseiten ohne doppelte Etiketten; Messwert-, Orts- und Berichtsseiten mit denselben Listen; „‹ Lage“ bei direkt geöffneten Seiten; eigene Farbe für „Wahrscheinlich“.

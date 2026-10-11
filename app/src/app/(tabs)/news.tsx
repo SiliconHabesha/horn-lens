@@ -3,12 +3,12 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useLocalSearchParams } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useMemo, useState } from "react";
-import { FlatList, Pressable, RefreshControl, StyleSheet, TextInput, View } from "react-native";
+import { FlatList, Pressable, RefreshControl, StyleSheet, Switch, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { dedupe, ItemRow, itemTime, StoryCard, Voices } from "../../components/items";
 import { Skeleton } from "../../components/Skeleton";
-import { Banner, Chip, ChipRow, Empty, T, tap } from "../../components/ui";
-import { ago, REGION_ORDER, REGIONS, TYPE_ORDER, TYPES } from "../../lib/de";
+import { Banner, Chip, ChipRow, Empty, IconButton, T, tap } from "../../components/ui";
+import { ago, plural, REGION_ORDER, REGIONS, TYPE_ORDER, TYPES } from "../../lib/de";
 import { useData } from "../../lib/data";
 import { narrow, storiesOf, type Story } from "../../lib/stories";
 import { noOutline, font, radius, space, useTheme } from "../../lib/theme";
@@ -51,6 +51,7 @@ export default function News() {
   const [type, setType] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const grouped = mode !== "items";
   // Sprung aus anderen Bildschirmen (k ändert sich bei jedem Sprung, damit er auch beim zweiten Mal greift)
   useEffect(() => { if (p.region && REGIONS[p.region]) { setRegion(p.region); setMode((m) => (m === "saved" ? "stories" : m)); } }, [p.region, p.k]);
   useEffect(() => { if (p.new === "1") { setOnlyNew(true); setHours(72); } }, [p.new, p.k]);
@@ -93,67 +94,89 @@ export default function News() {
   }, [data, list, most]);
   const savedList = useMemo(() => saved.filter(match), [saved, q]);
   const typesPresent = useMemo(() => TYPE_ORDER.filter((k) => base.some((i) => i.source_type === k && (region === "all" || i.regions.includes(region)))), [base, region]);
-  const active = (hours !== 24 ? 1 : 0) + (type ? 1 : 0);
+  const active = (hours !== 24 ? 1 : 0) + (type ? 1 : 0) + (onlyNew ? 1 : 0) + (most && mode === "stories" ? 1 : 0) + (mode === "items" ? 1 : 0);
   const multi = stories.filter((s) => s.items.length > 1).length;
 
   const header = (
     <View style={{ paddingTop: ins.top + space.m, gap: space.m, paddingBottom: space.s, maxWidth: 760, width: "100%", alignSelf: "center" }}>
-      <T v="display" accessibilityRole="header">{owner ? "Meldungen" : "Rotes Meer"}</T>
-      {offline && loadedAt ? <Banner icon="cloud-offline-outline" tone="warn" text={`Keine Verbindung. Stand: ${ago(loadedAt)}.`} action="Erneut" onAction={refresh} /> : null}
-      <Segmented value={mode} onChange={setMode} saved={saved.length} />
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: t.card, borderRadius: radius.m, paddingHorizontal: 12, height: 44,
-        borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule }}>
-        <Ionicons name="search" size={17} color={t.faint} />
-        <TextInput value={q} onChangeText={setQ} placeholder={mode === "saved" ? "Gemerktes durchsuchen" : "Suchen, z. B. Assab oder Reuters"} placeholderTextColor={t.faint}
-          style={{ ...noOutline, flex: 1, fontFamily: font.regular, fontSize: 16, color: t.ink, height: 42 }} returnKeyType="search" clearButtonMode="while-editing"
-          accessibilityLabel="Meldungen durchsuchen" autoCorrect={false} />
-        {q ? <Pressable onPress={() => setQ("")} accessibilityRole="button" accessibilityLabel="Suche löschen" hitSlop={10}><Ionicons name="close-circle" size={18} color={t.faint} /></Pressable> : null}
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+        <T v="display" accessibilityRole="header">{mode === "saved" ? "Gemerkt" : owner ? "Meldungen" : "Rotes Meer"}</T>
+        <IconButton icon={mode === "saved" ? "close" : "bookmark-outline"} label={mode === "saved" ? "Gemerkt schließen" : `Gemerkt (${saved.length})`}
+          onPress={() => setMode(mode === "saved" ? (grouped ? "stories" : "items") : "saved")} />
       </View>
-      {mode !== "saved" ? (
-        <>
-          {owner ? (
-            <ChipRow>
-              <Chip label="Alle Regionen" active={region === "all"} onPress={() => setRegion("all")} />
-              {REGION_ORDER.filter((r) => counts[r] > 0 || region === r).map((r) => <Chip key={r} label={REGIONS[r]} count={counts[r]} active={region === r} onPress={() => setRegion(r)} />)}
-            </ChipRow>
-          ) : null}
-          <ChipRow>
-            <Chip label={active ? `Filter · ${active}` : "Filter"} active={showFilters || active > 0} onPress={() => setShowFilters(!showFilters)} />
-            <Chip label="Nur neue" active={onlyNew} onPress={() => setOnlyNew(!onlyNew)} />
-            {mode === "stories" ? <Chip label="Meistberichtet" active={most} onPress={() => setMost(!most)} /> : null}
-          </ChipRow>
-          {showFilters ? (
-            <View style={{ backgroundColor: t.card, borderRadius: radius.l, padding: space.m, gap: space.s, borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule }}>
-              <T v="label" color={t.muted}>Zeitraum</T>
+      {offline && loadedAt ? <Banner icon="cloud-offline-outline" tone="warn" text={`Keine Verbindung. Stand: ${ago(loadedAt)}.`} action="Erneut" onAction={refresh} /> : null}
+      <View style={{ flexDirection: "row", gap: 8 }}>
+        <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: t.card, borderRadius: radius.m, paddingHorizontal: 12, height: 44,
+          borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule }}>
+          <Ionicons name="search" size={17} color={t.faint} />
+          <TextInput value={q} onChangeText={setQ} placeholder={mode === "saved" ? "Gemerktes durchsuchen" : "Suchen"} placeholderTextColor={t.faint}
+            style={{ ...noOutline, flex: 1, fontFamily: font.regular, fontSize: 16, color: t.ink, height: 42 }} returnKeyType="search" clearButtonMode="while-editing"
+            accessibilityLabel="Meldungen durchsuchen" autoCorrect={false} />
+          {q ? <Pressable onPress={() => setQ("")} accessibilityRole="button" accessibilityLabel="Suche löschen" hitSlop={10}><Ionicons name="close-circle" size={18} color={t.faint} /></Pressable> : null}
+        </View>
+        {mode !== "saved" ? (
+          <Pressable onPress={() => { tap(); setShowFilters(!showFilters); }} accessibilityRole="button" accessibilityState={{ expanded: showFilters }}
+            accessibilityLabel={active ? `Filter, ${active} aktiv` : "Filter"}
+            style={({ pressed }) => ({ height: 44, minWidth: 44, paddingHorizontal: 12, borderRadius: radius.m, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
+              backgroundColor: active || showFilters ? t.ink : t.card, borderWidth: StyleSheet.hairlineWidth, borderColor: active || showFilters ? t.ink : t.rule, opacity: pressed ? 0.7 : 1 })}>
+            <Ionicons name="options-outline" size={18} color={active || showFilters ? t.bg : t.ink} />
+            {active ? <T v="smallStrong" color={t.bg}>{active}</T> : null}
+          </Pressable>
+        ) : null}
+      </View>
+      {mode !== "saved" && showFilters ? (
+        <View style={{ backgroundColor: t.card, borderRadius: radius.l, padding: space.m, gap: space.s, borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule }}>
+          <T v="label" color={t.muted}>Zeitraum</T>
+          <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+            <Chip label="24 Stunden" active={hours === 24} onPress={() => setHours(24)} />
+            <Chip label="3 Tage" active={hours === 72} onPress={() => setHours(72)} />
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: 44 }}>
+            <T v="body">Nur neue seit dem letzten Besuch</T>
+            <Switch value={onlyNew} onValueChange={(v) => { tap(); setOnlyNew(v); }} accessibilityLabel="Nur neue Meldungen" />
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: 44 }}>
+            <T v="body" style={{ flex: 1 }}>Gleiche Geschichte zusammenfassen</T>
+            <Switch value={grouped} onValueChange={(v) => { tap(); setMode(v ? "stories" : "items"); }} accessibilityLabel="Gleiche Geschichte zusammenfassen" />
+          </View>
+          {mode === "stories" ? (
+            <>
+              <T v="label" color={t.muted} style={{ marginTop: 4 }}>Reihenfolge</T>
               <View style={{ flexDirection: "row", gap: 8 }}>
-                <Chip label="24 Stunden" active={hours === 24} onPress={() => setHours(24)} />
-                <Chip label="3 Tage" active={hours === 72} onPress={() => setHours(72)} />
+                <Chip label="Neueste zuerst" active={!most} onPress={() => setMost(false)} />
+                <Chip label="Meistberichtet zuerst" active={most} onPress={() => setMost(true)} />
               </View>
-              {typesPresent.length > 1 ? (
-                <>
-                  <T v="label" color={t.muted} style={{ marginTop: 4 }}>Quellenart</T>
-                  <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-                    {typesPresent.map((k) => <Chip key={k} label={TYPES[k]} color={t.type[k]} active={type === k} onPress={() => setType(type === k ? null : k)} />)}
-                  </View>
-                </>
-              ) : null}
-              {active ? (
-                <Pressable onPress={() => { tap(); setHours(24); setType(null); }} accessibilityRole="button" hitSlop={8} style={{ alignSelf: "flex-start", paddingVertical: 6 }}>
-                  <T v="smallStrong" color={t.accent}>Filter zurücksetzen</T>
-                </Pressable>
-              ) : null}
-            </View>
+            </>
           ) : null}
-          {list.length ? <View style={{ paddingTop: 4 }}><Voices items={list} unit="Meldungen" compact /></View> : null}
-          <T v="caption" style={{ marginTop: -4 }}>
-            {mode === "stories"
-              ? `${stories.length === 1 ? "1 Geschichte" : `${stories.length} Geschichten`} aus ${list.length === 1 ? "1 Meldung" : `${list.length} Meldungen`}${multi ? `, ${multi} davon bei mehreren Medien` : ""}`
-              : list.length === 1 ? "1 Meldung" : `${list.length} Meldungen`}
-            {active && !showFilters ? ` · ${[hours === 72 ? "3 Tage" : null, type ? TYPES[type] : null].filter(Boolean).join(", ")}` : ""}
-            {" · keine geprüften Tatsachen"}
-          </T>
-        </>
-      ) : <T v="caption">Gemerkte Meldungen bleiben auf diesem Gerät, auch wenn sie älter als drei Tage sind. Beim Abmelden werden sie gelöscht.</T>}
+          {typesPresent.length > 1 ? (
+            <>
+              <T v="label" color={t.muted} style={{ marginTop: 4 }}>Quellenart</T>
+              <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+                {typesPresent.map((k) => <Chip key={k} label={TYPES[k]} color={t.type[k]} active={type === k} onPress={() => setType(type === k ? null : k)} />)}
+              </View>
+            </>
+          ) : null}
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
+            {active ? (
+              <Pressable onPress={() => { tap(); setHours(24); setType(null); setOnlyNew(false); setMost(false); setMode("stories"); }} accessibilityRole="button" hitSlop={8} style={{ paddingVertical: 6 }}>
+                <T v="smallStrong" color={t.accent}>Zurücksetzen</T>
+              </Pressable>
+            ) : <View />}
+            <Pressable onPress={() => { tap(); setShowFilters(false); }} accessibilityRole="button" hitSlop={8} style={{ paddingVertical: 6 }}>
+              <T v="smallStrong">Fertig</T>
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
+      {mode !== "saved" && owner ? (
+        <ChipRow>
+          <Chip label="Alle" active={region === "all"} onPress={() => setRegion("all")} />
+          {REGION_ORDER.filter((r) => counts[r] > 0 || region === r).map((r) => <Chip key={r} label={REGIONS[r]} count={counts[r]} active={region === r} onPress={() => setRegion(r)} />)}
+        </ChipRow>
+      ) : null}
+      {mode !== "saved" && active && !showFilters ? (
+        <T v="caption">Filter: {[hours === 72 ? "3 Tage" : null, onlyNew ? "nur neue" : null, most && mode === "stories" ? "meistberichtet zuerst" : null, mode === "items" ? "einzeln" : null, type ? TYPES[type] : null].filter(Boolean).join(", ")}</T>
+      ) : null}
     </View>
   );
 

@@ -180,7 +180,7 @@ with sync_playwright() as p:
                 shot("search", None, 200)
                 R[f"{pre} search text"] = pg.evaluate("document.body.innerText").replace("\n", " | ")[:300]
                 shot("news-filter", "/news", 1500)
-                pg.get_by_text("Filter", exact=True).click(); pg.wait_for_timeout(400)
+                pg.get_by_label("Filter", exact=True).click(); pg.wait_for_timeout(400)
                 shot("news-filter-open", None, 200)
                 shot("item-toast", f"/item/{6173 + 100000}", 1500)
                 pg.get_by_label("Nicht mehr merken", exact=True).first.click(); pg.wait_for_timeout(350)

@@ -5,7 +5,7 @@ import { router } from "expo-router";
 import React from "react";
 import { Alert, Platform, Pressable, View } from "react-native";
 import { PushSettings } from "../components/PushSettings";
-import { Banner, Button, Card, Divider, openLink, Screen, T, tap } from "../components/ui";
+import { Banner, Button, Card, Divider, Group, ListRow, Screen, T, openLink, tap } from "../components/ui";
 import { useData } from "../lib/data";
 import { BELES_URL, CLAUDE_PAGE, WEB_URL } from "../lib/feeds";
 import { deleteAccount } from "../lib/auth";
@@ -52,7 +52,7 @@ export default function More() {
               <Ionicons name={data?.owner ? "shield-checkmark" : "person-circle-outline"} size={26} color={data?.owner ? t.status.confirmed : t.ink} />
               <View style={{ flex: 1 }}>
                 <T v="bodyStrong">{email}</T>
-                <T v="caption">{data?.owner ? "Voller Zugang: Meldungen, Behauptungen, Tagesberichte, Internet-Messwerte." : "Angemeldet. Dieses Konto sieht die offene Ausgabe."}</T>
+                <T v="caption">{data?.owner ? "Voller Zugang" : "Offene Ausgabe"}</T>
               </View>
             </View>
             <Button label="Abmelden" kind="secondary" icon="log-out-outline" onPress={async () => {
@@ -66,12 +66,12 @@ export default function More() {
           </>
         ) : (
           <>
-            <T v="small">Ohne Anmeldung zeigt Horn Lens die offene Ausgabe: Messwerte, Satellitenbilder und Schifffahrtsmeldungen vom Roten Meer.</T>
+            <T v="small">Ohne Anmeldung: offene Ausgabe (Rotes Meer und Messwerte).</T>
             <Button label="Anmelden mit Apple, Google oder E-Mail" icon="log-in-outline" onPress={() => router.push("/login")} />
           </>
         )}
       </Card>
-      {data?.owner ? <View style={{ marginTop: space.m }}><Banner icon="sparkles-outline" text="KI-Zusammenfassung und Übersetzung gibt es in Horn Lens in Claude." action="Öffnen" onAction={() => openLink(CLAUDE_PAGE)} /></View> : null}
+      {data?.owner ? <Group style={{ marginTop: space.m }}><ListRow first icon="sparkles-outline" label="KI-Zusammenfassung in Claude" external onPress={() => openLink(CLAUDE_PAGE)} /></Group> : null}
 
       <T v="label" color={t.muted} style={{ marginTop: space.xl, marginBottom: space.s }}>Benachrichtigungen</T>
       <PushSettings />

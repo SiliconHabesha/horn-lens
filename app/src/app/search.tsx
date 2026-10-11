@@ -23,7 +23,7 @@ function Section({ title, count, children }: { title: string; count: number; chi
         <T v="label" color={t.muted}>{title}</T>
         <T v="caption">{count}</T>
       </View>
-      <Card style={{ paddingVertical: 4 }}>{children}</Card>
+      <View>{children}</View>
     </View>
   );
 }
@@ -93,7 +93,7 @@ export default function Search() {
                 </Pressable>
               ))}
             </View>
-            <T v="small" style={{ marginTop: space.l }}>Durchsucht die Meldungen der letzten 72 Stunden{data?.owner ? ", alle Behauptungen" : ""}, die Orte und die Quellen. Ortsnamen findet die Suche auch in Ge'ez-Schrift.</T>
+
           </View>
         ) : total === 0 ? (
           <View style={{ alignItems: "center", paddingVertical: space.xxl, gap: 8 }}>
@@ -127,7 +127,7 @@ export default function Search() {
               </Section>
             ) : null}
             {res.items.length ? (
-              <Section title="Meldungen, 72 Std." count={res.items.length}>
+              <Section title="Meldungen" count={res.items.length}>
                 {res.items.slice(0, 30).map((it, i) => (
                   <View key={it.id} style={i ? { borderTopWidth: StyleSheet.hairlineWidth, borderColor: t.rule } : undefined}>
                     <ItemRow it={it} isNew={new Date(it.fetched_at).getTime() > seenBefore} onOpen={() => remember(q)} />

@@ -104,7 +104,7 @@ export default function ClaimForm() {
   const title = mode === "add" ? "Neue Behauptung" : mode === "edit" ? "Angaben berichtigen" : p.intent === "evidence" || p.src_url ? "Beleg ergänzen" : "Stufe ändern";
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: t.bg }} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}>
-      <Stack.Screen options={{ title, headerLeft: () => <Pressable onPress={close} hitSlop={10} accessibilityRole="button"><T v="bodyStrong" color={t.accent}>Abbrechen</T></Pressable> }} />
+      <Stack.Screen options={{ title, headerLeft: () => <Pressable onPress={close} hitSlop={10} accessibilityRole="button" style={{ paddingHorizontal: 16 }}><T v="bodyStrong" color={t.accent}>Abbrechen</T></Pressable> }} />
       <ScrollView contentContainerStyle={{ padding: space.l, gap: space.l, paddingBottom: 80, maxWidth: 760, width: "100%", alignSelf: "center" }} keyboardShouldPersistTaps="handled">
         {claim && mode !== "add" ? <T v="small">{claim.statement}</T> : null}
         {mode !== "status" ? (

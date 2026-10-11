@@ -6,7 +6,8 @@ import { LayoutChangeEvent, Pressable, ScrollView, StyleSheet, View, useWindowDi
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { boxOf, Box, fit, FULL, Layers, Mark, ZoomMap } from "../../components/MapCanvas";
 import { Bone } from "../../components/Skeleton";
-import { Banner, Button, Chip, ChipRow, openLink, T } from "../../components/ui";
+import { Banner, Button, Chip, ChipRow, openLink, PlainRow, T, tap } from "../../components/ui";
+import { seaMeta } from "../../lib/places";
 import { ago, fmtFull, num, plural } from "../../lib/de";
 import { useData } from "../../lib/data";
 import { feedState, noData } from "../../lib/feeds";
@@ -28,6 +29,7 @@ export default function MapScreen() {
   const [layers, setLayers] = useState<Layers>({ fire: true, quake: true, ship: true, sat: true });
   const [sel, setSel] = useState<Mark | null>(null);
   const [span, setSpan] = useState(24 * 30);
+  const [showLayers, setShowLayers] = useState(false);
   const [w, setW] = useState(0);
   // Kartenhöhe: fast quadratisch, aber höchstens gut die Hälfte des Bildschirms, damit darunter Platz bleibt
   const mw = Math.max(w - 2, 0);
@@ -41,9 +43,16 @@ export default function MapScreen() {
 
   const head = (
     <View style={{ paddingHorizontal: space.l, gap: space.m }}>
-      <View>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
         <T v="display" accessibilityRole="header">Karte</T>
-        <T v="small" style={{ marginTop: 4 }}>Messwerte rund um Eritrea. Mit zwei Fingern zoomen, auf eine Markierung tippen.</T>
+        {data ? (
+          <Pressable onPress={() => { tap(); setShowLayers(!showLayers); }} accessibilityRole="button" accessibilityState={{ expanded: showLayers }} accessibilityLabel="Ebenen und Zeitraum"
+            style={({ pressed }) => ({ height: 40, paddingHorizontal: 14, borderRadius: 20, flexDirection: "row", alignItems: "center", gap: 6,
+              backgroundColor: showLayers ? t.ink : t.card, borderWidth: StyleSheet.hairlineWidth, borderColor: showLayers ? t.ink : t.rule, opacity: pressed ? 0.7 : 1 })}>
+            <Ionicons name="layers-outline" size={17} color={showLayers ? t.bg : t.ink} />
+            <T v="smallStrong" color={showLayers ? t.bg : t.ink}>Ebenen</T>
+          </Pressable>
+        ) : null}
       </View>
       {offline && loadedAt ? <Banner icon="cloud-offline-outline" tone="warn" text={`Keine Verbindung. Stand: ${ago(loadedAt)}.`} action="Erneut" onAction={refresh} /> : null}
       <ChipRow>
@@ -94,42 +103,34 @@ export default function MapScreen() {
       </View>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: space.l, paddingBottom: space.xxl * 2, maxWidth: 760, width: "100%", alignSelf: "center" }}>
-        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, marginBottom: space.s, flexWrap: "wrap" }}>
-          <T v="h3">Zeitraum</T>
-          <T v="caption">Ältere Erdbeben und Vorfälle erscheinen blass.</T>
-        </View>
-        <ChipRow>
-          {SPANS.map(([hrs, label]) => <Chip key={hrs} label={label} active={span === hrs} onPress={() => setSpan(hrs)} />)}
-        </ChipRow>
-
-        <T v="h3" style={{ marginTop: space.l, marginBottom: space.s }}>Ebenen</T>
-        <View style={{ gap: 2 }}>
+        {/* Ebenen und Zeitraum nur bei Bedarf */}
+        {showLayers ? (
+        <View style={{ backgroundColor: t.card, borderRadius: radius.l, padding: space.m, gap: space.s, borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule, marginBottom: space.m }}>
+        <T v="label" color={t.muted}>Ebenen</T>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
           {([
-            ["fire", t.fire, "flame", fireNote],
-            ["quake", t.quake, "radio-button-off", usgs.ok ? `${num(data.quakes.length)} Erdbeben ab Stärke 2,5, 7 Tage (USGS)${span < 24 * 7 ? `; ${num(quakesIn)} im Zeitraum` : ""}` : noData(usgs, "USGS")],
-            ["ship", t.ship, "boat", ukmto.ok ? `${plural(data.maritime.length, "Vorfall", "Vorfälle")} auf See, 30 Tage (UKMTO)${span < 24 * 30 ? `; ${num(shipsIn)} im Zeitraum` : ""}` : noData(ukmto, "UKMTO")],
-            ["sat", t.accent, "scan", `${plural(data.sat.filter((p) => p.images.length).length, "Satelliten-Ort", "Satelliten-Orte")} mit Vorher-Nachher-Bildern`],
-          ] as [keyof Layers, string, keyof typeof Ionicons.glyphMap, string][]).map(([key, c, icon, label]) => (
-            <Pressable key={key} onPress={() => { setLayers({ ...layers, [key]: !layers[key] }); setSel(null); }} accessibilityRole="switch" accessibilityState={{ checked: layers[key] }} accessibilityLabel={label}
-              style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 10, minHeight: 44, opacity: pressed ? 0.6 : layers[key] ? 1 : 0.5 })}>
-              <Ionicons name={layers[key] ? "checkbox" : "square-outline"} size={22} color={c} />
-              <Ionicons name={icon} size={16} color={c} />
-              <T v="small" color={t.ink} style={{ flex: 1 }}>{label}</T>
-            </Pressable>
+            ["fire", t.fire, "Hitzepunkte", data.firesError || !firms.ok ? "–" : `${data.firesCapped ? "≥ " : ""}${num(data.firesTotal)}`],
+            ["quake", t.quake, "Erdbeben", usgs.ok ? num(span < 24 * 7 ? quakesIn : data.quakes.length) : "–"],
+            ["ship", t.ship, "Auf See", ukmto.ok ? num(shipsIn) : "–"],
+            ["sat", t.accent, "Satellit", num(data.sat.filter((p) => p.images.length).length)],
+          ] as [keyof Layers, string, string, string][]).map(([key, c, label, n]) => (
+            <Chip key={key} label={label} count={n as any} color={c} active={layers[key]} onPress={() => { setLayers({ ...layers, [key]: !layers[key] }); setSel(null); }} />
           ))}
         </View>
-        <T v="caption" style={{ marginTop: space.m }}>Gestrichelt: amtliche Regionsgrenzen (Natural Earth); West-Tigray ist seit 2020 umstritten. Ein Feuer wird oft von mehreren Satelliten erfasst. Ein Hitzepunkt zeigt Wärme, nicht ihre Ursache.</T>
+        <T v="label" color={t.muted} style={{ marginTop: 4 }}>Zeitraum für Erdbeben und Vorfälle auf See</T>
+        <View style={{ flexDirection: "row", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          {SPANS.map(([hrs, label]) => <Chip key={hrs} label={label} active={span === hrs} onPress={() => setSpan(hrs)} />)}
+        </View>
+        </View>
+        ) : null}
+        <T v="caption">Gestrichelt: Regionsgrenzen, West-Tigray umstritten.</T>
 
         {layers.ship && data.maritime.length ? (
           <>
-            <T v="h3" style={{ marginTop: space.xl, marginBottom: space.s }}>Vorfälle auf See im Zeitraum</T>
+            <T v="h3" style={{ marginTop: space.xl, marginBottom: space.s }}>Vorfälle auf See</T>
             {data.maritime.filter((m) => +new Date(m.t) >= since).length === 0 ? <T v="small">Keine Vorfälle in diesem Zeitraum.</T> : null}
             {data.maritime.filter((m) => +new Date(m.t) >= since).map((m, i) => (
-              <Pressable key={i} onPress={() => openLink(m.url || "https://www.ukmto.org/recent-incidents")} accessibilityRole="link"
-                style={({ pressed }) => ({ paddingVertical: 10, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: t.rule, opacity: pressed ? 0.6 : 1 })}>
-                <T v="caption">{fmtFull(m.t)} · UKMTO</T>
-                <T v="bodyStrong" style={{ fontFamily: font.semibold }}>{m.title}</T>
-              </Pressable>
+              <PlainRow key={i} first={i === 0} title={m.title} meta={seaMeta(m)} external onPress={() => openLink(m.url || "https://www.ukmto.org/recent-incidents")} />
             ))}
             {data.maritime.length - shipsIn > 0 ? <T v="caption" style={{ marginTop: 6 }}>{data.maritime.length - shipsIn} ältere ausgeblendet; auf der Karte blass.</T> : null}
           </>

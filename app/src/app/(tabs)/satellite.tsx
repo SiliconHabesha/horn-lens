@@ -48,7 +48,7 @@ function Stepper({ label, list, value, onChange }: { label: string; list: SatIma
       {btn(1, "chevron-back", `${label}: ein Bild früher`)}
       <View style={{ flex: 1, alignItems: "center" }}>
         <T v="caption">{label}</T>
-        <T v="smallStrong" tabular numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{fmtCapDay(value.t)}</T>
+        <T v="smallStrong" numberOfLines={1}>{new Intl.DateTimeFormat("de-DE", { timeZone: "UTC", day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value.t))}</T>
       </View>
       {btn(-1, "chevron-forward", `${label}: ein Bild später`)}
     </View>
@@ -125,17 +125,10 @@ export default function Satellite() {
   const scalePct = place.half_km > 0 ? 100 / (2 * place.half_km) : 0;
 
   return (
-    <Screen title="Satellit" sub="Sentinel-2, etwa 10 m pro Pixel, Norden oben. Über das Bild wischen, um Vorher und Nachher zu vergleichen.">
-      {GROUPS.map((g) => {
-        const ps = places.filter((x) => group(x) === g);
-        if (!ps.length) return null;
-        return (
-          <View key={g} style={{ marginBottom: space.s }}>
-            <T v="label" color={t.muted} style={{ marginBottom: 6 }}>{g}</T>
-            <ChipRow>{ps.map((x) => <Chip key={x.id} label={x.name} active={x.id === place.id} onPress={() => setPlaceId(x.id)} />)}</ChipRow>
-          </View>
-        );
-      })}
+    <Screen title="Satellit">
+      <ChipRow>
+        {GROUPS.flatMap((g) => places.filter((x) => group(x) === g)).map((x) => <Chip key={x.id} label={x.name} active={x.id === place.id} onPress={() => setPlaceId(x.id)} />)}
+      </ChipRow>
 
       <View onLayout={(e: LayoutChangeEvent) => setW(e.nativeEvent.layout.width)}
         style={{ marginTop: space.m, aspectRatio: 1, borderRadius: radius.l, overflow: "hidden", backgroundColor: t.cardAlt }}
@@ -191,24 +184,16 @@ export default function Satellite() {
       {single ? (
         <T v="small" style={{ marginTop: space.m }}>{place.images.length === 1 ? "Von diesem Ort gibt es bisher nur ein klares Bild; ein Vergleich ist noch nicht möglich." : "Beide Seiten zeigen dasselbe Bild. Ein anderes Datum wählen."}</T>
       ) : null}
-      {place.images.length > 1 ? (
-        <View style={{ flexDirection: "row", gap: space.s, marginTop: space.m }}>
+      {place.images.length > 2 ? (
+        <Pressable onPress={() => { tap(); setAllDates(!allDates); }} accessibilityRole="button" accessibilityState={{ expanded: allDates }} hitSlop={6} style={{ marginTop: space.s, paddingVertical: 6 }}>
+          <T v="smallStrong" color={t.accent}>{allDates ? "Fertig" : "Andere Daten wählen"}</T>
+        </Pressable>
+      ) : null}
+      {place.images.length > 1 && (allDates || place.images.length === 2) ? (
+        <View style={{ flexDirection: "row", gap: space.s, marginTop: space.s }}>
           <Stepper label="Vorher" list={place.images} value={before!} onChange={(i) => { if (before!.id === pickA?.id) setAfterId(i.id); else setBeforeId(i.id); }} />
           <Stepper label="Nachher" list={place.images} value={after!} onChange={(i) => { if (after!.id === pickA?.id) setAfterId(i.id); else setBeforeId(i.id); }} />
         </View>
-      ) : null}
-      {place.images.length > 2 ? (
-        <Pressable onPress={() => { tap(); setAllDates(!allDates); }} accessibilityRole="button" accessibilityState={{ expanded: allDates }} hitSlop={6} style={{ marginTop: space.s, paddingVertical: 6 }}>
-          <T v="smallStrong" color={t.accent}>{allDates ? "Datumsliste ausblenden" : `Alle ${place.images.length} Aufnahmedaten`}</T>
-        </Pressable>
-      ) : null}
-      {allDates ? (
-        <>
-          <T v="smallStrong" style={{ marginTop: space.s, marginBottom: 6 }}>Vorher</T>
-          <ChipRow>{place.images.map((i) => <Chip key={i.id} label={fmtCapDay(i.t)} active={i.id === before?.id} onPress={() => { if (before!.id === pickA?.id) setAfterId(i.id); else setBeforeId(i.id); }} />)}</ChipRow>
-          <T v="smallStrong" style={{ marginTop: space.m, marginBottom: 6 }}>Nachher</T>
-          <ChipRow>{place.images.map((i) => <Chip key={i.id} label={fmtCapDay(i.t)} active={i.id === after?.id} onPress={() => { if (after!.id === pickA?.id) setAfterId(i.id); else setBeforeId(i.id); }} />)}</ChipRow>
-        </>
       ) : null}
 
       <Card style={{ marginTop: space.l, gap: 8 }}>

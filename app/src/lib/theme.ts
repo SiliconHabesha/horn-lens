@@ -27,7 +27,7 @@ const light = {
     exile: "#6A4C9C", tigray: "#8E3B5C", international: "#0F6E74", ethiopian_independent: "#2F6B3A",
     un_ngo: "#2C5A9E", aggregator: "#636D70", measurement: "#3F6C8C", maritime_authority: "#1F4E79",
   } as Record<string, string>,
-  status: { confirmed: "#2F6B3A", likely: "#0F6E74", unconfirmed: "#8A5D00", disputed: "#6A4C9C", false: "#9A3A12" } as Record<string, string>,
+  status: { confirmed: "#2F6B3A", likely: "#5E8A2E", unconfirmed: "#8A5D00", disputed: "#6A4C9C", false: "#9A3A12" } as Record<string, string>,
 };
 export type Theme = typeof light;
 
@@ -57,7 +57,7 @@ const dark: Theme = {
     exile: "#A68BD6", tigray: "#D88AA9", international: "#4FB3B5", ethiopian_independent: "#6FB37B",
     un_ngo: "#7FA6E0", aggregator: "#8E9A9D", measurement: "#8DB6D4", maritime_authority: "#9CC1E8",
   },
-  status: { confirmed: "#6FB37B", likely: "#4FB3B5", unconfirmed: "#E3A23B", disputed: "#B9A0E6", false: "#E58A5E" },
+  status: { confirmed: "#6FB37B", likely: "#A8C77A", unconfirmed: "#E3A23B", disputed: "#B9A0E6", false: "#E58A5E" },
 };
 
 export function useTheme(): Theme & { dark: boolean } {

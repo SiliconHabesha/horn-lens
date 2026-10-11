@@ -5,7 +5,7 @@ import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Platform, Pressable, Share, StyleSheet, View } from "react-native";
 import { dedupe, ItemRow } from "../../components/items";
 import { toast } from "../../components/Toast";
-import { Banner, Card, Empty, openLink, Screen, StatusPill, T, tap } from "../../components/ui";
+import { Banner, Card, Empty, Group, Head, ListRow, openLink, Screen, StatusPill, T, tap } from "../../components/ui";
 import { de, fmtFull, fmtIsoDay, fmtTime, num, REGION_ORDER, REGIONS, STATUS, STATUS_ORDER } from "../../lib/de";
 import { loadReport, useData } from "../../lib/data";
 import { CLAUDE_PAGE } from "../../lib/feeds";
@@ -97,7 +97,6 @@ export default function ReportScreen() {
         : !rep ? <Empty text="Für dieses Datum gibt es keinen Tagesbericht." /> : (
         <>
           {rep._offline ? <View style={{ marginTop: space.m }}><Banner icon="cloud-offline-outline" tone="warn" text="Ohne Verbindung: gespeicherte Fassung dieses Berichts." /></View> : null}
-          <T v="small" style={{ marginTop: space.m }}>Erstellt um {fmtTime(rep.generated_at)} Uhr aus den 24 Stunden davor, dazu spät eingetroffene Meldungen.</T>
 
           {rep.summary?.sentences?.length ? (
             <Card style={{ marginTop: space.l, gap: 8 }}>
@@ -109,39 +108,33 @@ export default function ReportScreen() {
                   ))}
                 </T>
               ))}
-              <T v="caption">Von Claude aus den Schlagzeilen dieses Berichts geschrieben. Kann Fehler enthalten; bitte die Meldungen selbst öffnen.</T>
+              <T v="caption">Automatisch erstellt, kann Fehler enthalten.</T>
             </Card>
           ) : (
-            <Card style={{ marginTop: space.l }} onPress={() => openLink(CLAUDE_PAGE)}>
-              <T v="h3">Noch keine Zusammenfassung</T>
-              <T v="small" style={{ marginTop: 4 }}>In Claude kannst du diesen Bericht zusammenfassen lassen und speichern. Dann erscheint die Zusammenfassung auch hier. Tippen öffnet Claude.</T>
-            </Card>
+            <Group style={{ marginTop: space.l }}><ListRow first icon="sparkles-outline" label="Zusammenfassung in Claude erstellen" external onPress={() => openLink(CLAUDE_PAGE)} /></Group>
           )}
 
-          <T v="h2" style={{ marginTop: space.xl }}>Damals gemessen</T>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.s, marginTop: space.s }}>
-            {[sig(sg.fires_24h, "Hitzepunkt, 24 Std.", "Hitzepunkte, 24 Std."), sig(sg.outages_48h, "Internet-Warnung, 48 Std.", "Internet-Warnungen, 48 Std."),
-              sig(sg.maritime_30d, "Vorfall auf See, 30 Tage", "Vorfälle auf See, 30 Tage"), sig(sg.quakes_7d, "Erdbeben ab Stärke 2,5, 7 Tage", "Erdbeben ab Stärke 2,5, 7 Tage")]
-              .map((x, i) => (
-                <Card key={i} style={{ flexBasis: "45%", flexGrow: 1, padding: space.m }}>
-                  <T v="h2" tabular color={x.big === "–" ? t.muted : t.ink}>{x.big}</T><T v="caption">{x.label}</T>
-                </Card>
-              ))}
-          </View>
+          <Head title="Messwerte" />
+          <Group>
+            {[["flame-outline", "Hitzepunkte", "24 Std.", sg.fires_24h], ["wifi-outline", "Internet-Warnungen", "48 Std.", sg.outages_48h],
+              ["boat-outline", "Vorfälle auf See", "30 Tage", sg.maritime_30d], ["pulse-outline", "Erdbeben", "7 Tage", sg.quakes_7d]].map(([icon, label, hint, n], i) => (
+              <ListRow key={label as string} first={i === 0} icon={icon as any} label={label as string} hint={hint as string} value={n == null ? "–" : num(Number(n))} tone={n == null ? "none" : undefined} />
+            ))}
+          </Group>
           {down.length ? <T v="caption" style={{ marginTop: space.s }}>Damals nicht erreichbar: {down.slice(0, 8).join(", ")}{down.length > 8 ? ` und ${down.length - 8} weitere` : ""}. Fehlende Meldungen aus diesen Quellen sind kein Zeichen für Ruhe.</T> : null}
 
-          <T v="h2" style={{ marginTop: space.xl }}>Geänderte Behauptungen</T>
+          <Head title="Geänderte Behauptungen" />
           {(p.changes || []).length ? (p.changes || []).map((c: any, i: number) => {
             const known = c.claim_id && data?.claims.some((x) => x.id === c.claim_id);
             return (
-              <Card key={i} style={{ marginTop: space.s }} onPress={known ? () => router.push(`/claim/${c.claim_id}`) : undefined} accessibilityLabel={c.statement}>
+              <Pressable key={i} onPress={known ? () => { tap(); router.push(`/claim/${c.claim_id}`); } : undefined} accessibilityRole={known ? "button" : "text"} accessibilityLabel={c.statement}
+                style={({ pressed }) => ({ paddingVertical: 12, gap: 4, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: t.rule, opacity: pressed && known ? 0.6 : 1 })}>
                 <StatusPill status={c.status} small />
-                <T v="bodyStrong" style={{ marginTop: 6 }}>{c.statement}</T>
-                <T v="small" style={{ marginTop: 4 }}>{fmtFull(c.at)}. {c.note}</T>
-                {c.source_url ? <Pressable onPress={() => { tap(); openLink(c.source_url); }} hitSlop={6}><T v="caption" color={t.accent} style={{ marginTop: 4 }}>{c.source_title || "Quelle"} ↗</T></Pressable> : null}
-              </Card>
+                <T v="body" color={t.ink}>{c.statement}</T>
+                <T v="caption">{fmtFull(c.at)}{c.source_title ? ` · ${c.source_title}` : ""}</T>
+              </Pressable>
             );
-          }) : <T v="small" style={{ marginTop: space.s }}>In diesem Zeitraum hat keine Behauptung ihre Stufe geändert.</T>}
+          }) : <T v="small">Keine Behauptung hat ihre Stufe geändert.</T>}
 
           {claimSnap.length ? (
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: space.m, alignItems: "center" }}>
@@ -157,14 +150,11 @@ export default function ReportScreen() {
 
           {(p.alerts || []).length ? (
             <>
-              <T v="h2" style={{ marginTop: space.xl }}>Damalige Hinweise</T>
-              {(p.alerts || []).map((a, i) => (
-                <Card key={i} style={{ marginTop: space.s, borderLeftWidth: 4, borderLeftColor: t.warn }} onPress={a.url ? () => openLink(a.url) : undefined} accessibilityLabel={a.title}>
-                  <T v="label" color={t.warn}>{KIND[a.kind] || "Hinweis"} · {fmtFull(a.t)}</T>
-                  <T v="bodyStrong" style={{ marginTop: 2 }}>{a.title}</T>
-                  {a.note ? <T v="small" style={{ marginTop: 2 }}>{a.note}</T> : null}
-                </Card>
-              ))}
+              <Head title="Damalige Hinweise" />
+              <Group style={{ borderLeftWidth: 4, borderLeftColor: t.warn }}>
+                {(p.alerts || []).map((a, i) => <ListRow key={i} first={i === 0} tone="alert" icon="alert-circle-outline" label={a.title} sub={`${KIND[a.kind] || "Hinweis"} · ${fmtFull(a.t)}`}
+                  external={!!a.url} onPress={a.url ? () => openLink(a.url) : undefined} />)}
+              </Group>
             </>
           ) : null}
 
@@ -173,7 +163,7 @@ export default function ReportScreen() {
             const all = open[r] || list.length <= 8;
             return (
               <View key={r}>
-                <T v="h2" style={{ marginTop: space.xl }}>{REGIONS[r]} <T v="caption">{list.length}</T></T>
+                <Head title={`${REGIONS[r]} (${list.length})`} />
                 {(all ? list : list.slice(0, 6)).map((it, i) => (
                   <View key={it.id} style={i ? { borderTopWidth: StyleSheet.hairlineWidth, borderColor: t.rule } : undefined}><ItemRow it={it} /></View>
                 ))}

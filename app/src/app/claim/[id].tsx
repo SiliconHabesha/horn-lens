@@ -2,7 +2,7 @@
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import { Button, Card, Empty, openLink, Screen, StatusPill, T, tap } from "../../components/ui";
+import { Button, Card, Empty, ListRow, openLink, Screen, StatusPill, T, tap } from "../../components/ui";
 import { endDot, fmtDate, fmtIsoDay, REGIONS, STATUS } from "../../lib/de";
 import { ItemRow } from "../../components/items";
 import { useData } from "../../lib/data";
@@ -41,7 +41,7 @@ export default function ClaimDetail() {
   for (const e of c.events) { if (e.status === c.status) since = e.at; else break; }
   return (
     <Screen refresh topInset={false}>
-      <Stack.Screen options={{ title: STATUS[c.status]?.[0] || "Behauptung" }} />
+      <Stack.Screen options={{ title: "Behauptung" }} />
       <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
         <StatusPill status={c.status} />
         {c.party_claim ? <T v="caption" style={{ borderWidth: 1, borderColor: t.rule, borderRadius: 4, paddingHorizontal: 5 }}>Konfliktpartei</T> : null}
@@ -58,7 +58,8 @@ export default function ClaimDetail() {
           {since ? <View><T v="label" color={t.muted}>Stufe seit</T><T v="body">{fmtDate(since)}</T></View> : null}
         </View>
         {evidence ? (
-          <View><T v="label" color={t.muted}>Neueste Belege{evidence.admission ? " · von der betroffenen Seite eingeräumt" : ""}</T><SourceLinks list={sourcesOf(evidence)} /></View>
+          <View><T v="label" color={t.muted}>Neueste Belege{evidence.admission ? " · von der betroffenen Seite eingeräumt" : ""}</T>
+            {sourcesOf(evidence).map((r, i) => <ListRow key={i} first={i === 0} label={r.title || "Quelle"} external onPress={() => openLink(r.url)} />)}</View>
         ) : earlier ? (
           <View><T v="label" color={t.muted}>Belege aus der Zeit, als sie als „{STATUS[earlier.status]?.[0]}“ galt</T><SourceLinks list={sourcesOf(earlier)} /></View>
         ) : null}
@@ -67,13 +68,17 @@ export default function ClaimDetail() {
       {data?.owner ? (
         <View style={{ flexDirection: "row", gap: space.s, marginTop: space.m }}>
           <View style={{ flex: 1 }}><Button label="Stufe ändern" icon="swap-vertical" onPress={() => router.push(`/claim-form?mode=status&id=${c.id}`)} /></View>
-          <View style={{ flex: 1 }}><Button label="Neuer Beleg" icon="link-outline" kind="secondary" onPress={() => router.push(`/claim-form?mode=status&intent=evidence&id=${c.id}`)} /></View>
         </View>
       ) : null}
       {data?.owner ? (
-        <Pressable onPress={() => { tap(); router.push(`/claim-form?mode=edit&id=${c.id}`); }} accessibilityRole="button" hitSlop={6} style={{ alignSelf: "center", paddingVertical: 10 }}>
-          <T v="smallStrong" color={t.accent}>Angaben berichtigen</T>
-        </Pressable>
+        <View style={{ flexDirection: "row", justifyContent: "center", gap: space.xl, marginTop: space.s }}>
+          <Pressable onPress={() => { tap(); router.push(`/claim-form?mode=status&intent=evidence&id=${c.id}`); }} accessibilityRole="button" hitSlop={8} style={{ paddingVertical: 10 }}>
+            <T v="smallStrong" color={t.accent}>Neuer Beleg</T>
+          </Pressable>
+          <Pressable onPress={() => { tap(); router.push(`/claim-form?mode=edit&id=${c.id}`); }} accessibilityRole="button" hitSlop={8} style={{ paddingVertical: 10 }}>
+            <T v="smallStrong" color={t.accent}>Angaben berichtigen</T>
+          </Pressable>
+        </View>
       ) : null}
 
       {data?.owner ? <Related c={c} /> : null}

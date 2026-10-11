@@ -65,7 +65,7 @@ export function PushSettings() {
           </>
         ) : null}
       </Card>
-      {!pushSupported ? <T v="caption" style={{ marginTop: space.s }}>Benachrichtigungen gibt es in der App fürs Handy.</T> : null}
+
       {denied ? <View style={{ marginTop: space.s }}><Banner icon="notifications-off-outline" tone="warn" text="Benachrichtigungen sind in den Einstellungen des Handys für Horn Lens ausgeschaltet." action="Einstellungen" onAction={() => Linking.openSettings().catch(() => {})} /></View> : null}
       {msg ? <View style={{ marginTop: space.s }}><Banner icon="notifications-off-outline" tone="warn" text={msg} /></View> : null}
       {pushSupported && (alerts || report) && !denied ? (

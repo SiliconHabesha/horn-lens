@@ -50,37 +50,41 @@ export async function shareStory(s: Story) {
   } catch { /* abgebrochen */ }
 }
 
-export function ItemRow({ it, isNew, translation, others, onOpen }: { it: Item; isNew?: boolean; translation?: string; others?: number; onOpen?: () => void }) {
+/** Farbpunkte der Quellenarten (höchstens vier), als ruhiges Zeichen dafür, wer berichtet */
+function Dots({ types }: { types: string[] }) {
   const t = useTheme();
-  const c = t.type[it.source_type] || t.type.aggregator;
+  return (
+    <View style={{ flexDirection: "row", gap: 3 }}>
+      {types.slice(0, 4).map((k) => <View key={k} style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: t.type[k] || t.type.aggregator }} />)}
+    </View>
+  );
+}
+
+/** Eine Zeile für Meldung und Geschichte: Schlagzeile, darunter wer und wann */
+function NewsRow({ title, types, who, when, isNew, onPress, a11y }: { title: string; types: string[]; who: string; when: string; isNew?: boolean; onPress: () => void; a11y: string }) {
+  const t = useTheme();
+  return (
+    <Pressable onPress={() => { tap(); onPress(); }} accessibilityRole="button" accessibilityLabel={a11y} accessibilityHint="Öffnet Einzelheiten"
+      style={({ pressed }) => ({ paddingVertical: 13, gap: 5, opacity: pressed ? 0.6 : 1 })}>
+      {/* Neu seit dem letzten Besuch: Schlagzeile kräftig; Älteres normal */}
+      <T v={isNew ? "bodyStrong" : "body"} color={t.ink} style={titleStyle(title)} numberOfLines={3}>{title}</T>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <Dots types={types} />
+        <T v="caption" color={t.ink} numberOfLines={1} style={{ flexShrink: 1 }}>{who}</T>
+        <T v="caption" numberOfLines={1} style={{ flexShrink: 0 }}>{when}</T>
+
+      </View>
+    </Pressable>
+  );
+}
+
+export function ItemRow({ it, isNew, others, onOpen }: { it: Item; isNew?: boolean; translation?: string; others?: number; onOpen?: () => void }) {
+  const who = `${it.origin_domain || it.source_name}${others ? ` + ${others} ${others === 1 ? "weiteres Medium" : "weitere Medien"}` : ""}`;
   const when = whenOf(it);
   return (
-    <Pressable onPress={() => { tap(); onOpen?.(); router.push(`/item/${it.id}`); }} accessibilityRole="button"
-      accessibilityLabel={`${it.title}. ${it.origin_domain || it.source_name}, ${TYPES[it.source_type] || ""}, ${when}${others ? `. Auch bei ${others} weiteren Medien` : ""}`}
-      accessibilityHint="Öffnet Einzelheiten und das Original"
-      style={({ pressed }) => ({ flexDirection: "row", gap: 12, paddingVertical: 14, opacity: pressed ? 0.6 : 1 })}>
-      <View style={{ width: 3, borderRadius: 2, backgroundColor: c }} />
-      <View style={{ flex: 1, gap: 6 }}>
-        <T v="bodyStrong" style={titleStyle(it.title)}>
-          {isNew ? <T v="label" color={t.accent}>Neu  </T> : null}{it.title}
-        </T>
-        {translation ? (
-          <View style={{ borderLeftWidth: 2, borderColor: t.rule, paddingLeft: 8 }}>
-            <T v="caption" color={t.faint}>Maschinell übersetzt</T>
-            <T v="small" color={t.ink}>{translation}</T>
-          </View>
-        ) : null}
-        <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: 10, rowGap: 2 }}>
-          <T v="smallStrong" color={c}>{it.origin_domain || it.source_name}</T>
-          <T v="caption">{TYPES[it.source_type] || it.source_type}</T>
-          <T v="caption">{when}</T>
-          {others ? <T v="caption" color={t.ink}>+ {others} {others === 1 ? "weiteres Medium" : "weitere Medien"}</T> : null}
-        </View>
-      </View>
-      <Pressable onPress={() => shareItem(it)} hitSlop={14} accessibilityRole="button" accessibilityLabel="Teilen" style={{ paddingTop: 2 }}>
-        <Ionicons name={Platform.OS === "ios" ? "share-outline" : "share-social-outline"} size={18} color={t.faint} />
-      </Pressable>
-    </Pressable>
+    <NewsRow title={it.title} types={[it.source_type]} who={who} when={when} isNew={isNew}
+      onPress={() => { onOpen?.(); router.push(`/item/${it.id}`); }}
+      a11y={`${it.title}. ${it.origin_domain || it.source_name}, ${TYPES[it.source_type] || ""}, ${when}${isNew ? ", neu" : ""}`} />
   );
 }
 
@@ -124,35 +128,15 @@ export function Voices({ items, counts: given, compact, unit }: { items?: Item[]
 }
 
 
-/** Eine Geschichte: oberste Schlagzeile, wie viele Medien berichten, aus welchen Quellenarten, gemeinsame Wörter */
+/** Eine Geschichte: oberste Schlagzeile und wie viele Medien welcher Art berichten */
 export function StoryCard({ s, seenBefore }: { s: Story; seenBefore?: number }) {
-  const t = useTheme();
   if (s.items.length === 1) return <ItemRow it={s.lead} isNew={seenBefore != null && new Date(s.lead.fetched_at).getTime() > seenBefore} others={s.totalSources && s.totalSources > 1 ? s.totalSources - 1 : undefined} />;
   const isNew = seenBefore != null && s.items.some((i) => new Date(i.fetched_at).getTime() > seenBefore);
-  const typeNames = TYPE_ORDER.filter((k) => s.types[k]).map((k) => TYPES[k]);
+  const types = TYPE_ORDER.filter((k) => s.types[k]);
   return (
-    <Pressable onPress={() => { tap(); router.push(`/item/${s.lead.id}`); }} accessibilityRole="button"
-      accessibilityLabel={`Geschichte bei ${s.sources} Medien: ${s.lead.title}. Quellenarten: ${typeNames.join(", ")}. Zuletzt ${fmtWhen(s.last)}.`}
-      style={({ pressed }) => ({ paddingVertical: 14, gap: 8, opacity: pressed ? 0.6 : 1 })}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: t.cardAlt, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
-          <Ionicons name="layers-outline" size={13} color={t.ink} />
-          <T v="caption" color={t.ink}>{s.sources} Medien</T>
-        </View>
-        {s.total ? <T v="caption">{s.items.length} von {s.total} Meldungen passen</T> : null}
-        {isNew ? <T v="label" color={t.accent}>Neu</T> : null}
-        <T v="caption" style={{ marginLeft: "auto" }}>{fmtWhen(s.last)}</T>
-        <Pressable onPress={() => shareStory(s)} hitSlop={14} accessibilityRole="button" accessibilityLabel="Geschichte mit allen Medien teilen">
-          <Ionicons name={Platform.OS === "ios" ? "share-outline" : "share-social-outline"} size={18} color={t.faint} />
-        </Pressable>
-      </View>
-      <T v="bodyStrong" style={titleStyle(s.lead.title)}>{s.lead.title}</T>
-      <Voices counts={s.types} compact unit="Medien" />
-      <T v="caption" numberOfLines={2}>
-        <T v="caption" color={t.ink}>{typeNames.join(" · ")}</T>
-        {s.shared.length ? `   Gemeinsam: ${s.shared.slice(0, 4).join(", ")}` : ""}
-      </T>
-    </Pressable>
+    <NewsRow title={s.lead.title} types={types} who={`${s.sources} Medien${s.total ? ` (${s.items.length} von ${s.total} passen)` : ""}`} when={fmtWhen(s.last)} isNew={isNew}
+      onPress={() => router.push(`/item/${s.lead.id}`)}
+      a11y={`Geschichte bei ${s.sources} Medien: ${s.lead.title}. Quellenarten: ${types.map((k) => TYPES[k]).join(", ")}. Zuletzt ${fmtWhen(s.last)}${isNew ? ", neu" : ""}.`} />
   );
 }
 

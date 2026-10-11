@@ -67,10 +67,7 @@ export default function Welcome() {
           <Page w={pageW} icon="people-outline" title="Wer sagt was"
             lead="Jede Quelle hat eine Farbe für ihre Art. So siehst du auf einen Blick, ob nur eine Seite berichtet oder viele.">
             {VOICES.map(([k, sub]) => <Row key={k} color={t.type[k]} title={TYPES[k]} sub={sub} />)}
-            <View style={{ flexDirection: "row", height: 8, borderRadius: 4, overflow: "hidden", gap: 2, marginTop: space.s }}>
-              {VOICES.map(([k], i) => <View key={k} style={{ flex: [3, 1, 2, 1, 4, 1][i], backgroundColor: t.type[k] }} />)}
-            </View>
-            <T v="caption">Der Balken zeigt die Anteile. Eine Meldung ist keine geprüfte Tatsache.</T>
+            <T v="caption" style={{ marginTop: space.s }}>Eine Meldung ist keine geprüfte Tatsache.</T>
           </Page>
           <Page w={pageW} icon="checkmark-done-circle-outline" title="Wie sicher ist das?"
             lead="Behauptungen aus dem Konflikt bekommen eine Stufe. Sie ändert sich nur mit Belegen, und der Verlauf bleibt sichtbar.">

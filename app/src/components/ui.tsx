@@ -84,7 +84,7 @@ export function StatusPill({ status, small }: { status: string; small?: boolean 
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start" }}>
       <View style={{ width: small ? 7 : 9, height: small ? 7 : 9, borderRadius: 5, backgroundColor: c }} />
-      <T v="label" color={c} style={status === "false" ? { textDecorationLine: "line-through" } : undefined}>{STATUS[status]?.[0] || status}</T>
+      <T v="label" color={c}>{STATUS[status]?.[0] || status}</T>
     </View>
   );
 }
@@ -186,6 +186,61 @@ export function Button({ label, onPress, kind = "primary", icon, disabled }: { l
         backgroundColor: primary ? t.ink : t.card, borderWidth: primary ? 0 : StyleSheet.hairlineWidth, borderColor: t.rule, opacity: disabled ? 0.45 : pressed ? 0.75 : 1 })}>
       {icon ? <Ionicons name={icon} size={18} color={primary ? t.bg : t.ink} /> : null}
       <T v="bodyStrong" color={primary ? t.bg : t.ink}>{label}</T>
+    </Pressable>
+  );
+}
+
+/** Eine Zeile in einer gruppierten Liste (Messwerte, Weiter zu, Orte): Symbol, Text, Zusatz, Wert rechts, Pfeil */
+export function ListRow({ icon, label, hint, sub, value, tone, onPress, first, external }: {
+  icon?: keyof typeof Ionicons.glyphMap; label: string; hint?: string; sub?: string; value?: string; tone?: "alert" | "none"; onPress?: () => void; first?: boolean; external?: boolean;
+}) {
+  const t = useTheme();
+  const c = tone === "alert" ? t.warn : tone === "none" ? t.muted : t.ink;
+  return (
+    <Pressable onPress={onPress ? () => { tap(); onPress(); } : undefined} accessibilityRole={onPress ? (external ? "link" : "button") : "text"}
+      accessibilityLabel={`${label}${hint ? `, ${hint}` : ""}${sub ? `, ${sub}` : ""}${value ? `: ${value}` : ""}`}
+      style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, minHeight: 50, paddingVertical: 9,
+        borderTopWidth: first ? 0 : StyleSheet.hairlineWidth, borderColor: t.rule, opacity: pressed && onPress ? 0.6 : 1 })}>
+      {icon ? <Ionicons name={icon} size={19} color={tone === "alert" ? t.warn : t.muted} /> : null}
+      <View style={{ flex: 1 }}>
+        <T v="body" color={t.ink} numberOfLines={2}>{label}{hint ? <T v="small" color={t.muted}>{`  ${hint}`}</T> : null}</T>
+        {sub ? <T v="caption" numberOfLines={2}>{sub}</T> : null}
+      </View>
+      {value ? <T v="bodyStrong" color={c}>{value}</T> : null}
+      {onPress ? <Ionicons name={external ? "open-outline" : "chevron-forward"} size={16} color={t.faint} /> : null}
+    </Pressable>
+  );
+}
+
+/** Gruppe von ListRows in einer Karte */
+export function Group({ children, style }: { children: React.ReactNode; style?: ViewStyle }) {
+  const t = useTheme();
+  return <View style={[{ backgroundColor: t.card, borderRadius: radius.l, paddingHorizontal: space.l, paddingVertical: 2, borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule }, style]}>{children}</View>;
+}
+
+/** Abschnittsüberschrift mit optionalem Link rechts */
+export function Head({ title, action, onAction, first }: { title: string; action?: string; onAction?: () => void; first?: boolean }) {
+  const t = useTheme();
+  return (
+    <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: first ? 0 : space.xl, marginBottom: space.s }}>
+      <T v="h2" accessibilityRole="header">{title}</T>
+      {action && onAction ? (
+        <Pressable onPress={() => { tap(); onAction(); }} hitSlop={12} accessibilityRole="button" accessibilityLabel={`${title}: ${action}`}>
+          <T v="smallStrong" color={t.accent}>{action}</T>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+/** Einfache Inhaltszeile ohne Rahmen (z. B. Vorfälle auf See): Titel, darunter Zeit und Herkunft */
+export function PlainRow({ title, meta, onPress, first, external }: { title: string; meta: string; onPress?: () => void; first?: boolean; external?: boolean }) {
+  const t = useTheme();
+  return (
+    <Pressable onPress={onPress ? () => { tap(); onPress(); } : undefined} accessibilityRole={onPress ? (external ? "link" : "button") : "text"} accessibilityLabel={`${title}. ${meta}`}
+      style={({ pressed }) => ({ paddingVertical: 12, gap: 4, borderTopWidth: first ? 0 : StyleSheet.hairlineWidth, borderColor: t.rule, opacity: pressed && onPress ? 0.6 : 1 })}>
+      <T v="body" color={t.ink}>{title}</T>
+      <T v="caption">{meta}</T>
     </Pressable>
   );
 }

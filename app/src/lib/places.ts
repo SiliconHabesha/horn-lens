@@ -1,5 +1,6 @@
 // Orte rund um Eritrea: Lage, Schreibweisen (lateinisch und in Ge'ez-Schrift) und was Horn Lens zu jedem Ort weiß.
 // Erwähnungen werden nur über den Ortsnamen in der Schlagzeile gefunden: erwähnt heißt nicht, dass dort etwas geschah.
+import { fmtFull } from "./de";
 import type { Claim, Data, Item } from "./types";
 
 export type Place = {
@@ -90,3 +91,9 @@ export function nearest(lat: number, lon: number) {
   for (const p of PLACES) { const d = km(lat, lon, p.lat, p.lon); if (d < bd) { bd = d; best = p; } }
   return { p: best, d: bd };
 }
+
+// Eine Zeile für Vorfälle auf See, überall gleich: Zeit · UKMTO · nächster Ort
+export const seaMeta = (m: { t: string; lat: number; lon: number }, extra?: string) => {
+  const n = nearest(m.lat, m.lon);
+  return `${fmtFull(m.t)} · UKMTO · ${n.d < 8 ? `bei ${n.p.name}` : `etwa ${Math.round(n.d)} km von ${n.p.name}`}${extra ? ` · ${extra}` : ""}`;
+};
