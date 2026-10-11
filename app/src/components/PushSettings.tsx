@@ -1,11 +1,11 @@
 // Einstellungen für Benachrichtigungen (im Bildschirm "Mehr")
 import * as Notifications from "expo-notifications";
 import React, { useEffect, useState } from "react";
-import { AppState, Linking, Pressable, Switch, View } from "react-native";
+import { AppState, Linking, Pressable, View } from "react-native";
 import { useData } from "../lib/data";
 import { disablePush, enablePush, getPrefs, pushSupported } from "../lib/push";
 import { space, useTheme } from "../lib/theme";
-import { Banner, Card, Divider, T, tap } from "./ui";
+import { Banner, Card, Divider, T, tap, Toggle } from "./ui";
 
 export function PushSettings() {
   const t = useTheme();
@@ -48,9 +48,9 @@ export function PushSettings() {
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12 }}>
           <View style={{ flex: 1 }}>
             <T v="bodyStrong">Hinweise</T>
-            <T v="caption">{data?.owner ? "Vorfälle auf See, starke Erdbeben, Internet-Einbrüche, viele Meldungen zu Eritrea" : "Vorfälle auf See und starke Erdbeben"}</T>
+            <T v="caption">{data?.owner ? "Vorfälle auf See, starke Erdbeben, Rückgänge der Internetverbindung, viele Meldungen zu Eritrea" : "Vorfälle auf See und starke Erdbeben"}</T>
           </View>
-          <Switch value={alerts && !denied} disabled={busy || !pushSupported} onValueChange={(v) => apply(v, report)} accessibilityLabel="Hinweise als Benachrichtigung" />
+          <Toggle value={alerts && !denied} disabled={busy || !pushSupported} onValueChange={(v) => apply(v, report)} accessibilityLabel="Hinweise als Benachrichtigung" />
         </View>
         {data?.owner ? (
           <>
@@ -60,7 +60,7 @@ export function PushSettings() {
                 <T v="bodyStrong">Tagesbericht</T>
                 <T v="caption">Jeden Morgen gegen 7:15 Uhr (deutsche Zeit)</T>
               </View>
-              <Switch value={report && !denied} disabled={busy || !pushSupported} onValueChange={(v) => apply(alerts, v)} accessibilityLabel="Tagesbericht als Benachrichtigung" />
+              <Toggle value={report && !denied} disabled={busy || !pushSupported} onValueChange={(v) => apply(alerts, v)} accessibilityLabel="Tagesbericht als Benachrichtigung" />
             </View>
           </>
         ) : null}

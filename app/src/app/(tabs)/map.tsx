@@ -23,7 +23,7 @@ const SPANS: [number, string][] = [[24, "24 Std."], [24 * 7, "7 Tage"], [24 * 30
 export default function MapScreen() {
   const t = useTheme();
   const ins = useSafeAreaInsets();
-  const { height: winH } = useWindowDimensions();
+  const { height: winH, width: winW } = useWindowDimensions();
   const { data, offline, loadedAt, refresh } = useData();
   const [view, setView] = useState("all");
   const [layers, setLayers] = useState<Layers>({ fire: true, quake: true, ship: true, sat: true });
@@ -75,7 +75,7 @@ export default function MapScreen() {
 
   if (!data) {
     return (
-      <View style={{ flex: 1, backgroundColor: t.bg, paddingTop: ins.top + space.m }}>
+      <View style={{ flex: 1, backgroundColor: t.bg, paddingTop: ins.top + space.m + (winW >= 900 ? space.xl : 0) }}>
         {head}
         <View style={{ margin: space.l }}><Bone h={320} style={{ borderRadius: radius.l }} /></View>
       </View>
@@ -87,7 +87,7 @@ export default function MapScreen() {
   const quakesIn = data.quakes.filter((q) => +new Date(q.t) >= since).length, shipsIn = data.maritime.filter((m) => +new Date(m.t) >= since).length;
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.bg, paddingTop: ins.top + space.m }}>
+    <View style={{ flex: 1, backgroundColor: t.bg, paddingTop: ins.top + space.m + (winW >= 900 ? space.xl : 0) }}>
       <View style={{ maxWidth: 760, width: "100%", alignSelf: "center" }}>
         {head}
         <View onLayout={onLayout} style={{ marginTop: space.m, marginHorizontal: space.l, borderRadius: radius.l, overflow: "hidden", borderWidth: 1, borderColor: t.rule }}>
@@ -148,7 +148,7 @@ export default function MapScreen() {
             </View>
           ))}
         </View>
-        <T v="caption" style={{ marginTop: 6 }}>{layers.fire ? `${fireNote.replace(/\.$/, "")}. ` : ""}Gestrichelt: Regionsgrenzen, West-Tigray umstritten.</T>
+        <T v="caption" style={{ marginTop: 6 }}>{layers.fire ? `${fireNote.replace(/\.$/, "")}. ` : ""}Gestrichelt: Regionsgrenzen, West-Tigray/Welkait umstritten.</T>
 
         {layers.ship && data.maritime.length ? (
           <>

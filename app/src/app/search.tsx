@@ -65,7 +65,7 @@ export default function Search() {
     };
   }, [index, dq]);
   const total = res ? res.places.length + res.claims.length + res.items.length + res.sources.length : 0;
-  const suggestions = recent.length ? recent : ["Assab", "Adigrat", "Grenze", "UN", "Rotes Meer"];
+  const suggestions = recent.length ? recent : data?.owner ? ["Assab", "Adigrat", "Badme", "UN", "Rotes Meer"] : ["Assab", "Bab el-Mandeb", "Houthi", "UKMTO"];
 
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
@@ -74,7 +74,7 @@ export default function Search() {
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: t.card, borderRadius: radius.m, paddingHorizontal: 12, height: 48,
           borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule }}>
           <Ionicons name="search" size={18} color={t.faint} />
-          <TextInput value={q} onChangeText={setQ} autoFocus placeholder={data?.owner ? "Orte, Behauptungen, Meldungen, Quellen" : "Orte, Meldungen, Quellen"} placeholderTextColor={t.faint}
+          <TextInput value={q} onChangeText={setQ} autoFocus placeholder="Orte, Meldungen, Quellen …" placeholderTextColor={t.faint}
             style={{ ...noOutline, flex: 1, fontFamily: font.regular, fontSize: 17, color: t.ink, height: 46 }} returnKeyType="search" autoCorrect={false}
             onSubmitEditing={() => remember(q)} accessibilityLabel="Suchbegriff" />
           {q ? <Pressable onPress={() => setQ("")} hitSlop={10} accessibilityRole="button" accessibilityLabel="Suche löschen"><Ionicons name="close-circle" size={20} color={t.faint} /></Pressable> : null}

@@ -53,7 +53,7 @@ async function loadPublic(): Promise<Raw> {
     owner: false, texts: null,
     data: {
       now: new Date().toISOString(), sources, reports: [],
-      items: items.map((i) => ({ ...i, source_id: i.source.id, source_name: srcName(i.source.name), source_type: i.source.source_type })),
+      items: items.map((i) => ({ ...i, source_id: i.source.id, source_name: srcName(de(i.source.name)), source_type: i.source.source_type })),
       signals: {
         fires_total: fires.length, fires_capped: fires.length >= PUBLIC_FIRE_CAP,
         fires: fires.map((x) => [x.lat, x.lon, Math.round(new Date(x.occurred_at).getTime() / 1000), x.detail?.satellite ?? null, x.detail?.frp_mw ?? null]),

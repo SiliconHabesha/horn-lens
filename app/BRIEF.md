@@ -79,3 +79,15 @@ Regeln:
 4. Höchstens eine Zeile Filter sichtbar; der Rest hinter „Filter“.
 5. Gleiche Dinge sehen gleich aus: Zahlen rechts, Pfeil für „führt weiter“, Warnfarbe nur für Warnungen.
 Umgesetzt (Runde 7): einheitliche Zeilen (Meldung/Geschichte, Messwert, Vorfall auf See) überall; Lage als Briefing ohne Balken und Absätze; Meldungen ohne Umschalter (Gemerkt oben rechts, Zusammenfassen im Filter); Behauptungen als Zeilen; Karte mit „Ebenen“-Knopf; Detailseiten ohne doppelte Etiketten; Messwert-, Orts- und Berichtsseiten mit denselben Listen; „‹ Lage“ bei direkt geöffneten Seiten; eigene Farbe für „Wahrscheinlich“.
+
+## Runde 8: jedes Detail (Nacht 11./12. Oktober 2026)
+Vier unabhängige Detailprüfungen (Lage/Meldungen, Behauptungen, Karte/Orte/Messwerte, Konto/Recht), danach zwei Gegenprüfungen.
+Umgesetzt:
+- Ehrlichkeit: „–“ statt Null auch auf Ortsseiten, wenn eine Messquelle schweigt; „mind.“ bei Hitzepunkten, wenn nur eine Auswahl geladen ist; Hitzepunkte nach Ort mit demselben Umkreis (40 km) wie die Ortsseiten; „unauffällig“ statt „normal“; leichte Rückgänge heißen nicht mehr „Einbruch“; „Noch keine Meldung in unseren Quellen“ statt „Nicht berichtet von“; englische Originaltexte sind als solche gekennzeichnet.
+- Neutralität: Regierungen Eritreas und Äthiopiens sowie Tigray gleich als Konfliktparteien beschrieben; „West-Tigray/Welkait, umstritten“; neutrale Beispiele im Formular; „eine andere Seite bestreitet es“.
+- Karte: lesbare Ortsnamen (heller Rand), weniger Überlappungen, Legende der Formen, eigene Farbe für Vorfälle auf See (dunkel: gelb), Ortsseite öffnet die Karte gezoomt auf den Ort.
+- Formular: Datum als Tag.Monat.Jahr, Zukunft wird abgelehnt, Rückfrage beim Abbrechen, Eingeständnis nur bei „Bestätigt“.
+- Lade-Skelette statt „gibt es nicht“, verständliche Fehlertexte ohne englische Technikmeldungen, Rückgängig beim Merken, Abmelden mit Rückfrage.
+- Stufen haben eigene Formen (Haken, Fragezeichen, Pfeile, Kreuz), nicht nur Farben; Schalter in Hausfarben; größere Tippflächen.
+- Impressum und Datenschutz auch auf dem Anmeldebildschirm; Datenschutz ergänzt (USA-Übermittlung Supabase, Microsoft, Speicherdauer, Suchverlauf).
+Offen (braucht den Inhaber): Apple-Schlüssel für das Widerrufen bei Kontolöschung, Builds für die App-Stores über das Expo-Konto, Google/Apple-Anmeldung einrichten.

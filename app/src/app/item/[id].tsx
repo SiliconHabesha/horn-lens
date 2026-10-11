@@ -6,7 +6,7 @@ import { Platform, Pressable, StyleSheet, View } from "react-native";
 import { ItemRow, shareItem, shareStory, titleStyle, whenOf } from "../../components/items";
 import { toast } from "../../components/Toast";
 import { Button, Empty, openLink, Screen, T, tap } from "../../components/ui";
-import { fmtWhen, plural, TYPE_NOTE, TYPE_ORDER, TYPES } from "../../lib/de";
+import { fmtWhen, plural, srcName, TYPE_NOTE, TYPE_ORDER, TYPES } from "../../lib/de";
 import { knownItem, useData } from "../../lib/data";
 import { placesIn } from "../../lib/places";
 import { storiesOf, VOICE_TYPES } from "../../lib/stories";
@@ -28,7 +28,9 @@ export default function ItemDetail() {
     return (
       <Screen topInset={false} refresh={false}>
         <Stack.Screen options={{ title: "Meldung" }} />
-        {data ? <Empty icon="newspaper-outline" text="Diese Meldung ist älter als 72 Stunden und nicht mehr abrufbar. Gemerkte Meldungen bleiben unter „Gemerkt“." /> : <Skeleton rows={4} />}
+        {!data ? <Skeleton rows={4} />
+          : !data.owner && data.items.some((x) => String(x.id) === String(id)) ? <Empty icon="lock-closed-outline" text="Diese Meldung gehört nicht zur offenen Ausgabe." />
+          : <Empty icon="newspaper-outline" text="Diese Meldung ist älter als 72 Stunden und nicht mehr abrufbar. Gemerkte Meldungen bleiben unter „Gemerkt“." />}
       </Screen>
     );
   }
@@ -51,8 +53,8 @@ export default function ItemDetail() {
       <T v="title" style={titleStyle(it.title, true)} accessibilityRole="header">{it.title}</T>
       <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 8, rowGap: 4, marginTop: space.s, alignItems: "center" }}>
         <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: c }} />
-        <T v="smallStrong" color={t.ink}>{it.origin_domain || it.source_name}</T>
-        <T v="small">{TYPES[it.source_type] || it.source_type} · {it.published_at ? whenOf(it) : `ohne Zeitangabe der Quelle, ${whenOf(it)}`}</T>
+        <T v="smallStrong" color={t.ink}>{srcName(it.origin_domain || it.source_name)}</T>
+        <T v="small">· {TYPES[it.source_type] || it.source_type} · {it.published_at ? whenOf(it) : `ohne Zeitangabe der Quelle, ${whenOf(it)}`}</T>
       </View>
       {placesIn(it.title).length ? (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: space.s, alignItems: "center" }}>
@@ -83,7 +85,7 @@ export default function ItemDetail() {
       {story && story.items.length > 1 ? (
         <>
           <T v="h2" style={{ marginTop: space.xl }} accessibilityRole="header">Dieselbe Geschichte bei {plural(story.sources, "Medium", "Medien")}</T>
-          <T v="caption" style={{ marginTop: 2 }}>Erste Meldung {fmtWhen(story.first)}, letzte {fmtWhen(story.last)}</T>
+          <T v="caption" style={{ marginTop: 2 }}>Zuerst {fmtWhen(story.first)} · zuletzt {fmtWhen(story.last)}</T>
           {byType.map(([k, list]) => (
             <View key={k} style={{ marginTop: byType.length > 1 ? space.m : space.s }}>
               {byType.length > 1 ? <T v="label" color={t.muted}>{TYPES[k]}</T> : null}
@@ -92,12 +94,15 @@ export default function ItemDetail() {
               ))}
             </View>
           ))}
-          {missing.length ? <T v="small" style={{ marginTop: space.m }}>Nicht berichtet von: {missing.map((k) => TYPES[k]).join(", ")}</T> : null}
-          <Pressable onPress={() => { tap(); setHow(!how); }} accessibilityRole="button" accessibilityState={{ expanded: how }} hitSlop={6} style={{ marginTop: space.m, paddingVertical: 6 }}>
+          {missing.length ? <View style={{ marginTop: space.m }}>
+            <T v="small">Noch keine Meldung dazu in unseren Quellen von: {missing.map((k) => TYPES[k]).join(", ")}</T>
+            <T v="caption">Bezogen auf die Quellen, die Horn Lens abruft. Schweigen ist keine Aussage.</T>
+          </View> : null}
+          <Pressable onPress={() => { tap(); setHow(!how); }} accessibilityRole="button" accessibilityState={{ expanded: how }} style={{ marginTop: space.s, minHeight: 44, justifyContent: "center", alignSelf: "flex-start" }}>
             <T v="smallStrong" color={t.accent}>Wie wird zusammengefasst?</T>
           </Pressable>
           {how ? (
-            <T v="caption">Schlagzeilen gehören zusammen, wenn sie seltene Wörter teilen{story.shared.length ? ` (hier: ${story.shared.join(", ")})` : ""} und höchstens 48 Stunden auseinanderliegen. Das geschieht automatisch und kann irren. „Nicht berichtet“ bezieht sich auf die erreichbaren Quellen der letzten 72 Stunden; Schlagzeilen in Tigrinya, Amharisch oder Arabisch werden nicht zugeordnet.</T>
+            <T v="caption">Schlagzeilen gehören zusammen, wenn sie seltene Wörter teilen{story.shared.length ? ` (hier: ${story.shared.join(", ")})` : ""} und höchstens 48 Stunden auseinanderliegen. Das geschieht automatisch und kann irren. „Noch keine Meldung“ bezieht sich auf die erreichbaren Quellen der letzten 72 Stunden; Schlagzeilen in Tigrinya, Amharisch oder Arabisch werden nicht zugeordnet.</T>
           ) : null}
         </>
       ) : null}

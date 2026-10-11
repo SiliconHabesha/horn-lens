@@ -1,6 +1,6 @@
 // Orte rund um Eritrea: Lage, Schreibweisen (lateinisch und in Ge'ez-Schrift) und was Horn Lens zu jedem Ort weiß.
 // Erwähnungen werden nur über den Ortsnamen in der Schlagzeile gefunden: erwähnt heißt nicht, dass dort etwas geschah.
-import { fmtFull } from "./de";
+import { fmtFull, num } from "./de";
 import type { Claim, Data, Item } from "./types";
 
 export type Place = {
@@ -15,7 +15,7 @@ export type Place = {
 
 export const PLACES: Place[] = [
   { id: "asmara", name: "Asmara", lat: 15.333, lon: 38.933, country: "Eritrea", latin: ["asmara", "asmera"], geez: ["ኣስመራ", "አስመራ"], major: true },
-  { id: "massawa", name: "Massawa", lat: 15.609, lon: 39.45, country: "Eritrea", latin: ["massawa", "massaua", "mitsiwa", "mits'iwa"], geez: ["ምጽዋዕ", "ምፅዋ"], major: true },
+  { id: "massawa", name: "Massawa", lat: 15.609, lon: 39.45, country: "Eritrea", latin: ["massawa", "massaua", "mitsiwa", "mits'iwa"], geez: ["ምጽዋዕ", "ምፅዋ"], major: true, dy: -3 },
   { id: "assab", name: "Assab", lat: 13.009, lon: 42.739, country: "Eritrea", latin: ["aseb"], weak: { alias: ["assab"], ctx: ["eritrea", "eritrean", "port", "ethiopia", "ethiopian", "red sea", "sea access", "airbase", "base", "uae", "emirati", "abiy"] }, geez: ["ዓሰብ", "አሰብ", "ዐሰብ"], major: true, left: true },
   { id: "keren", name: "Keren", lat: 15.778, lon: 38.451, country: "Eritrea", latin: [], weak: { alias: ["keren"], ctx: ["eritrea", "eritrean", "eritreans"] }, geez: ["ከረን"], major: false },
   { id: "mendefera", name: "Mendefera", lat: 14.886, lon: 38.815, country: "Eritrea", latin: ["mendefera"], geez: ["መንደፈራ"], major: false },
@@ -35,10 +35,10 @@ export const PLACES: Place[] = [
   { id: "adwa", name: "Adwa", lat: 14.165, lon: 38.896, country: "Äthiopien (Tigray)", latin: ["adwa", "adowa"], geez: ["ዓድዋ"], major: false },
   { id: "shire", name: "Shire", lat: 14.104, lon: 38.284, country: "Äthiopien (Tigray)", latin: ["inda selassie", "endaselassie", "shire endaselassie"], weak: { alias: ["shire"], ctx: ["tigray", "tigrayan", "ethiopia", "ethiopian", "eritrea", "eritrean", "idp", "idps", "displaced"] }, major: false },
   { id: "mekelle", name: "Mekelle", lat: 13.497, lon: 39.475, country: "Äthiopien (Tigray)", latin: ["mekelle", "mekele", "mek'ele", "makelle", "makale"], geez: ["መቐለ", "መቀሌ"], major: true },
-  { id: "humera", name: "Humera", lat: 14.297, lon: 36.617, country: "Äthiopien (Westtigray, umstritten)", latin: ["humera"], geez: ["ሑመራ", "ሁመራ"], major: true },
+  { id: "humera", name: "Humera", lat: 14.297, lon: 36.617, country: "Äthiopien (West-Tigray/Welkait, umstritten)", latin: ["humera"], geez: ["ሑመራ", "ሁመራ"], major: true },
   { id: "alamata", name: "Alamata", lat: 12.416, lon: 39.554, country: "Äthiopien (Raya, umstritten)", latin: ["alamata"], geez: ["ኣላማጣ", "አላማጣ"], major: true },
   { id: "semera", name: "Semera", lat: 11.792, lon: 41.006, country: "Äthiopien (Afar)", latin: ["semera"], geez: ["ሰመራ"], major: true },
-  { id: "babelmandeb", name: "Bab el-Mandeb", lat: 12.583, lon: 43.333, country: "Meerenge", latin: ["bab el-mandeb", "bab al-mandab", "bab-el-mandeb", "bab el mandeb", "bab al-mandeb", "mandeb"], major: true },
+  { id: "babelmandeb", name: "Bab el-Mandeb", lat: 12.583, lon: 43.333, country: "Meerenge", latin: ["bab el-mandeb", "bab al-mandab", "bab-el-mandeb", "bab el mandeb", "bab al-mandeb", "mandeb"], major: true, left: true },
   { id: "mokha", name: "Mokka", lat: 13.32, lon: 43.25, country: "Jemen", latin: ["mokha", "al-mukha", "mukha"], weak: { alias: ["mocha"], ctx: ["yemen", "yemeni", "red sea", "houthi", "houthis", "port", "ship", "vessel"] }, major: true },
   { id: "hodeidah", name: "Hudaida", lat: 14.798, lon: 42.954, country: "Jemen", latin: ["hodeidah", "hudaydah", "hodeida", "hudaida"], major: true },
   { id: "portsudan", name: "Port Sudan", lat: 19.616, lon: 37.216, country: "Sudan", latin: ["port sudan"], major: true },
@@ -94,7 +94,9 @@ export function nearest(lat: number, lon: number) {
 }
 
 // Eine Zeile für Vorfälle auf See, überall gleich: Zeit · UKMTO · nächster Ort
-export const seaMeta = (m: { t: string; lat: number; lon: number }, extra?: string) => {
+export const seaMeta = (m: { t: string; lat: number; lon: number; title?: string }, extra?: string) => {
   const n = nearest(m.lat, m.lon);
-  return `${fmtFull(m.t)} · UKMTO · ${n.d < 8 ? `bei ${n.p.name}` : `etwa ${Math.round(n.d)} km von ${n.p.name}`}${extra ? ` · ${extra}` : ""}`;
+  // Nennt die Meldung selbst schon einen Ort („25 sm westlich von Mokka“), keinen zweiten danebenstellen
+  if (m.title && / von |, /.test(m.title)) return `${fmtFull(m.t)} · UKMTO${extra ? ` · ${extra}` : ""}`;
+  return `${fmtFull(m.t)} · UKMTO · ${n.d < 8 ? `bei ${n.p.name}` : `etwa ${num(Math.round(n.d))} km von ${n.p.name}`}${extra ? ` · ${extra}` : ""}`;
 };

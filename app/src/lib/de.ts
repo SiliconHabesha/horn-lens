@@ -17,10 +17,10 @@ export const TYPES: Record<string, string> = {
   maritime_authority: "Seefahrtsbehörde",
 };
 export const TYPE_NOTE: Record<string, string> = {
-  government_er: "Amtliche Erklärungen. Sie zeigen die Haltung der Regierung, keine unabhängige Bestätigung.",
+  government_er: "Amtliche Erklärungen aus Eritrea, einer Konfliktpartei. Sie zeigen die Haltung der Regierung, keine unabhängige Bestätigung.",
   progov_er: "Nah an Eritreas Regierung. Ihre Berichte zum Konflikt wie die Aussage einer Konfliktpartei lesen.",
   exile: "Diaspora-Medien, meist regierungskritisch, mit Quellen im Land. Nützlich, aber allein nie ausreichend.",
-  government_et: "Amtliche Erklärungen aus Äthiopien. Eine Konfliktpartei.",
+  government_et: "Amtliche Erklärungen aus Äthiopien, einer Konfliktpartei. Sie zeigen die Haltung der Regierung, keine unabhängige Bestätigung.",
   progov_et: "Nah an Äthiopiens Regierungspartei. Ihre Berichte zum Konflikt wie die Aussage einer Konfliktpartei lesen.",
   ethiopian_independent: "Unabhängige äthiopische Medien; zusammen mit eritreischen und internationalen Quellen lesen.",
   tigray: "Tigrayische Medien. Ihre Berichte zum Konflikt wie die Aussage einer Konfliktpartei lesen.",
@@ -38,9 +38,9 @@ export const REGIONS: Record<string, string> = {
 export const REGION_ORDER = ["eritrea", "tigray", "afar", "red_sea", "ethiopia", "horn"];
 export const STATUS: Record<string, [string, string]> = {
   confirmed: ["Bestätigt", "Mindestens zwei unabhängige Quellen berichten es als Tatsache, oder die betroffene Seite räumt es ein."],
-  likely: ["Wahrscheinlich", "Mehrere unabhängige Hinweise, aber noch keine zwei Quellen, die es bestätigen."],
+  likely: ["Wahrscheinlich", "Mehrere Hinweise sprechen dafür, aber noch keine zwei unabhängigen Quellen berichten es als Tatsache."],
   unconfirmed: ["Unbestätigt", "Berichtet, aber noch nicht unabhängig überprüft."],
-  disputed: ["Umstritten", "Eine Seite behauptet es, die andere bestreitet es."],
+  disputed: ["Umstritten", "Eine Seite behauptet es, eine andere bestreitet es."],
   false: ["Falsch", "Durch Belege widerlegt."],
 };
 export const STATUS_ORDER = ["confirmed", "likely", "unconfirmed", "disputed", "false"];
@@ -110,6 +110,7 @@ const dePlace = (p: string) => {
   if (SEA[t]) return SEA[t];
   t = t.replace(/^(\d+) km ([NSEW]{1,3}) of /, (_, n, dir) => `${n} km ${dir.replace(/E/g, "O")} von `);
   t = t.replace(/^(\d+(?:\.\d+)?)\s?NM ([NSEW]{1,3}|North(?: ?East| ?West)?|South(?: ?East| ?West)?|East|West) of /i, (_, n, dir) => `${deNum(n)} sm ${dirDe(dir)} von `);
+  t = t.replace(/\b(Mokha|Al[- ]Mukha)\b/g, "Mokka").replace(/\b(Hodeidah|Hudaydah|Al Hudaydah)\b/g, "Hudaida");
   t = t.replace(/\bborder region\b/gi, "Grenzgebiet").replace(/\bcoast\b/gi, "Küste");
   for (const [en, d] of Object.entries({ ...COUNTRY, ...SEA })) t = t.replace(new RegExp(`\\b${en}\\b`, "g"), d);
   return t;
@@ -137,7 +138,7 @@ const RULES: Rule[] = [
     `IODA (${ds}) hat ${fmtN(a)} gemessen, üblich sind ${fmtN(b)}${p ? ` (−${p} %)` : ""}. Ein gemessener Rückgang beweist keine absichtliche Abschaltung.`],
   [/^(\d+) reports on Eritrea from (\d+) outlets in 6 hours$/, (_, a, b) => `${a} Meldungen zu Eritrea von ${b} Medien in 6 Stunden`],
   [/^Corrected: ([^."]+)\.(?: Previous wording: "([\s\S]*?)"\.)?(?: ([\s\S]*))?$/, (_, parts, old, rest) =>
-    `Berichtigt: ${parts.split(", ").map((x) => CORR[x] || x).join(", ")}.${old ? ` Bisheriger Wortlaut: „${de(old)}“` : ""}${rest ? ` ${de(rest)}` : ""}`],
+    `Berichtigt: ${parts.split(", ").map((x) => CORR[x] || x).join(", ")}.${old ? ` Bisheriger Wortlaut: „${de(old)}“` : ""}${rest ? (de(rest) === rest && isEnglish(rest, rest) ? ` (englischer Wortlaut: „${rest}“)` : ` ${de(rest)}`) : ""}`],
   [/^unknown status (.*)$/, (_, x) => `unbekannter Status ${x}`],
   [/^not allowed$/, () => "nur für den Betreiber von Horn Lens freigegeben"],
 ];

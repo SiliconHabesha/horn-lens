@@ -53,9 +53,9 @@ export default function PlaceScreen() {
       {/* Messwerte in der Umgebung: gleiche Zeilen wie in der Lage */}
       <Head title="In der Umgebung" />
       <Group>
-        <ListRow first icon="flame-outline" label="Hitzepunkte" hint={`bis ${RADIUS.fire} km · 24 Std.`} value={capped && !d.fires.length ? "–" : val(d.fires.length, down.fire, capped ? "≥ " : "")} onPress={() => router.push("/signal/fires")} />
-        <ListRow icon="pulse-outline" label="Erdbeben" hint={`bis ${RADIUS.quake} km · 7 Tage`} value={val(d.quakes.length, down.quake)} onPress={() => router.push("/signal/quakes")} />
-        <ListRow icon="boat-outline" label="Vorfälle auf See" hint={`bis ${RADIUS.ship} km · 30 Tage`} value={val(d.ships.length, down.ship)} onPress={() => router.push("/signal/sea")} />
+        <ListRow first icon="flame-outline" label="Hitzepunkte" hint={`bis ${RADIUS.fire} km · 24 Std.`} value={capped && !d.fires.length ? "–" : val(d.fires.length, down.fire, capped ? "mind. " : "")} onPress={() => router.push("/signal/fires")} />
+        <ListRow icon="pulse-outline" label="Erdbeben" hint={`bis ${RADIUS.quake} km · 7 Tage`} value={val(d.quakes.length, down.quake)} onPress={() => router.push("/signal/quakes")} />
+        <ListRow icon="boat-outline" label="Vorfälle auf See" hint={`bis ${RADIUS.ship} km · 30 Tage`} value={val(d.ships.length, down.ship)} onPress={() => router.push("/signal/sea")} />
         {d.sat.map(({ x: sp }) => <ListRow key={sp.id} icon="planet-outline" label={sp.name} sub={`Satellitenbilder · neuestes ${fmtCapDay(sp.images[0].t)}`} onPress={() => router.navigate(`/satellite?place=${sp.id}`)} />)}
       </Group>
 
@@ -77,7 +77,7 @@ export default function PlaceScreen() {
           {d.claims.map((c, i) => (
             <Pressable key={c.id} onPress={() => { tap(); router.push(`/claim/${c.id}`); }} accessibilityRole="button" accessibilityLabel={c.statement}
               style={({ pressed }) => ({ paddingVertical: 12, gap: 4, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: t.rule, opacity: pressed ? 0.6 : 1 })}>
-              <StatusPill status={c.status} small />
+              <StatusPill status={c.status} small />
               <T v="body" color={t.ink}>{c.statement}</T>
             </Pressable>
           ))}

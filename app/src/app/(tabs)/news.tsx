@@ -3,11 +3,11 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useLocalSearchParams } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useMemo, useState } from "react";
-import { FlatList, Pressable, RefreshControl, StyleSheet, Switch, TextInput, View } from "react-native";
+import { FlatList, Pressable, RefreshControl, StyleSheet, TextInput, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { dedupe, ItemRow, itemTime, StoryCard } from "../../components/items";
 import { Skeleton } from "../../components/Skeleton";
-import { Banner, Chip, ChipRow, Empty, IconButton, T, tap } from "../../components/ui";
+import { Banner, Chip, ChipRow, Empty, IconButton, T, tap, Toggle } from "../../components/ui";
 import { ago, REGION_ORDER, REGIONS, TYPE_ORDER, TYPES } from "../../lib/de";
 import { useData } from "../../lib/data";
 import { narrow, storiesOf, type Story } from "../../lib/stories";
@@ -18,6 +18,7 @@ type Mode = "stories" | "items" | "saved";
 export default function News() {
   const t = useTheme();
   const ins = useSafeAreaInsets();
+  const winW = useWindowDimensions().width;
   const p = useLocalSearchParams<{ region?: string; new?: string; mode?: string; k?: string }>();
   const { data, refreshing, refresh, seenBefore, offline, loadedAt, loading, saved, session } = useData();
   const uid = session?.user?.id ?? null;
@@ -83,7 +84,7 @@ export default function News() {
   const active = (hours !== 24 ? 1 : 0) + (type ? 1 : 0) + (onlyNew ? 1 : 0) + (most && mode === "stories" ? 1 : 0) + (mode === "items" ? 1 : 0);
 
   const header = (
-    <View style={{ paddingTop: ins.top + space.m, gap: space.m, paddingBottom: space.s, maxWidth: 760, width: "100%", alignSelf: "center" }}>
+    <View style={{ paddingTop: ins.top + space.m + (winW >= 900 ? space.xl : 0), gap: space.m, paddingBottom: space.s, maxWidth: 760, width: "100%", alignSelf: "center" }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
         <T v="display" accessibilityRole="header">{mode === "saved" ? "Gemerkt" : owner ? "Meldungen" : "Rotes Meer"}</T>
         <IconButton icon={mode === "saved" ? "close" : "bookmark-outline"} label={mode === "saved" ? "Gemerkt schließen" : `Gemerkt (${saved.length})`}
@@ -118,11 +119,11 @@ export default function News() {
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.m, minHeight: 44 }}>
             <T v="body" style={{ flex: 1 }}>Nur neue seit dem letzten Besuch</T>
-            <Switch value={onlyNew} onValueChange={(v) => { tap(); setOnlyNew(v); }} accessibilityLabel="Nur neue Meldungen" />
+            <Toggle value={onlyNew} onValueChange={(v) => { tap(); setOnlyNew(v); }} accessibilityLabel="Nur neue Meldungen" />
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.m, minHeight: 44 }}>
-            <T v="body" style={{ flex: 1 }}>Gleiche Geschichte zusammenfassen</T>
-            <Switch value={grouped} onValueChange={(v) => { tap(); setMode(v ? "stories" : "items"); }} accessibilityLabel="Gleiche Geschichte zusammenfassen" />
+            <T v="body" style={{ flex: 1 }}>Meldungen zur selben Geschichte bündeln</T>
+            <Toggle value={grouped} onValueChange={(v) => { tap(); setMode(v ? "stories" : "items"); }} accessibilityLabel="Meldungen zur selben Geschichte bündeln" />
           </View>
           {mode === "stories" ? (
             <>

@@ -13,7 +13,7 @@ import { CLAUDE_PAGE } from "../../lib/feeds";
 import { radius, space, useTheme } from "../../lib/theme";
 import type { Item, Report } from "../../lib/types";
 
-const KIND: Record<string, string> = { outage: "Internet-Einbruch", maritime: "Vorfall auf See", quake: "Erdbeben", surge: "Viele Meldungen" };
+const KIND: Record<string, string> = { outage: "Internetverbindung", maritime: "Vorfall auf See", quake: "Erdbeben", surge: "Viele Meldungen" };
 
 // Klartext zum Teilen: Zusammenfassung mit Quellen, Messwerte, wichtigste Schlagzeilen
 function digest(rep: Report, regions: Record<string, Item[]>) {
@@ -21,7 +21,7 @@ function digest(rep: Report, regions: Record<string, Item[]>) {
   const lines = [`Horn Lens – Tagesbericht ${fmtIsoDay(rep.report_date)}`, ""];
   for (const s of rep.summary?.sentences || []) lines.push(`${s.text}${(s.cites || []).length ? ` (${(s.cites || []).map((c: any) => c.outlet).join(", ")})` : ""}`);
   if ((rep.summary?.sentences || []).length) lines.push("");
-  const m = [["Hitzepunkte (24 Std.)", sg.fires_24h], ["Internet-Einbrüche (48 Std.)", sg.outages_48h], ["Vorfälle auf See (30 Tage)", sg.maritime_30d], ["Erdbeben (7 Tage)", sg.quakes_7d]]
+  const m = [["Hitzepunkte (24 Std.)", sg.fires_24h], ["Auffälligkeiten Internet (48 Std.)", sg.outages_48h], ["Vorfälle auf See (30 Tage)", sg.maritime_30d], ["Erdbeben (7 Tage)", sg.quakes_7d]]
     .filter(([, n]) => n != null).map(([l, n]) => `${l}: ${num(Number(n))}`);
   if (m.length) lines.push(`Gemessen: ${m.join(" · ")}`, "");
   for (const r of REGION_ORDER) {
@@ -124,7 +124,7 @@ export default function ReportScreen() {
 
           <Head title="Messwerte" />
           <Group>
-            {[["flame-outline", "Hitzepunkte", "24 Std.", sg.fires_24h], ["wifi-outline", "Internet-Einbrüche", "48 Std.", sg.outages_48h],
+            {[["flame-outline", "Hitzepunkte", "24 Std.", sg.fires_24h], ["wifi-outline", "Auffälligkeiten Internet", "48 Std.", sg.outages_48h],
               ["boat-outline", "Vorfälle auf See", "30 Tage", sg.maritime_30d], ["pulse-outline", "Erdbeben", "7 Tage", sg.quakes_7d]].map(([icon, label, hint, n], i) => (
               <ListRow key={label as string} first={i === 0} icon={icon as any} label={label as string} hint={hint as string} value={n == null ? "–" : num(Number(n))} tone={n == null ? "none" : undefined} />
             ))}

@@ -3,7 +3,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Haptics from "expo-haptics";
 import * as WebBrowser from "expo-web-browser";
 import React from "react";
-import { Linking, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextProps, View, ViewStyle } from "react-native";
+import { Linking, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextProps, View, ViewStyle, Switch, SwitchProps, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ago, num, STATUS } from "../lib/de";
 import { useData } from "../lib/data";
@@ -80,12 +80,16 @@ export function ChipRow({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Jede Stufe hat eine eigene Form, nicht nur eine Farbe (auch für Menschen mit Farbsehschwäche)
+const STATUS_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
+  confirmed: "checkmark-circle", likely: "ellipse", unconfirmed: "help-circle", disputed: "swap-horizontal", false: "close-circle",
+};
 export function StatusPill({ status, small }: { status: string; small?: boolean }) {
   const t = useTheme();
   const c = t.status[status] || t.muted;
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start" }}>
-      <View style={{ width: small ? 7 : 9, height: small ? 7 : 9, borderRadius: 5, backgroundColor: c }} />
+      <Ionicons name={STATUS_ICON[status] || "ellipse"} size={small ? 13 : 15} color={c} accessibilityElementsHidden importantForAccessibility="no" />
       <T v="label" color={c}>{STATUS[status]?.[0] || "Stufe unbekannt"}</T>
     </View>
   );
@@ -139,6 +143,8 @@ export function Screen({ title, sub, right, children, scroll = true, refresh = t
   const t = useTheme();
   const ins = useSafeAreaInsets();
   const { refreshing, refresh: doRefresh, offline, loadedAt } = useData();
+  // Breite Fenster (Seitenleiste): etwas mehr Luft über dem Titel
+  const wide = useWindowDimensions().width >= 900;
   const head = title ? (
     <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginBottom: space.m, gap: 12 }}>
       <View style={{ flex: 1 }}>
@@ -154,9 +160,9 @@ export function Screen({ title, sub, right, children, scroll = true, refresh = t
     <Banner icon="time-outline" text={`Diese Ansicht ist von ${ago(loadedAt)}.`} action="Aktualisieren" onAction={doRefresh} />
   ) : null;
   const inner = <View style={{ maxWidth: 760, width: "100%", alignSelf: "center" }}>{head}{offlineBanner}{children}</View>;
-  if (!scroll) return <View style={{ flex: 1, backgroundColor: t.bg, paddingTop: (topInset ? ins.top : 0) + space.m, paddingHorizontal: space.l }}>{inner}</View>;
+  if (!scroll) return <View style={{ flex: 1, backgroundColor: t.bg, paddingTop: (topInset ? ins.top : 0) + space.m + (wide && topInset ? space.xl : 0), paddingHorizontal: space.l }}>{inner}</View>;
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: t.bg }} contentContainerStyle={{ paddingTop: (topInset ? ins.top : 0) + space.m, paddingHorizontal: space.l, paddingBottom: space.xxl * 2 }}
+    <ScrollView style={{ flex: 1, backgroundColor: t.bg }} contentContainerStyle={{ paddingTop: (topInset ? ins.top : 0) + space.m + (wide && topInset ? space.xl : 0), paddingHorizontal: space.l, paddingBottom: space.xxl * 2 }}
       refreshControl={refresh ? <RefreshControl refreshing={refreshing} onRefresh={doRefresh} tintColor={t.muted} colors={[t.accent]} /> : undefined}
       keyboardShouldPersistTaps="handled">
       {inner}
@@ -191,6 +197,12 @@ export function Button({ label, onPress, kind = "primary", icon, disabled }: { l
       <T v="bodyStrong" color={primary ? t.bg : t.ink}>{label}</T>
     </Pressable>
   );
+}
+
+/** Schalter in den Farben von Horn Lens (statt Systemgrün oder -türkis) */
+export function Toggle(props: SwitchProps) {
+  const t = useTheme();
+  return <Switch trackColor={{ false: t.rule, true: t.accent }} thumbColor="#FFFFFF" {...({ activeThumbColor: "#FFFFFF" } as any)} ios_backgroundColor={t.rule} {...props} />;
 }
 
 /** Eine Zeile in einer gruppierten Liste (Messwerte, Weiter zu, Orte): Symbol, Text, Zusatz, Wert rechts, Pfeil */

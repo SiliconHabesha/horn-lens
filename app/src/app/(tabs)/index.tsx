@@ -15,7 +15,7 @@ import { useTheme } from "../../lib/theme";
 
 type Icon = keyof typeof Ionicons.glyphMap;
 const ALERT: Record<string, { label: string; icon: Icon; to: string }> = {
-  outage: { label: "Internet-Einbruch", icon: "wifi-outline", to: "/signal/internet" },
+  outage: { label: "Internetverbindung", icon: "wifi-outline", to: "/signal/internet" },
   maritime: { label: "Vorfall auf See", icon: "boat-outline", to: "/signal/sea" },
   quake: { label: "Erdbeben", icon: "pulse-outline", to: "/signal/quakes" },
   surge: { label: "Viele Meldungen", icon: "newspaper-outline", to: "/news?region=eritrea" },
@@ -65,8 +65,8 @@ export default function Lage() {
   const warnedIn = (country: RegExp) => data.alerts.some((a) => a.kind === "outage" && country.test(a.title));
   const signals: { icon: Icon; label: string; hint: string; value: string; tone?: "alert" | "none"; to: string }[] = [];
   if (data.owner) {
-    signals.push({ icon: "wifi-outline", label: "Internet Eritrea", hint: "48 Std.", value: !ioda.ok ? "–" : er ? plural(er, "Einbruch", "Einbrüche") : "normal", tone: !ioda.ok ? "none" : er && !warnedIn(/Eritrea/) ? "alert" : undefined, to: "/signal/internet" });
-    signals.push({ icon: "wifi-outline", label: "Internet Äthiopien", hint: "48 Std.", value: !ioda.ok ? "–" : et ? plural(et, "Einbruch", "Einbrüche") : "normal", tone: !ioda.ok ? "none" : et && !warnedIn(/Äthiopien|Ethiopia/) ? "alert" : undefined, to: "/signal/internet" });
+    signals.push({ icon: "wifi-outline", label: "Internet Eritrea", hint: "48 Std.", value: !ioda.ok ? "–" : er ? plural(er, "Auffälligkeit", "Auffälligkeiten") : "unauffällig", tone: !ioda.ok ? "none" : er && !warnedIn(/Eritrea/) ? "alert" : undefined, to: "/signal/internet" });
+    signals.push({ icon: "wifi-outline", label: "Internet Äthiopien", hint: "48 Std.", value: !ioda.ok ? "–" : et ? plural(et, "Auffälligkeit", "Auffälligkeiten") : "unauffällig", tone: !ioda.ok ? "none" : et && !warnedIn(/Äthiopien|Ethiopia/) ? "alert" : undefined, to: "/signal/internet" });
   }
   signals.push({ icon: "flame-outline", label: "Hitzepunkte", hint: "24 Std.", value: data.firesError || !firms.ok ? "–" : `${data.firesCapped ? "≥ " : ""}${num(data.firesTotal)}`, tone: data.firesError || !firms.ok ? "none" : undefined, to: "/signal/fires" });
   signals.push({ icon: "boat-outline", label: "Vorfälle auf See", hint: "30 Tage", value: !ukmto.ok ? "–" : num(data.maritime.length),
@@ -116,7 +116,9 @@ export default function Lage() {
       {data.alerts.length ? (
         <>
           <Head title="Wichtig jetzt" />
-          <Group style={{ borderLeftWidth: 4, borderLeftColor: t.warn }}>
+          <Group style={{ overflow: "hidden" }}>
+            {/* Warnstreifen links, gerade statt als Bogen an der runden Ecke */}
+            <View pointerEvents="none" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, backgroundColor: t.warn }} />
             {data.alerts.map((a, i) => {
               const k = ALERT[a.kind];
               const src = a.source && !a.title.includes(a.source) ? ` · ${a.source}` : "";

@@ -2,7 +2,7 @@
 import { router } from "expo-router";
 import React from "react";
 import { Platform, Pressable, Share, StyleSheet, View } from "react-native";
-import { fmtIsoDay, fmtWhen, plural, TYPE_ORDER, TYPES } from "../lib/de";
+import { fmtIsoDay, fmtWhen, plural, srcName, TYPE_ORDER, TYPES } from "../lib/de";
 import { font, useTheme } from "../lib/theme";
 import type { Story } from "../lib/stories";
 import type { Item } from "../lib/types";
@@ -36,7 +36,7 @@ export async function shareStory(s: Story) {
   const seen = new Set<string>();
   const lines = [`Bei ${plural(s.sources, "Medium", "Medien")}: ${s.lead.title}`, ""];
   for (const it of s.items) {
-    const who = it.origin_domain || it.source_name;
+    const who = srcName(it.origin_domain || it.source_name);
     if (seen.has(who) || seen.size >= 6) continue;
     seen.add(who);
     lines.push(`– ${who} (${TYPES[it.source_type] || it.source_type}): ${it.url}`);
@@ -78,7 +78,7 @@ function NewsRow({ title, types, who, when, isNew, onPress, a11y }: { title: str
 }
 
 export function ItemRow({ it, isNew, others, onOpen }: { it: Item; isNew?: boolean; translation?: string; others?: number; onOpen?: () => void }) {
-  const who = `${it.origin_domain || it.source_name}${others ? ` + ${others} ${others === 1 ? "weiteres Medium" : "weitere Medien"}` : ""}`;
+  const who = `${srcName(it.origin_domain || it.source_name)}${others ? ` + ${others} ${others === 1 ? "weiteres Medium" : "weitere Medien"}` : ""}`;
   const when = whenOf(it);
   return (
     <NewsRow title={it.title} types={[it.source_type]} who={who} when={when} isNew={isNew}

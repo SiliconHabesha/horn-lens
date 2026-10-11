@@ -64,7 +64,7 @@ export default function Claims() {
               </View>
               <T v={changed ? "bodyStrong" : "body"} color={t.ink} numberOfLines={3}>{c.statement}</T>
               <T v="caption">
-                {REGIONS[c.region] || c.region}{since ? ` · seit ${fmtDate(since)}` : ""}{isEnglish(c.raw?.statement, c.statement) ? " · englischer Wortlaut" : ""}
+                {REGIONS[c.region] || c.region}{since ? ` · Stufe seit ${fmtDate(since)}` : ""}{isEnglish(c.raw?.statement, c.statement) ? " · englischer Wortlaut" : ""}
                 {changed ? " · geändert" : sort === "stale" && days >= 7 ? ` · ${days} Tage unverändert` : ""}
               </T>
             </Pressable>

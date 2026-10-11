@@ -1,9 +1,9 @@
 // Formular: Status ändern, Angaben berichtigen oder neue Behauptung anlegen. Die Regeln prüft zusätzlich die Datenbank.
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
 import { toast } from "../components/Toast";
-import { Banner, Button, Chip, T, tap } from "../components/ui";
+import { Banner, Button, Chip, T, tap, Toggle } from "../components/ui";
 import { de, REGION_ORDER, REGIONS, STATUS, STATUS_ORDER, todayBerlin } from "../lib/de";
 import { useData } from "../lib/data";
 import { sb } from "../lib/supabase";
@@ -14,7 +14,8 @@ type Src = { title: string; url: string };
 const validDay = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s || "") && new Date(s + "T12:00:00Z").toISOString().slice(0, 10) === s;
 // Datum vor n Tagen (Berliner Kalender) als JJJJ-MM-TT
 // „11.10.2026“ in JJJJ-MM-TT umwandeln, alles andere unverändert lassen
-const toIso = (s: string) => { const m = s.trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/); return m ? `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}` : s; };
+const toIso = (s: string) => { const m = s.trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/); return m ? `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}` : s.trim(); };
+const isoToDe = (s: string) => (validDay(s) ? s.split("-").reverse().join(".") : s);
 const hostOf = (u: string) => u.replace(/^https?:\/\/(www\.)?/i, "").split(/[/:?#]/)[0].toLowerCase();
 const dayMinus = (n: number) => { const [y, m, d] = todayBerlin().split("-").map(Number); return new Date(Date.UTC(y, m - 1, d - n)).toISOString().slice(0, 10); };
 // Außerhalb des Formulars, damit Eingabefelder beim Tippen nicht neu entstehen und den Fokus verlieren
@@ -36,6 +37,9 @@ export default function ClaimForm() {
   const [disputed, setDisputed] = useState(init.disputed_by);
   const [region, setRegion] = useState(claim?.region || "eritrea");
   const [first, setFirst] = useState(claim?.first_reported || todayBerlin());
+  // Was im Feld steht (Tag.Monat.Jahr), getrennt vom gespeicherten Wert, damit man mitten im Datum tippen kann
+  const [firstText, setFirstText] = useState(() => isoToDe(claim?.first_reported || todayBerlin()));
+  const pickFirst = (iso: string) => { setFirst(iso); setFirstText(isoToDe(iso)); };
   const [party, setParty] = useState(!!claim?.party_claim);
   const [status, setStatus] = useState(claim?.status || "unconfirmed");
   const [note, setNote] = useState("");
@@ -53,7 +57,7 @@ export default function ClaimForm() {
     if (filled.current || !claim) return;
     filled.current = true;
     setStatement(claim.statement); setClaimant(claim.claimant); setDisputed(claim.disputed_by || "");
-    setRegion(claim.region); setFirst(claim.first_reported); setParty(!!claim.party_claim); setStatus(claim.status);
+    setRegion(claim.region); pickFirst(claim.first_reported); setParty(!!claim.party_claim); setStatus(claim.status);
   }, [claim]);
 
   if (!data) return <View style={{ flex: 1, backgroundColor: t.bg, padding: space.l }}><Skeleton rows={5} /></View>;
@@ -128,8 +132,8 @@ export default function ClaimForm() {
         {mode !== "status" ? (
           <>
             <Field label="Aussage"><TextInput style={[input, { minHeight: 80, textAlignVertical: "top" }]} multiline value={statement} onChangeText={setStatement} placeholder="Eine überprüfbare Aussage" placeholderTextColor={t.faint} /></Field>
-            <Field label="Wer sagt es"><TextInput style={[input, { minHeight: 64, textAlignVertical: "top" }]} multiline value={claimant} onChangeText={setClaimant} placeholder="z. B. Regierung Äthiopiens" placeholderTextColor={t.faint} /></Field>
-            <Field label="Wer bestreitet es (optional)"><TextInput style={[input, { minHeight: 80, textAlignVertical: "top" }]} multiline value={disputed} onChangeText={setDisputed} placeholder="z. B. Eritreas Informationsminister" placeholderTextColor={t.faint} /></Field>
+            <Field label="Wer sagt es"><TextInput style={[input, { minHeight: 64, textAlignVertical: "top" }]} multiline value={claimant} onChangeText={setClaimant} placeholder="z. B. ein Ministerium, eine Agentur, Augenzeugen" placeholderTextColor={t.faint} /></Field>
+            <Field label="Wer bestreitet es (optional)"><TextInput style={[input, { minHeight: 80, textAlignVertical: "top" }]} multiline value={disputed} onChangeText={setDisputed} placeholder="z. B. die betroffene Regierung oder Gruppe" placeholderTextColor={t.faint} /></Field>
             {mode === "add" ? (
               <Field label="Region">
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -139,9 +143,9 @@ export default function ClaimForm() {
             ) : null}
             <Field label="Zuerst gemeldet">
               <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-                {[0, 1, 2].map((n) => { const d = dayMinus(n); return <Chip key={n} label={n === 0 ? "Heute" : n === 1 ? "Gestern" : "Vorgestern"} active={first === d} onPress={() => setFirst(d)} />; })}
+                {[0, 1, 2].map((n) => { const d = dayMinus(n); return <Chip key={n} label={n === 0 ? "Heute" : n === 1 ? "Gestern" : "Vorgestern"} active={first === d} onPress={() => pickFirst(d)} />; })}
               </View>
-              <TextInput style={input} value={validDay(first) ? first.split("-").reverse().join(".") : first} onChangeText={(v) => setFirst(toIso(v))}
+              <TextInput style={input} value={firstText} onChangeText={(v) => { setFirstText(v); setFirst(toIso(v)); }}
                 placeholder={todayBerlin().split("-").reverse().join(".")} placeholderTextColor={t.faint} autoCapitalize="none"
                 accessibilityLabel="Datum der ersten Meldung, Tag.Monat.Jahr" keyboardType="numbers-and-punctuation" />
               {first && !validDay(first) ? <T v="caption" color={t.warn}>Bitte als Tag.Monat.Jahr schreiben, z. B. {todayBerlin().split("-").reverse().join(".")}.</T>
@@ -149,7 +153,7 @@ export default function ClaimForm() {
             </Field>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.m }}>
               <T v="body" style={{ flex: 1 }}>Von einer Konfliktpartei behauptet</T>
-              <Switch value={party} onValueChange={(v) => { tap(); setParty(v); }} accessibilityLabel="Von einer Konfliktpartei behauptet" />
+              <Toggle value={party} onValueChange={(v) => { tap(); setParty(v); }} accessibilityLabel="Von einer Konfliktpartei behauptet" />
             </View>
           </>
         ) : null}
@@ -183,7 +187,7 @@ export default function ClaimForm() {
               <>
                 <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.m }}>
                   <T v="body" style={{ flex: 1 }}>Die betroffene Seite hat es eingeräumt</T>
-                  <Switch value={admission} onValueChange={(v) => { tap(); setAdmission(v); }} accessibilityLabel="Die betroffene Seite hat es eingeräumt" />
+                  <Toggle value={admission} onValueChange={(v) => { tap(); setAdmission(v); }} accessibilityLabel="Die betroffene Seite hat es eingeräumt" />
                 </View>
                 <T v="caption">„Bestätigt“ braucht zwei unabhängige Quellen (eine übernommene Agenturmeldung zählt einmal) oder ein Eingeständnis der betroffenen Seite.</T>
               </>

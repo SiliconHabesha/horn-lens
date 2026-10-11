@@ -13,8 +13,8 @@ import { radius, space, useTheme } from "../lib/theme";
 
 export const WELCOME_KEY = "hl:welcome:v1";
 const VOICES: [string, string][] = [
-  ["government_er", "Amtliche Sicht Eritreas"], ["exile", "Meist regierungskritisch, mit Quellen im Land"], ["government_et", "Amtliche Sicht Äthiopiens"],
-  ["tigray", "Aus Tigray, Sicht einer Konfliktpartei"], ["international", "Agenturen und Sender von außen"], ["un_ngo", "Eigene Erhebungen, Berichte von außen"],
+  ["government_er", "Amtliche Sicht Eritreas, einer Konfliktpartei"], ["exile", "Meist regierungskritisch, mit Quellen im Land"], ["government_et", "Amtliche Sicht Äthiopiens, einer Konfliktpartei"],
+  ["tigray", "Aus Tigray, einer Konfliktpartei"], ["international", "Agenturen und Sender von außen"], ["un_ngo", "Eigene Erhebungen, Berichte von außen"],
 ];
 
 function Page({ w, icon, title, lead, children }: { w: number; icon: keyof typeof Ionicons.glyphMap; title: string; lead: string; children?: React.ReactNode }) {
@@ -68,7 +68,7 @@ export default function Welcome() {
             lead="Was am Horn von Afrika geschieht, Eritrea zuerst. Jede Angabe mit Herkunft, damit du selbst einschätzen kannst, wie belastbar sie ist.">
             <Row icon="newspaper-outline" color={t.ink} title="Meldungen aller Seiten" sub="Schlagzeilen aus Eritrea, Äthiopien, Tigray, der Diaspora und von außen, nebeneinander." />
             <Row icon="layers-outline" color={t.ink} title="Geschichten" sub="Berichten mehrere Medien dasselbe, fasst Horn Lens sie zusammen und zeigt, welche Seiten darüber berichten." />
-            <Row icon="map-outline" color={t.ink} title="Messwerte und Satellitenbilder" sub="Hitzepunkte, Erdbeben, Vorfälle auf See, Internet-Einbrüche und Vorher-Nachher-Bilder." />
+            <Row icon="map-outline" color={t.ink} title="Messwerte und Satellitenbilder" sub="Hitzepunkte, Erdbeben, Vorfälle auf See, Internetverbindung und Vorher-Nachher-Bilder." />
             {data && !data.owner ? <T v="caption" style={{ marginTop: space.s }}>Ohne Anmeldung siehst du die offene Ausgabe: Rotes Meer, Messwerte und Satellitenbilder.</T> : null}
           </Page>
           <Page w={pageW} icon="people-outline" title="Wer sagt was"
@@ -84,7 +84,7 @@ export default function Welcome() {
                 <T v="small">{STATUS[k][1]}</T>
               </View>
             ))}
-            <Row icon="flame-outline" color={t.fire} title="Messwerte zeigen was, nicht warum" sub="Ein Hitzepunkt zeigt Hitze, nicht die Ursache: oft Feldbrände, manchmal Kämpfe. Ein Internet-Einbruch sagt nichts darüber, warum." />
+            <Row icon="flame-outline" color={t.fire} title="Messwerte zeigen, was geschah, nicht warum" sub="Ein Hitzepunkt zeigt Hitze, nicht die Ursache: oft Feldbrände, manchmal Kämpfe. Ein Rückgang der Internetverbindung sagt nicht, warum." />
           </Page>
         </ScrollView>
       </View>

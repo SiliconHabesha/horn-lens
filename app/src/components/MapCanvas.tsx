@@ -25,7 +25,7 @@ export const boxOf = (north: number, west: number, south: number, east: number):
 };
 
 const MINI_NAMES = new Set(["asmara", "massawa", "assab", "mekelle", "portsudan", "djibouti"]);
-const LABELS: [string, number, number][] = [["ERITREA", 15.9, 38.2], ["ÄTHIOPIEN", 10.7, 37.9], ["SUDAN", 17.6, 35.4], ["JEMEN", 15.6, 44.6], ["SAUDI-ARABIEN", 19.3, 41.9], ["DSCHIBUTI", 11.15, 42.3]];
+const LABELS: [string, number, number][] = [["ERITREA", 15.9, 38.2], ["ÄTHIOPIEN", 10.7, 37.9], ["SUDAN", 17.6, 35.4], ["JEMEN", 15.6, 44.6], ["SAUDI-ARABIEN", 19.3, 41.9]];
 
 export type Layers = { fire: boolean; quake: boolean; ship: boolean; sat: boolean };
 export type Mark = { x: number; y: number; kind: string; at: number; when: string; text: string; place?: string; url?: string | null; src?: string; sat?: string; pid?: string; name?: string; minor?: boolean };
@@ -46,8 +46,8 @@ export function marksOf(data: Data, layers: Layers): Mark[] {
   return out;
 }
 
-/** Ab dieser Vergrößerung (Kartenpunkte je Bildschirmpunkt) werden auch kleinere Orte beschriftet */
-export const MINOR_K = 0.35;
+/** Ist der sichtbare Ausschnitt schmaler als das (in Kartenpunkten), werden auch kleinere Orte beschriftet */
+export const MINOR_W = 260;
 
 /** Nur die Zeichnung (ohne Gesten). k = Kartenpunkte je Bildschirmpunkt, damit Zeichen beim Zoomen gleich groß bleiben. */
 export function MapSvg({ data, layers, box, w, h, sel, since, mini }: {
@@ -86,7 +86,7 @@ export function MapSvg({ data, layers, box, w, h, sel, since, mini }: {
         return <Rect key={p.id} x={x - s / 2} y={y - s / 2} width={s} height={s} fill="none" stroke={t.accent} strokeWidth={1.6 * k} />; })}
       {/* Auswahlring unter den Ortsnamen, damit er keinen Namen verdeckt */}
       {sel ? <Circle cx={sel.x} cy={sel.y} r={12 * k} fill="none" stroke={t.ink} strokeWidth={2.2 * k} /> : null}
-      {PLACES.filter((p) => (mini ? MINI_NAMES.has(p.id) : p.major || k < MINOR_K)).map(({ name: n, lat: la, lon: lo, left, dy = 0 }) => { const [x, y] = proj(la, lo);
+      {PLACES.filter((p) => (mini ? MINI_NAMES.has(p.id) : p.major || box[2] < MINOR_W)).map(({ name: n, lat: la, lon: lo, left, dy = 0 }) => { const [x, y] = proj(la, lo);
         const tx = left ? x - 5 * k : x + 5 * k, ty = y + (4 + dy) * k, fs = (mini ? 10 : 11) * k, anchor = left ? "end" : "start";
         return (
         <G key={n}>
@@ -150,7 +150,7 @@ export function ZoomMap({ data, layers, w, h, box, onBox, sel, onSelect, since }
     const k = b[2] / W;
     const x = b[0] + qx * k, y = b[1] + qy * k;
     let best: Mark | null = null, bd = (22 * k) ** 2;
-    for (const m of M) { if (m.minor && k >= MINOR_K) continue; const d = ((m.x - x) ** 2 + (m.y - y) ** 2) * (m.pid ? 1.6 : 1); if (d < bd) { bd = d; best = m; } }
+    for (const m of M) { if (m.minor && b[2] >= MINOR_W) continue; const d = ((m.x - x) ** 2 + (m.y - y) ** 2) * (m.pid ? 1.6 : 1); if (d < bd) { bd = d; best = m; } }
     if (best) tap();
     live.current.onSelect(best);
   };

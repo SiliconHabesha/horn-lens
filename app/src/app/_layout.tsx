@@ -41,7 +41,7 @@ export default function Root() {
         <Gate>
         <Stack screenOptions={({ navigation }: any) => ({
           headerStyle: { backgroundColor: t.bg }, headerTintColor: t.ink, headerShadowVisible: false,
-          headerTitleStyle: { fontFamily: font.semibold, fontSize: 16 }, headerBackTitle: "Zurück",
+          headerTitleStyle: { fontFamily: font.semibold, fontSize: 16 }, headerTitleAlign: "center", headerBackTitle: "Zurück",
           contentStyle: { backgroundColor: t.bg },
           // Direkt geöffnet (Link, Benachrichtigung): trotzdem ein Weg zurück zur Lage
           ...(navigation.canGoBack() ? {} : { headerLeft: () => <HomeBack /> }),
@@ -114,10 +114,10 @@ function FirstRun() {
 const handled = new Set<string>();
 function NotificationRouter() {
   const r = Notifications.useLastNotificationResponse();
-  const { authReady, data } = useData();
+  const { authReady, data, loading } = useData();
   useEffect(() => {
     // Erst wenn die Daten da sind: sonst zeigt der Zielbildschirm kurz „gibt es nicht“
-    if (!r || !authReady || !data) return;
+    if (!r || !authReady || (!data && loading)) return;
     const id = r.notification.request.identifier;
     if (handled.has(id)) return;
     handled.add(id);
@@ -126,6 +126,6 @@ function NotificationRouter() {
     if (path.startsWith("/report") && data && !data.owner) return;
     setTimeout(() => { try { router.push(path as any); } catch { /* Navigation noch nicht bereit */ } }, 400);
     Notifications.clearLastNotificationResponseAsync?.().catch(() => {});
-  }, [r, authReady, data]);
+  }, [r, authReady, data, loading]);
   return null;
 }

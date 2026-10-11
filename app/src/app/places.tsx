@@ -11,13 +11,15 @@ import { dedupe, poolOf } from "../lib/stories";
 const GROUPS: [string, (c: string) => boolean][] = [
   ["Eritrea", (c) => c === "Eritrea"],
   ["Grenzgebiet", (c) => c.startsWith("Grenzgebiet")],
-  ["Tigray und Afar", (c) => c.startsWith("Äthiopien")],
+  ["Nordäthiopien und umstrittene Gebiete", (c) => c.startsWith("Äthiopien")],
   ["Rotes Meer und Nachbarn", (c) => !c.startsWith("Äthiopien") && c !== "Eritrea" && !c.startsWith("Grenzgebiet")],
 ];
 
 export default function Places() {
   const { data } = useData();
   const rows = useMemo(() => (data ? (() => { const pool = dedupe(poolOf(data)); return PLACES.map((p) => ({ p, d: dossier(p, data, pool) })); })() : []), [data]);
+  // Hitzepunkte sind oft nur eine Auswahl: dann „mind.“
+  const sample = !!data && (data.firesCapped || data.firesTotal > data.fires.length);
   return (
     <Screen topInset={false}>
       <Stack.Screen options={{ title: "Orte" }} />
@@ -28,7 +30,7 @@ export default function Places() {
             <Head title={g} first={g === GROUPS[0][0]} />
             <Group>
               {list.map(({ p, d }, i) => {
-                const sig = [data?.owner && d.items.length ? plural(d.items.length, "Meldung", "Meldungen") : null, d.fires.length ? plural(d.fires.length, "Hitzepunkt", "Hitzepunkte") : null, d.quakes.length ? plural(d.quakes.length, "Erdbeben", "Erdbeben") : null,
+                const sig = [data?.owner && d.items.length ? plural(d.items.length, "Meldung", "Meldungen") : null, d.fires.length ? `${sample ? "mind. " : ""}${plural(d.fires.length, "Hitzepunkt", "Hitzepunkte")}` : null, d.quakes.length ? plural(d.quakes.length, "Erdbeben", "Erdbeben") : null,
                   d.ships.length ? plural(d.ships.length, "Vorfall auf See", "Vorfälle auf See") : null, d.sat.length ? "Satellitenbilder" : null].filter(Boolean).join(" · ");
                 return <ListRow key={p.id} first={i === 0} label={p.name} sub={sig || undefined}
                   onPress={() => router.push(`/place/${p.id}`)} />;

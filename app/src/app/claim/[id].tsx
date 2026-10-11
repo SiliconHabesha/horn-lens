@@ -74,10 +74,10 @@ export default function ClaimDetail() {
       ) : null}
       {data?.owner ? (
         <View style={{ flexDirection: "row", justifyContent: "center", gap: space.xl, marginTop: space.s }}>
-          <Pressable onPress={() => { tap(); router.push(`/claim-form?mode=status&intent=evidence&id=${c.id}`); }} accessibilityRole="button" hitSlop={8} style={{ paddingVertical: 10 }}>
+          <Pressable onPress={() => { tap(); router.push(`/claim-form?mode=status&intent=evidence&id=${c.id}`); }} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center" }}>
             <T v="smallStrong" color={t.accent}>Neuer Beleg</T>
           </Pressable>
-          <Pressable onPress={() => { tap(); router.push(`/claim-form?mode=edit&id=${c.id}`); }} accessibilityRole="button" hitSlop={8} style={{ paddingVertical: 10 }}>
+          <Pressable onPress={() => { tap(); router.push(`/claim-form?mode=edit&id=${c.id}`); }} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center" }}>
             <T v="smallStrong" color={t.accent}>Angaben berichtigen</T>
           </Pressable>
         </View>

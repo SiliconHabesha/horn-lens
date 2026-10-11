@@ -113,10 +113,14 @@ export default function Satellite() {
 
   const years = [...new Set(places.flatMap((x) => x.images.map((i) => new Date(i.t).getUTCFullYear())))].sort();
   // Vorlagen: zeigen das echte Datum und sind gesperrt, wenn kein Bild nah genug am Wunschdatum liegt
+  // Führen zwei Vorlagen zum selben Bild, nur die erste zeigen
+  const used = new Set<number>();
   const preset = (label: string, target: number | null, pick?: SatImage) => {
     const img = pick || (target != null ? nearest(target) : place.images[0]);
     const off = target != null ? Math.abs(new Date(img.t).getTime() - target) / DAY : 0;
     const usable = img.id !== place.images[0].id && off <= 45;
+    if (usable && used.has(img.id)) return null;
+    used.add(img.id);
     const active = after?.id === place.images[0].id && before?.id === img.id;
     return (
       <Chip key={label} label={usable ? `${label} · ${fmtCapDay(img.t)}` : label} active={active} disabled={!usable}
@@ -135,7 +139,7 @@ export default function Satellite() {
       </ChipRow>
 
       <View onLayout={(e: LayoutChangeEvent) => setW(e.nativeEvent.layout.width)}
-        style={{ marginTop: space.m, aspectRatio: 1, borderRadius: radius.l, overflow: "hidden", backgroundColor: t.cardAlt }}
+        style={{ marginTop: space.m, aspectRatio: 1, width: "100%", maxWidth: 560, alignSelf: "center", borderRadius: radius.l, overflow: "hidden", backgroundColor: t.cardAlt }}
         {...(single ? {} : pan.panHandlers)} accessible accessibilityLabel={single ? `Satellitenbild ${place.name}` : `Vergleich ${place.name}: links Vorher, rechts Nachher. Wischen verschiebt die Trennlinie.`}
         accessibilityRole={single ? "image" : "adjustable"} accessibilityValue={single ? undefined : { text: `Trennlinie bei ${Math.round(split * 100)} Prozent` }}
         accessibilityActions={single ? undefined : [{ name: "increment" }, { name: "decrement" }]}

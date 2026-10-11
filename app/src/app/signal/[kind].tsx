@@ -6,13 +6,13 @@ import { Button, Empty, Group, Head, ListRow, openLink, Screen, T } from "../../
 import { fmtFull, num } from "../../lib/de";
 import { useData } from "../../lib/data";
 import { feedState } from "../../lib/feeds";
-import { nearest, seaMeta } from "../../lib/places";
+import { nearest, RADIUS, seaMeta } from "../../lib/places";
 import { space } from "../../lib/theme";
 import { Skeleton } from "../../components/Skeleton";
 
 type Kind = "internet" | "fires" | "quakes" | "sea";
 const META: Record<Kind, { title: string; feed: string; who: string; about: string; url: string }> = {
-  internet: { title: "Internet-Einbrüche", feed: "ioda", who: "IODA", about: "Zeigt, wenn weniger Netze erreichbar sind, nicht warum. Kurze Einbrüche in Eritrea können unbemerkt bleiben.", url: "https://ioda.inetintel.cc.gatech.edu/" },
+  internet: { title: "Internetverbindung", feed: "ioda", who: "IODA", about: "Zeigt, wenn weniger Netze erreichbar sind, nicht warum. Kurze Rückgänge in Eritrea können unbemerkt bleiben.", url: "https://ioda.inetintel.cc.gatech.edu/" },
   fires: { title: "Hitzepunkte", feed: "firms", who: "NASA FIRMS", about: "Ein Hitzepunkt zeigt Hitze, nicht die Ursache: oft Feldbrände oder Gasfackeln, manchmal Kämpfe.", url: "https://firms.modaps.eosdis.nasa.gov/map/" },
   quakes: { title: "Erdbeben", feed: "usgs", who: "USGS", about: "Ab Stärke 2,5 in 7 Tagen. Das Afar-Dreieck bebt häufig.", url: "https://earthquake.usgs.gov/earthquakes/map/" },
   sea: { title: "Vorfälle auf See", feed: "ukmto", who: "UKMTO", about: "Britische Schifffahrtsstelle; nennt keine Verantwortlichen, Orte sind ungefähr.", url: "https://www.ukmto.org/recent-incidents" },
@@ -35,8 +35,9 @@ export default function Signal() {
     const by = new Map<string, { name: string; id: string; n: number }>();
     for (const f of data.fires) {
       const n = nearest(f.lat, f.lon);
-      const key = n.d <= 60 ? n.p.id : "_far";
-      const cur = by.get(key) || { name: n.d <= 60 ? n.p.name : "Abseits bekannter Orte", id: key, n: 0 };
+      // Gleicher Umkreis wie auf den Ortsseiten, damit die Zahlen übereinstimmen
+      const key = n.d <= RADIUS.fire ? n.p.id : "_far";
+      const cur = by.get(key) || { name: n.d <= RADIUS.fire ? n.p.name : `Weiter als ${RADIUS.fire} km von bekannten Orten`, id: key, n: 0 };
       cur.n++;
       by.set(key, cur);
     }
@@ -75,7 +76,7 @@ export default function Signal() {
           <Head title={sample ? `${num(data.fires.length)} von ${data.firesCapped ? "mindestens " : ""}${num(data.firesTotal)} Hitzepunkten, nach Ort` : `${num(data.firesTotal)} in 24 Stunden, nach Ort`} />
           {sample ? <T v="caption" style={{ marginBottom: space.s }}>Horn Lens lädt nur eine Auswahl. Die Verteilung nach Orten ist deshalb ungefähr; alle Punkte zeigt NASA FIRMS.</T> : null}
           {areas.length ? (
-            <Group>{areas.map((a, i) => <ListRow key={a.id} first={i === 0} label={a.id === "_far" ? a.name : `Bei ${a.name}`} hint={a.id === "_far" ? "über 60 km" : undefined} value={num(a.n)}
+            <Group>{areas.map((a, i) => <ListRow key={a.id} first={i === 0} label={a.id === "_far" ? a.name : `Umkreis ${a.name}`} hint={a.id === "_far" ? undefined : `bis ${RADIUS.fire} km`} value={num(a.n)}
               onPress={a.id !== "_far" ? () => router.push(`/place/${a.id}`) : undefined} align />)}</Group>
           ) : none("Keine Hitzepunkte in 24 Stunden.")}
         </>
