@@ -91,3 +91,4 @@ Umgesetzt:
 - Stufen haben eigene Formen (Haken, Fragezeichen, Pfeile, Kreuz), nicht nur Farben; Schalter in Hausfarben; größere Tippflächen.
 - Impressum und Datenschutz auch auf dem Anmeldebildschirm; Datenschutz ergänzt (USA-Übermittlung Supabase, Microsoft, Speicherdauer, Suchverlauf).
 Offen (braucht den Inhaber): Apple-Schlüssel für das Widerrufen bei Kontolöschung, Builds für die App-Stores über das Expo-Konto, Google/Apple-Anmeldung einrichten.
+- Nachtrag 12. Okt., 1 Uhr: Prüfung mit echten Daten (Quellen, Behauptungen, Meldungen der letzten 72 Std.): alle Behauptungen übersetzt, Meldungen ohne Bezug zur Region werden schon in der Datenbank aussortiert. Radio Erena und Addis Standard sperren Abrufe von Servern (Schutzseite „Just a moment…“); Ausweichadressen (WordPress-Schnittstelle, Google News) ebenfalls gesperrt – nicht umgehen. Im Browser lädt die Ge'ez-Schrift jetzt im Hintergrund (schnellerer Start).
