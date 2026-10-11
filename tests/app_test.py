@@ -149,6 +149,11 @@ with sync_playwright() as p:
             R[f"{pre} map box"] = box
             shot("satellite", "/satellite", 2500)
             shot("more", "/more")
+            if mode == "owner" and tag == "mob":
+                # Abmelden: danach darf nichts Privates mehr im Speicher oder auf dem Bildschirm sein
+                pg.get_by_text("Abmelden", exact=True).click(); pg.wait_for_timeout(1500)
+                R[f"{pre} after logout keys"] = pg.evaluate("Object.keys(localStorage).filter(k => k.startsWith('hl:cache') || k.includes('auth-token'))")
+                R[f"{pre} after logout screen"] = pg.evaluate("document.body.innerText").replace("\n", " | ")[:120]
             if mode == "public": shot("login", "/login")
             R[f"{pre} errors"] = errs[:5]
             ctx.close()

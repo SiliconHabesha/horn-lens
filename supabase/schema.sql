@@ -3,6 +3,8 @@
 -- Diese Datei beschreibt den Ist-Zustand vollständig. Auf einem leeren Supabase-Projekt ausgeführt,
 -- entsteht dieselbe Datenbank (ohne Inhalte). migrations/ ist die frühe Geschichte.
 -- Die Korrekturen aus pending_corrections.sql sind seit 11. Oktober eingespielt und stehen am Ende dieser Datei.
+-- Nachtrag 11. Oktober (App): Zugang für die App und Benachrichtigungen kamen als Migrationen dazu, siehe
+-- supabase/app_access.md. Ihr genauer Wortlaut liegt in Supabase unter Database → Migrations.
 
 create extension if not exists pg_cron;
 create extension if not exists pg_net;

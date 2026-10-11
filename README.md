@@ -4,9 +4,24 @@ Ein persönliches Lagebild zum Horn von Afrika, mit Eritrea an erster Stelle. Po
 
 Die Seite sammelt jede Stunde Meldungen, Messwerte und Satellitenbilder. Bei jeder Meldung steht, **wer** etwas sagt und **wann**. Erfunden wird nichts: Was keine Quelle liefert, zeigt die Seite als „keine Daten“ an.
 
-Stand: 11. Oktober 2026.
+Stand: 11. Oktober 2026 (mit App).
 
 ---
+
+
+## 0. Die App (neu, 11. Oktober 2026)
+
+Horn Lens gibt es jetzt als echte App für iPhone und Android, gebaut mit Expo im Ordner `app/`. Aus demselben Code entsteht auch eine Web-Fassung.
+
+- **Bedienung:** Tab-Leiste unten mit Lage, Meldungen, Behauptungen, Karte und Satellit. Unter „Mehr“ (oben rechts in „Lage“) liegen Konto, Benachrichtigungen, Quellen, Methode und Rechtliches.
+- **Funktionen:** Ziehen zum Aktualisieren. „Neu seit deinem letzten Besuch“. Suche und Filter bei Meldungen. Teilen-Knopf. Karte mit Ausschnitten und Ebenen. Satelliten-Vergleich per Wischen. Tagesberichte. Ohne Verbindung zeigt die App den letzten Stand. Dunkler Modus.
+- **Anmeldung:** Ohne Anmeldung zeigt die Handy-App die offene Ausgabe: Messwerte, Satellit und Rotes Meer. Mit deinem Konto siehst du alles und kannst Behauptungen pflegen. Die Datenbank prüft das (siehe `supabase/app_access.md`).
+- **Benachrichtigungen:** Hinweise (Vorfälle auf See, starke Erdbeben, Internet-Einbrüche, viele Meldungen zu Eritrea) und der Tagesbericht. Sie funktionieren erst in der Store-Fassung, siehe `app/STORE.md`.
+- **KI-Zusammenfassung:** bleibt kostenlos in Claude (Horn Lens in Claude); die App verlinkt dorthin.
+- **Web-Fassung:** liegt fertig gebaut vor. Sie ist privat: ohne Anmeldung zeigt sie nur den Anmeldebildschirm und wird nicht von Suchmaschinen erfasst. Online geht sie über Vercel, sobald das GitHub-Projekt `horn-lens` angelegt ist.
+- **Dein Konto:** Lege es einmal in der Web-Fassung unter „Konto anlegen“ an, mit deiner E-Mail-Adresse, für die der Zugang freigeschaltet ist. Dann den Link in der Bestätigungs-E-Mail öffnen. Zeigt der Link danach eine Fehlerseite, ist die Bestätigung trotzdem erledigt. Damit er künftig auf Horn Lens führt, in Supabase → Authentication → URL Configuration die Site URL auf die Web-Adresse setzen.
+- **In die Stores:** Schritt für Schritt in `app/STORE.md`, mit Store-Texten und Angaben für die Prüfung.
+- **Prüfen:** `cd app && npm run web:build`, danach `python3 tests/app_test.py`
 
 ## 1. So schaust du es dir an
 
