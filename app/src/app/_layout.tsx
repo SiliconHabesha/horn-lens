@@ -1,10 +1,10 @@
 // Nur die verwendeten Schriftschnitte laden (hält App und Web-Fassung klein)
 import { useFonts } from "expo-font";
-const PublicSans_400Regular = require("@expo-google-fonts/public-sans/400Regular/PublicSans_400Regular.ttf");
-const PublicSans_500Medium = require("@expo-google-fonts/public-sans/500Medium/PublicSans_500Medium.ttf");
-const PublicSans_600SemiBold = require("@expo-google-fonts/public-sans/600SemiBold/PublicSans_600SemiBold.ttf");
-const PublicSans_700Bold = require("@expo-google-fonts/public-sans/700Bold/PublicSans_700Bold.ttf");
-const PublicSans_800ExtraBold = require("@expo-google-fonts/public-sans/800ExtraBold/PublicSans_800ExtraBold.ttf");
+const SG_400 = require("@expo-google-fonts/schibsted-grotesk/400Regular/SchibstedGrotesk_400Regular.ttf");
+const SG_500 = require("@expo-google-fonts/schibsted-grotesk/500Medium/SchibstedGrotesk_500Medium.ttf");
+const SG_600 = require("@expo-google-fonts/schibsted-grotesk/600SemiBold/SchibstedGrotesk_600SemiBold.ttf");
+const SG_700 = require("@expo-google-fonts/schibsted-grotesk/700Bold/SchibstedGrotesk_700Bold.ttf");
+const SG_800 = require("@expo-google-fonts/schibsted-grotesk/800ExtraBold/SchibstedGrotesk_800ExtraBold.ttf");
 const NotoSansEthiopic_400Regular = require("@expo-google-fonts/noto-sans-ethiopic/400Regular/NotoSansEthiopic_400Regular.ttf");
 import * as Notifications from "expo-notifications";
 import { router, Stack } from "expo-router";
@@ -27,7 +27,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function Root() {
   const t = useTheme();
-  const [loaded] = useFonts({ PublicSans_400Regular, PublicSans_500Medium, PublicSans_600SemiBold, PublicSans_700Bold, PublicSans_800ExtraBold, NotoSansEthiopic_400Regular });
+  const [loaded] = useFonts({ SG_400, SG_500, SG_600, SG_700, SG_800, NotoSansEthiopic_400Regular });
   useEffect(() => { SystemUI.setBackgroundColorAsync(t.bg).catch(() => {}); }, [t.bg]);
   useEffect(() => { if (loaded) SplashScreen.hideAsync().catch(() => {}); }, [loaded]);
   useEffect(() => { if (Platform.OS === "web") { try { document.documentElement.lang = "de"; document.title = "Horn Lens"; } catch { /* egal */ } } }, []);

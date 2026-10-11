@@ -66,11 +66,12 @@ export function useTheme(): Theme & { dark: boolean } {
 }
 
 export const font = {
-  regular: "PublicSans_400Regular",
-  medium: "PublicSans_500Medium",
-  semibold: "PublicSans_600SemiBold",
-  bold: "PublicSans_700Bold",
-  black: "PublicSans_800ExtraBold",
+  // Schibsted Grotesk: Hausschrift eines skandinavischen Nachrichtenverlags, kräftig in Überschriften, ruhig im Text
+  regular: "SG_400",
+  medium: "SG_500",
+  semibold: "SG_600",
+  bold: "SG_700",
+  black: "SG_800",
   ethiopic: "NotoSansEthiopic_400Regular",
 };
 

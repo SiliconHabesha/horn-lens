@@ -54,3 +54,9 @@ Offen: Behauptung verfolgen mit eigener Benachrichtigung (braucht Server-Änderu
 - Meldungen: Filter eingeklappt, leere Regionen ausgeblendet.
 - Große Bildschirme: Navigation als Leiste links.
 - Benachrichtigungen öffnen jetzt die passende Messwert-Seite (Funktion notify v2).
+
+## Gestaltung (Runde 5, UI)
+- Schrift: Schibsted Grotesk (Hausschrift eines Nachrichtenverlags) für alles, Noto Sans Ethiopic für Ge'ez; Zahlen in Tabellenziffern.
+- Etiketten in normaler Schreibung statt Versalien; Listen stehen direkt auf der Seite, Karten nur für abgeschlossene Einheiten (Hinweise, Messwerte, Karte).
+- Erkennungszeichen: der Farbbalken „wer berichtet“. Die Lage beginnt mit „N Geschichten heute“ und diesem Balken über die volle Breite.
+- Farben unverändert sparsam: Farbe nur für Quellenart, Stufe und Warnung.

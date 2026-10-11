@@ -133,17 +133,17 @@ export default function Lage() {
           <SectionHead title="Eritrea" action="Alle" onAction={() => router.push("/news?region=eritrea")}
             sub={d.eritrea.length ? `${plural(d.eritrea.length, "Meldung", "Meldungen")} in ${plural(d.erStories.length, "Geschichte", "Geschichten")}, 24 Stunden. Meldungen sind keine geprüften Tatsachen.` : undefined} />
           {d.eritrea.length ? (
-            <Card style={{ paddingVertical: space.s }}>
-              <View style={{ paddingVertical: space.s }}><Voices items={d.eritrea} unit="Meldungen" /></View>
-              <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: t.rule, marginVertical: 4 }} />
+            <View>
+              <Voices items={d.eritrea} unit="Meldungen" />
+              <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: t.rule, marginTop: space.m }} />
               <StoryList stories={d.erStories} seenBefore={seenBefore} limit={5} />
-            </Card>
+            </View>
           ) : <Card><T v="small">Keine Meldungen zu Eritrea in den letzten 24 Stunden aus unseren Quellen. Das ist häufig: Aus dem Land dringen kaum unabhängige Nachrichten.</T></Card>}
         </>
       ) : (
         <>
           <SectionHead title="Rotes Meer" action="Alle" onAction={() => router.push("/news")} />
-          {d.redSea.length ? <Card style={{ paddingVertical: space.s }}><StoryList stories={d.redStories} limit={5} /></Card>
+          {d.redSea.length ? <StoryList stories={d.redStories} limit={5} />
             : <Card><T v="small">Keine Meldungen zum Roten Meer in den letzten 24 Stunden.</T></Card>}
         </>
       )}
@@ -152,7 +152,7 @@ export default function Lage() {
       {data.owner && d.top.length ? (
         <>
           <SectionHead title="Meistberichtet" action="Alle" onAction={() => router.push("/news")} sub="Geschichten, die mehrere Medien in 24 Stunden aufgreifen" />
-          <Card style={{ paddingVertical: space.s }}><StoryList stories={d.top} seenBefore={seenBefore} /></Card>
+          <StoryList stories={d.top} seenBefore={seenBefore} />
         </>
       ) : null}
 
@@ -234,23 +234,49 @@ export default function Lage() {
 }
 
 /** Was seit dem letzten Öffnen dazugekommen ist. Jede Zahl führt zur passenden Ansicht. */
+/** Kopf der Lage: wie viel heute berichtet wird und von welchen Seiten (das Kernbild von Horn Lens), darunter was seit dem letzten Besuch neu ist */
 function SinceCard({ seenBefore, first, counts }: { seenBefore: number; first: boolean; counts: readonly (readonly [number, string, string, string])[] }) {
   const t = useTheme();
-  const any = counts.some(([n]) => n > 0);
+  const { data } = useData();
+  const today = useMemo(() => {
+    if (!data) return null;
+    const st = storiesOf(data).filter((x) => Date.now() - new Date(x.last).getTime() < 24 * 3600e3);
+    const items = st.flatMap((x) => x.items.filter((i) => Date.now() - new Date(itemTime(i)).getTime() < 24 * 3600e3));
+    const media = new Map<string, string>();
+    for (const i of items) media.set(i.origin_domain || i.source_name, i.source_type);
+    const types: Record<string, number> = {};
+    for (const ty of media.values()) types[ty] = (types[ty] || 0) + 1;
+    return { stories: st.length, items: items.length, media: media.size, types, multi: st.filter((x) => x.sources > 1).length };
+  }, [data]);
+  const shown = counts.filter(([n]) => n > 0);
   return (
-    <Card style={{ marginBottom: space.m, backgroundColor: t.cardAlt, borderWidth: 0 }}>
-      <T v="label" color={t.muted}>{first ? "In den letzten 24 Stunden" : `Seit deinem letzten Besuch (${ago(seenBefore)})`}</T>
-      {any ? (
-        <View style={{ flexDirection: "row", gap: space.l, marginTop: 8, flexWrap: "wrap" }}>
-          {counts.filter(([n]) => n > 0).map(([n, one, many, to]) => (
-            <Pressable key={to + one} onPress={() => { tap(); router.push(to as any); }} accessibilityRole="button" accessibilityLabel={`${n} ${n === 1 ? one : many}`}
-              style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, minWidth: 64 })}>
-              <T v="h2" color={n ? t.ink : t.muted}>{num(n)}</T><T v="small">{n === 1 ? one : many}</T>
-            </Pressable>
-          ))}
-        </View>
-      ) : <T v="body" style={{ marginTop: 6 }}>Nichts Neues.</T>}
-    </Card>
+    <View style={{ marginBottom: space.l }}>
+      {today && today.items ? (
+        <Pressable onPress={() => { tap(); router.navigate("/news"); }} accessibilityRole="button"
+          accessibilityLabel={`Heute ${today.stories} Geschichten aus ${today.items} Meldungen von ${today.media} Medien. Öffnet die Meldungen.`}
+          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, gap: 10 })}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+            <T v="display" tabular style={{ fontSize: 48, lineHeight: 50, letterSpacing: -2 }}>{num(today.stories)}</T>
+            <View style={{ flex: 1 }}>
+              <T v="h3">{today.stories === 1 ? "Geschichte heute" : "Geschichten heute"}</T>
+              <T v="small">aus {plural(today.items, "Meldung", "Meldungen")} von {plural(today.media, "Medium", "Medien")}{today.multi ? `, ${today.multi} mehrfach berichtet` : ""}</T>
+            </View>
+          </View>
+          <Voices counts={today.types} unit="Medien" />
+        </Pressable>
+      ) : null}
+      <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8, marginTop: space.m }}>
+        <T v="caption">{first ? "Letzte 24 Stunden:" : `Seit deinem letzten Besuch (${ago(seenBefore)}):`}</T>
+        {shown.length ? shown.map(([n, one, many, to]) => (
+          <Pressable key={to + one} onPress={() => { tap(); router.push(to as any); }} accessibilityRole="button" accessibilityLabel={`${n} ${n === 1 ? one : many}`} hitSlop={6}
+            style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 10, minHeight: 32, borderRadius: 999,
+              backgroundColor: t.accent, opacity: pressed ? 0.7 : 1 })}>
+            <T v="smallStrong" color={t.accentInk} tabular>{num(n)}</T>
+            <T v="small" color={t.accentInk}>{n === 1 ? one : many}</T>
+          </Pressable>
+        )) : <T v="smallStrong">nichts Neues</T>}
+      </View>
+    </View>
   );
 }
 

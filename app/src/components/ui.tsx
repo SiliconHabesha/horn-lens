@@ -19,25 +19,26 @@ export async function openLink(url: string | null | undefined) {
 }
 
 type V = "display" | "title" | "h2" | "h3" | "body" | "bodyStrong" | "small" | "smallStrong" | "caption" | "label";
-const VAR: Record<V, { size: number; line: number; family: string; spacing?: number; upper?: boolean }> = {
-  display: { size: 34, line: 38, family: font.black, spacing: -0.8 },
-  title: { size: 26, line: 31, family: font.black, spacing: -0.5 },
-  h2: { size: 20, line: 25, family: font.bold, spacing: -0.3 },
-  h3: { size: 16, line: 21, family: font.semibold },
-  body: { size: 15.5, line: 22, family: font.regular },
-  bodyStrong: { size: 15.5, line: 22, family: font.semibold },
-  small: { size: 13.5, line: 19, family: font.regular },
-  smallStrong: { size: 13.5, line: 19, family: font.semibold },
-  caption: { size: 12, line: 16, family: font.medium },
-  label: { size: 11.5, line: 14, family: font.bold, spacing: 0.7, upper: true },
+// Schriftgrade: wenige, klar getrennte Stufen. Etiketten in normaler Schreibung statt Versalien.
+const VAR: Record<V, { size: number; line: number; family: string; spacing?: number }> = {
+  display: { size: 34, line: 38, family: font.black, spacing: -1 },
+  title: { size: 26, line: 31, family: font.black, spacing: -0.6 },
+  h2: { size: 20, line: 25, family: font.bold, spacing: -0.35 },
+  h3: { size: 16.5, line: 21, family: font.semibold, spacing: -0.1 },
+  body: { size: 16, line: 23, family: font.regular },
+  bodyStrong: { size: 16, line: 22, family: font.semibold, spacing: -0.1 },
+  small: { size: 14, line: 20, family: font.regular },
+  smallStrong: { size: 14, line: 20, family: font.semibold },
+  caption: { size: 12.5, line: 17, family: font.medium },
+  label: { size: 13, line: 17, family: font.semibold },
 };
-export function T({ v = "body", color, style, children, ...rest }: TextProps & { v?: V; color?: string }) {
+export function T({ v = "body", color, style, tabular, children, ...rest }: TextProps & { v?: V; color?: string; tabular?: boolean }) {
   const t = useTheme();
   const s = VAR[v];
   const muted = v === "small" || v === "caption";
   return (
     <Text {...rest} style={[{ fontSize: s.size, lineHeight: s.line, fontFamily: s.family, letterSpacing: s.spacing, color: color || (muted ? t.muted : t.ink),
-      textTransform: s.upper ? "uppercase" : undefined }, style]}>
+      fontVariant: tabular ? ["tabular-nums"] : undefined }, style]}>
       {children}
     </Text>
   );
