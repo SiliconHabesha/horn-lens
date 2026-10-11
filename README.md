@@ -18,7 +18,7 @@ Horn Lens gibt es jetzt als echte App für iPhone und Android, gebaut mit Expo i
 - **Anmeldung:** Ohne Anmeldung zeigt die Handy-App die offene Ausgabe: Messwerte, Satellit und Rotes Meer. Mit deinem Konto siehst du alles und kannst Behauptungen pflegen. Die Datenbank prüft das (siehe `supabase/app_access.md`).
 - **Benachrichtigungen:** Hinweise (Vorfälle auf See, starke Erdbeben, Internet-Einbrüche, viele Meldungen zu Eritrea) und der Tagesbericht. Sie funktionieren erst in der Store-Fassung, siehe `app/STORE.md`.
 - **KI-Zusammenfassung:** bleibt kostenlos in Claude (Horn Lens in Claude); die App verlinkt dorthin.
-- **Web-Fassung:** liegt fertig gebaut vor. Sie ist privat: ohne Anmeldung zeigt sie nur den Anmeldebildschirm und wird nicht von Suchmaschinen erfasst. Online geht sie über Vercel, sobald das GitHub-Projekt `horn-lens` angelegt ist.
+- **Web-Fassung:** https://horn-lens.vercel.app. Sie ist privat: ohne Anmeldung zeigt sie nur den Anmeldebildschirm und wird nicht von Suchmaschinen erfasst. Der Code liegt im privaten GitHub-Projekt `SiliconHabesha/horn-lens`. Jede Änderung dort geht automatisch online; die Bauanleitung steht in `vercel.json` im Hauptordner.
 - **Dein Konto:** Lege es einmal in der Web-Fassung unter „Konto anlegen“ an, mit deiner E-Mail-Adresse, für die der Zugang freigeschaltet ist. Dann den Link in der Bestätigungs-E-Mail öffnen. Zeigt der Link danach eine Fehlerseite, ist die Bestätigung trotzdem erledigt. Damit er künftig auf Horn Lens führt, in Supabase → Authentication → URL Configuration die Site URL auf die Web-Adresse setzen.
 - **In die Stores:** Schritt für Schritt in `app/STORE.md`, mit Store-Texten und Angaben für die Prüfung.
 - **Prüfen:** `cd app && npm run web:build`, danach `python3 tests/app_test.py`
