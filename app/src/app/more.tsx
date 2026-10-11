@@ -80,6 +80,10 @@ export default function More() {
       <Card style={{ paddingVertical: 4 }}>
         <Row icon="library-outline" title="Unsere Quellen" sub="Wer berichtet, wie wir sie einordnen, ob sie erreichbar sind" onPress={() => router.push("/sources")} />
         <Divider />
+        <Row icon="book-outline" title="Einführung und Legende" sub="Farben der Quellen, Stufen der Behauptungen" onPress={() => router.push("/welcome")} />
+        <Divider />
+        <Row icon="bookmark-outline" title="Gemerkte Meldungen" sub="Nur auf diesem Gerät" onPress={() => router.navigate(`/news?mode=saved&k=${Date.now()}`)} />
+        <Divider />
         <Row icon="compass-outline" title="So arbeitet Horn Lens" sub="Regeln, Grenzen, Nachweise" onPress={() => router.push("/method")} />
         <Divider />
         <Row icon="people-outline" title="BELES" sub="Die App für Eritreerinnen und Eritreer weltweit" onPress={() => openLink(BELES_URL)} external />
@@ -90,6 +94,8 @@ export default function More() {
         <Row icon="document-outline" title="Impressum" onPress={() => openLink(`${WEB_URL}/impressum.html`)} external />
         <Divider />
         <Row icon="lock-closed-outline" title="Datenschutz" onPress={() => openLink(`${WEB_URL}/datenschutz.html`)} external />
+        <Divider />
+        <Row icon="mail-outline" title="Kontakt" sub="info@beles.app" onPress={() => openLink("mailto:info@beles.app?subject=Horn%20Lens")} external />
       </Card>
       <T v="caption" style={{ textAlign: "center", marginTop: space.xl }}>Horn Lens {Constants.expoConfig?.version || ""} · powered by BELES</T>
     </Screen>

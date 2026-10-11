@@ -1,0 +1,660 @@
+[
+{
+"id": 6173,
+"title": "At least 139 people dead after migrant boat capsizes off Djibouti",
+"url": "https://example.org/6173",
+"language": "en",
+"regions": [
+"horn",
+"ethiopia"
+],
+"origin_domain": "Africanews",
+"published_at": "2026-10-11T15:19:39Z",
+"fetched_at": "2026-10-11T15:19:39Z",
+"source_id": "africanews",
+"source_name": "Africanews",
+"source_type": "international"
+},
+{
+"id": 6065,
+"title": "Ethiopia, Eritrea ramp up rhetoric: Are they inching towards war?",
+"url": "https://example.org/6065",
+"language": "en",
+"regions": [
+"eritrea",
+"ethiopia",
+"tigray"
+],
+"origin_domain": "Al Jazeera English",
+"published_at": "2026-10-11T14:09:12Z",
+"fetched_at": "2026-10-11T14:09:12Z",
+"source_id": "al",
+"source_name": "Al Jazeera English",
+"source_type": "international"
+},
+{
+"id": 5947,
+"title": "Eritrea uges United Nations to intervene in standoff with Ethiopia",
+"url": "https://example.org/5947",
+"language": "en",
+"regions": [
+"eritrea",
+"ethiopia",
+"tigray"
+],
+"origin_domain": "Africanews",
+"published_at": "2026-10-11T13:20:43Z",
+"fetched_at": "2026-10-11T13:20:43Z",
+"source_id": "africanews",
+"source_name": "Africanews",
+"source_type": "international"
+},
+{
+"id": 5861,
+"title": "A migrant boat sank off the coast of Djibouti with the UN reporting over 200 people dead or missing",
+"url": "https://example.org/5861",
+"language": "en",
+"regions": [
+"horn",
+"ethiopia"
+],
+"origin_domain": "DW – Africa",
+"published_at": "2026-10-11T11:35:00Z",
+"fetched_at": "2026-10-11T11:35:00Z",
+"source_id": "dw",
+"source_name": "DW – Africa",
+"source_type": "international"
+},
+{
+"id": 5725,
+"title": "At least 109 dead, over 100 missing as migrant boat capsizes off Djibouti",
+"url": "https://example.org/5725",
+"language": "en",
+"regions": [
+"horn"
+],
+"origin_domain": "Al Jazeera English",
+"published_at": "2026-10-11T11:34:40Z",
+"fetched_at": "2026-10-11T11:34:40Z",
+"source_id": "al",
+"source_name": "Al Jazeera English",
+"source_type": "international"
+},
+{
+"id": 5470,
+"title": "At least 109 migrants dead, more than 100 missing after boat capsizes off Djibouti",
+"url": "https://example.org/5470",
+"language": "en",
+"regions": [
+"horn"
+],
+"origin_domain": "France 24 – Africa",
+"published_at": "2026-10-11T09:24:40Z",
+"fetched_at": "2026-10-11T09:24:40Z",
+"source_id": "france",
+"source_name": "France 24 – Africa",
+"source_type": "international"
+},
+{
+"id": 4946,
+"title": "Tiff over Nile adds to Red Sea access frictions",
+"url": "https://example.org/4946",
+"language": "en",
+"regions": [
+"red_sea"
+],
+"origin_domain": "The EastAfrican",
+"published_at": "2026-10-11T04:00:00Z",
+"fetched_at": "2026-10-11T04:00:00Z",
+"source_id": "the",
+"source_name": "The EastAfrican",
+"source_type": "international"
+},
+{
+"id": 3749,
+"title": "Eritrea urges UN deterrence measures against Ethiopia",
+"url": "https://example.org/3749",
+"language": "en",
+"regions": [
+"eritrea",
+"ethiopia",
+"tigray"
+],
+"origin_domain": "DW – Africa",
+"published_at": "2026-10-10T18:32:00Z",
+"fetched_at": "2026-10-10T18:32:00Z",
+"source_id": "dw",
+"source_name": "DW – Africa",
+"source_type": "international"
+},
+{
+"id": 3505,
+"title": "Celebrations in Ethiopian city after reported Eritrean ‘incursion’",
+"url": "https://example.org/3505",
+"language": "en",
+"regions": [
+"eritrea",
+"ethiopia"
+],
+"origin_domain": "Al Jazeera English",
+"published_at": "2026-10-10T16:54:56Z",
+"fetched_at": "2026-10-10T16:54:56Z",
+"source_id": "al",
+"source_name": "Al Jazeera English",
+"source_type": "international"
+},
+{
+"id": 3406,
+"title": "Eritrea urges UN to intervene in standoff with Ethiopia",
+"url": "https://example.org/3406",
+"language": "en",
+"regions": [
+"eritrea",
+"ethiopia"
+],
+"origin_domain": "Al Jazeera English",
+"published_at": "2026-10-10T16:41:25Z",
+"fetched_at": "2026-10-10T16:41:25Z",
+"source_id": "al",
+"source_name": "Al Jazeera English",
+"source_type": "international"
+},
+{
+"id": 3273,
+"title": "Seminar on workplace safety in Southern Red Sea Region",
+"url": "https://example.org/3273",
+"language": "en",
+"regions": [
+"eritrea",
+"red_sea"
+],
+"origin_domain": "Shabait (Eritrean Ministry of Information)",
+"published_at": "2026-10-10T15:31:56Z",
+"fetched_at": "2026-10-10T15:31:56Z",
+"source_id": "shabait",
+"source_name": "Shabait (Eritrean Ministry of Information)",
+"source_type": "government_er"
+},
+{
+"id": 3032,
+"title": "መልእኽቲ ሚኒስተር ጉዳያት ወጻኢ ኣቶ ዑስማን ሳልሕ፡ ናብ ባይቶ ጸጥታ ሕቡራት ሃገራት",
+"url": "https://example.org/3032",
+"language": "en",
+"regions": [
+"eritrea",
+"ethiopia"
+],
+"origin_domain": "Shabait (Eritrean Ministry of Information)",
+"published_at": "2026-10-10T13:50:42Z",
+"fetched_at": "2026-10-10T13:50:42Z",
+"source_id": "shabait",
+"source_name": "Shabait (Eritrean Ministry of Information)",
+"source_type": "government_er"
+},
+{
+"id": 2927,
+"title": "Eritrea: Foreign Minister Osman Saleh Sends Letter to the UN Security Council",
+"url": "https://example.org/2927",
+"language": "en",
+"regions": [
+"eritrea"
+],
+"origin_domain": "Shabait (Eritrean Ministry of Information)",
+"published_at": "2026-10-10T12:28:26Z",
+"fetched_at": "2026-10-10T12:28:26Z",
+"source_id": "shabait",
+"source_name": "Shabait (Eritrean Ministry of Information)",
+"source_type": "government_er"
+},
+{
+"id": 2723,
+"title": "In three years, Israel's war on Gaza hasn't just changed the Middle East, it's changed the world | Steve Bloomfield",
+"url": "https://example.org/2723",
+"language": "en",
+"regions": [],
+"origin_domain": "The Guardian – Ethiopia",
+"published_at": "2026-10-10T12:00:56Z",
+"fetched_at": "2026-10-10T12:00:56Z",
+"source_id": "the",
+"source_name": "The Guardian – Ethiopia",
+"source_type": "international"
+},
+{
+"id": 2493,
+"title": "Ethiopia Accuses Eritrea of Military Incursions across Three Tigray Zones",
+"url": "https://example.org/2493",
+"language": "en",
+"regions": [
+"eritrea",
+"tigray",
+"ethiopia"
+],
+"origin_domain": "The Reporter (Ethiopia)",
+"published_at": "2026-10-10T08:40:50Z",
+"fetched_at": "2026-10-10T08:40:50Z",
+"source_id": "the",
+"source_name": "The Reporter (Ethiopia)",
+"source_type": "ethiopian_independent"
+},
+{
+"id": 2494,
+"title": "National Unity Vital To Defending Sovereignty From Foreign Aggression",
+"url": "https://example.org/2494",
+"language": "en",
+"regions": [
+"eritrea",
+"ethiopia"
+],
+"origin_domain": "The Reporter (Ethiopia)",
+"published_at": "2026-10-10T08:09:55Z",
+"fetched_at": "2026-10-10T08:09:55Z",
+"source_id": "the",
+"source_name": "The Reporter (Ethiopia)",
+"source_type": "ethiopian_independent"
+},
+{
+"id": 2292,
+"title": "Frontline Reshuffle: How the Red Sea Shadow Is Reigniting Ethio-Eritrea Border Friction",
+"url": "https://example.org/2292",
+"language": "en",
+"regions": [
+"eritrea",
+"red_sea",
+"tigray",
+"ethiopia"
+],
+"origin_domain": "The Reporter (Ethiopia)",
+"published_at": "2026-10-10T07:24:12Z",
+"fetched_at": "2026-10-10T07:24:12Z",
+"source_id": "the",
+"source_name": "The Reporter (Ethiopia)",
+"source_type": "ethiopian_independent"
+},
+{
+"id": 2293,
+"title": "From Pretoria to the Red Sea:",
+"url": "https://example.org/2293",
+"language": "en",
+"regions": [
+"red_sea",
+"ethiopia"
+],
+"origin_domain": "The Reporter (Ethiopia)",
+"published_at": "2026-10-10T07:19:05Z",
+"fetched_at": "2026-10-10T07:19:05Z",
+"source_id": "the",
+"source_name": "The Reporter (Ethiopia)",
+"source_type": "ethiopian_independent"
+},
+{
+"id": 2050,
+"title": "How the Houthi-Saudi conflict is affecting countries on Africa's Red Sea coast — and beyond",
+"url": "https://example.org/2050",
+"language": "en",
+"regions": [
+"red_sea"
+],
+"origin_domain": "DW – Africa",
+"published_at": "2026-10-10T06:10:00Z",
+"fetched_at": "2026-10-10T06:10:00Z",
+"source_id": "dw",
+"source_name": "DW – Africa",
+"source_type": "international"
+},
+{
+"id": 2388,
+"title": "Ethiopia, Eritrea draw battle lines as crisis deepens",
+"url": "https://example.org/2388",
+"language": "en",
+"regions": [
+"eritrea",
+"ethiopia"
+],
+"origin_domain": "The EastAfrican",
+"published_at": "2026-10-10T06:00:00Z",
+"fetched_at": "2026-10-10T06:00:00Z",
+"source_id": "the",
+"source_name": "The EastAfrican",
+"source_type": "international"
+},
+{
+"id": 132,
+"title": "what’s in a name? Dori Barentu Debra Soira",
+"url": "https://example.org/132",
+"language": "en",
+"regions": [
+"eritrea"
+],
+"origin_domain": "Awate.com",
+"published_at": "2026-10-09T19:46:04Z",
+"fetched_at": "2026-10-09T19:46:04Z",
+"source_id": "awate.com",
+"source_name": "Awate.com",
+"source_type": "exile"
+},
+{
+"id": 814,
+"title": "Drone strike kills 30 people in Sudan’s Blue Nile region",
+"url": "https://example.org/814",
+"language": "en",
+"regions": [
+"horn"
+],
+"origin_domain": "Al Jazeera English",
+"published_at": "2026-10-09T17:19:43Z",
+"fetched_at": "2026-10-09T17:19:43Z",
+"source_id": "al",
+"source_name": "Al Jazeera English",
+"source_type": "international"
+},
+{
+"id": 310,
+"title": "Vessel Struck by Unknown Projectile Off UAE Coast Amid Surge in Attacks, UKMTO Says",
+"url": "https://example.org/310",
+"language": "en",
+"regions": [],
+"origin_domain": "gCaptain",
+"published_at": "2026-10-09T16:37:26Z",
+"fetched_at": "2026-10-09T16:37:26Z",
+"source_id": "gcaptain",
+"source_name": "gCaptain",
+"source_type": "international"
+},
+{
+"id": 291,
+"title": "South Sudan breaks ground for Naivasha dry port",
+"url": "https://example.org/291",
+"language": "en",
+"regions": [],
+"origin_domain": "The EastAfrican",
+"published_at": "2026-10-09T16:15:00Z",
+"fetched_at": "2026-10-09T16:15:00Z",
+"source_id": "the",
+"source_name": "The EastAfrican",
+"source_type": "international"
+},
+{
+"id": 749,
+"title": "Eritrean troops in Ethiopia raise fears of a regional war",
+"url": "https://example.org/749",
+"language": "en",
+"regions": [
+"eritrea",
+"ethiopia",
+"tigray"
+],
+"origin_domain": "DW – Africa",
+"published_at": "2026-10-09T15:20:00Z",
+"fetched_at": "2026-10-09T15:20:00Z",
+"source_id": "dw",
+"source_name": "DW – Africa",
+"source_type": "international"
+},
+{
+"id": 300,
+"title": "Addis Ababa Shares Early Childhood Development Model with Nigerian Delegation Led by Vice President Shettima",
+"url": "https://example.org/300",
+"language": "en",
+"regions": [],
+"origin_domain": "Fana Broadcasting (English)",
+"published_at": "2026-10-09T14:27:15Z",
+"fetched_at": "2026-10-09T14:27:15Z",
+"source_id": "fana",
+"source_name": "Fana Broadcasting (English)",
+"source_type": "progov_et"
+},
+{
+"id": 23,
+"title": "Ethiopia and Eritrea accuse one another of launching war",
+"url": "https://example.org/23",
+"language": "en",
+"regions": [
+"eritrea",
+"tigray",
+"ethiopia"
+],
+"origin_domain": "Al Jazeera English",
+"published_at": "2026-10-09T14:11:50Z",
+"fetched_at": "2026-10-09T14:11:50Z",
+"source_id": "al",
+"source_name": "Al Jazeera English",
+"source_type": "international"
+},
+{
+"id": 301,
+"title": "A CURSE ON ETHIOPIA, A TRAGEDY FOR THE TIGRAY PEOPLE, A CANKER EATING AT THE HORN OF AFRICA",
+"url": "https://example.org/301",
+"language": "en",
+"regions": [
+"tigray",
+"ethiopia",
+"horn"
+],
+"origin_domain": "Fana Broadcasting (English)",
+"published_at": "2026-10-09T14:09:25Z",
+"fetched_at": "2026-10-09T14:09:25Z",
+"source_id": "fana",
+"source_name": "Fana Broadcasting (English)",
+"source_type": "progov_et"
+},
+{
+"id": 24,
+"title": "Ethiopia and Eritrea trade war accusations as regional conflict threatens to escalate",
+"url": "https://example.org/24",
+"language": "en",
+"regions": [
+"eritrea",
+"ethiopia"
+],
+"origin_domain": "Africanews",
+"published_at": "2026-10-09T14:08:43Z",
+"fetched_at": "2026-10-09T14:08:43Z",
+"source_id": "africanews",
+"source_name": "Africanews",
+"source_type": "international"
+},
+{
+"id": 25,
+"title": "Ethiopian Airlines to resume flights to Tigray's capital from Sunday",
+"url": "https://example.org/25",
+"language": "en",
+"regions": [
+"tigray",
+"ethiopia"
+],
+"origin_domain": "Africanews",
+"published_at": "2026-10-09T13:59:25Z",
+"fetched_at": "2026-10-09T13:59:25Z",
+"source_id": "africanews",
+"source_name": "Africanews",
+"source_type": "international"
+},
+{
+"id": 302,
+"title": "THE TIGRAY PEOPLE’S NAME, ASMARA’S GAME, CAIRO’S GAIN",
+"url": "https://example.org/302",
+"language": "en",
+"regions": [
+"eritrea",
+"tigray"
+],
+"origin_domain": "Fana Broadcasting (English)",
+"published_at": "2026-10-09T13:44:49Z",
+"fetched_at": "2026-10-09T13:44:49Z",
+"source_id": "fana",
+"source_name": "Fana Broadcasting (English)",
+"source_type": "progov_et"
+},
+{
+"id": 292,
+"title": "South Sudan denies plan to eject foreign traders",
+"url": "https://example.org/292",
+"language": "en",
+"regions": [],
+"origin_domain": "The EastAfrican",
+"published_at": "2026-10-09T11:45:00Z",
+"fetched_at": "2026-10-09T11:45:00Z",
+"source_id": "the",
+"source_name": "The EastAfrican",
+"source_type": "international"
+},
+{
+"id": 26,
+"title": "Over 20,000 Ethiopian Migrants cross into Djibouti in three weeks",
+"url": "https://example.org/26",
+"language": "en",
+"regions": [
+"ethiopia",
+"horn"
+],
+"origin_domain": "Africanews",
+"published_at": "2026-10-09T11:42:10Z",
+"fetched_at": "2026-10-09T11:42:10Z",
+"source_id": "africanews",
+"source_name": "Africanews",
+"source_type": "international"
+},
+{
+"id": 231,
+"title": "Eritrea and Ethiopia accuse each other of provoking war as Tigray rebels retreat",
+"url": "https://example.org/231",
+"language": "en",
+"regions": [
+"eritrea",
+"tigray",
+"ethiopia"
+],
+"origin_domain": "France 24 – Africa",
+"published_at": "2026-10-09T11:36:58Z",
+"fetched_at": "2026-10-09T11:36:58Z",
+"source_id": "france",
+"source_name": "France 24 – Africa",
+"source_type": "international"
+},
+{
+"id": 303,
+"title": "FROM INVASION TO PROXIES: Egypt’s Enduring Campaign Against Ethiopia",
+"url": "https://example.org/303",
+"language": "en",
+"regions": [
+"ethiopia"
+],
+"origin_domain": "Fana Broadcasting (English)",
+"published_at": "2026-10-09T11:22:33Z",
+"fetched_at": "2026-10-09T11:22:33Z",
+"source_id": "fana",
+"source_name": "Fana Broadcasting (English)",
+"source_type": "progov_et"
+},
+{
+"id": 306,
+"title": "Ethiopian Airlines to Resume Regular Flights to Mekelle on October 11",
+"url": "https://example.org/306",
+"language": "en",
+"regions": [
+"tigray",
+"ethiopia"
+],
+"origin_domain": "Fana Broadcasting (English)",
+"published_at": "2026-10-09T10:22:37Z",
+"fetched_at": "2026-10-09T10:22:37Z",
+"source_id": "fana",
+"source_name": "Fana Broadcasting (English)",
+"source_type": "progov_et"
+},
+{
+"id": 173,
+"title": "UN Deputy Chief Calls for Respecting Ethiopia’s Sovereignty as Eritrea Border Tensions Flare",
+"url": "https://example.org/173",
+"language": "en",
+"regions": [
+"eritrea",
+"ethiopia"
+],
+"origin_domain": "The Reporter (Ethiopia)",
+"published_at": "2026-10-09T08:20:52Z",
+"fetched_at": "2026-10-09T08:20:52Z",
+"source_id": "the",
+"source_name": "The Reporter (Ethiopia)",
+"source_type": "ethiopian_independent"
+},
+{
+"id": 28,
+"title": "Ethiopian drones strike Eritrean forces near Adigrat",
+"url": "https://example.org/28",
+"language": "en",
+"regions": [
+"eritrea",
+"tigray",
+"ethiopia"
+],
+"origin_domain": "Africanews",
+"published_at": "2026-10-09T08:17:38Z",
+"fetched_at": "2026-10-09T08:17:38Z",
+"source_id": "africanews",
+"source_name": "Africanews",
+"source_type": "international"
+},
+{
+"id": 27,
+"title": "Tigray war: Why peace talks may fail before they even begin {Africanews Debates}",
+"url": "https://example.org/27",
+"language": "en",
+"regions": [
+"tigray",
+"ethiopia"
+],
+"origin_domain": "Africanews",
+"published_at": "2026-10-09T07:52:38Z",
+"fetched_at": "2026-10-09T07:52:38Z",
+"source_id": "africanews",
+"source_name": "Africanews",
+"source_type": "international"
+},
+{
+"id": 1,
+"title": "ርእሰ ዓንቀጽ – ልኡላዊ ግዝኣት ኤርትራ፡ ብደምን ብሕግን ዝተሓጽረ ቀይሕ መስመር!",
+"url": "https://example.org/1",
+"language": "en",
+"regions": [
+"eritrea",
+"ethiopia"
+],
+"origin_domain": "Shabait (Eritrean Ministry of Information)",
+"published_at": "2026-10-09T06:16:19Z",
+"fetched_at": "2026-10-09T06:16:19Z",
+"source_id": "shabait",
+"source_name": "Shabait (Eritrean Ministry of Information)",
+"source_type": "government_er"
+},
+{
+"id": 2,
+"title": "Vocational training for youth in Central Region",
+"url": "https://example.org/2",
+"language": "en",
+"regions": [
+"eritrea"
+],
+"origin_domain": "Shabait (Eritrean Ministry of Information)",
+"published_at": "2026-10-09T04:20:56Z",
+"fetched_at": "2026-10-09T04:20:56Z",
+"source_id": "shabait",
+"source_name": "Shabait (Eritrean Ministry of Information)",
+"source_type": "government_er"
+},
+{
+"id": 11,
+"title": "A Voice of Our Own",
+"url": "https://example.org/11",
+"language": "en",
+"regions": [
+"eritrea"
+],
+"origin_domain": "Awate.com",
+"published_at": "2026-10-08T18:51:39Z",
+"fetched_at": "2026-10-08T18:51:39Z",
+"source_id": "awate.com",
+"source_name": "Awate.com",
+"source_type": "exile"
+}
+]

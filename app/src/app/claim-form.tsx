@@ -16,7 +16,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 export default function ClaimForm() {
   const t = useTheme();
-  const p = useLocalSearchParams<{ mode?: string; id?: string }>();
+  const p = useLocalSearchParams<{ mode?: string; id?: string; src_title?: string; src_url?: string }>();
   const mode = (p.mode === "edit" || p.mode === "status" ? p.mode : "add") as "add" | "edit" | "status";
   const { data, refresh } = useData();
   const claim = data?.claims.find((c) => String(c.id) === String(p.id));
@@ -31,7 +31,8 @@ export default function ClaimForm() {
   const [party, setParty] = useState(!!claim?.party_claim);
   const [status, setStatus] = useState(claim?.status || "unconfirmed");
   const [note, setNote] = useState("");
-  const [sources, setSources] = useState<Src[]>([{ title: "", url: "" }, { title: "", url: "" }]);
+  // Aus einer Meldung angelegt: die Meldung ist schon als erste Quelle eingetragen
+  const [sources, setSources] = useState<Src[]>([{ title: p.src_title || "", url: p.src_url || "" }, { title: "", url: "" }]);
   const [admission, setAdmission] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [unsure, setUnsure] = useState(false);

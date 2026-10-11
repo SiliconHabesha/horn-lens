@@ -49,6 +49,13 @@ items = [it(1, "Eritrean troops reported near Adigrat as tensions rise", ["eritr
   it(7, "Ethiopia says it will not accept Eritrean troop presence", ["ethiopia", "eritrea"], "Fana Broadcasting (English)", "fana", "progov_et", 10),
   it(8, "Afar region reports displacement after clashes", ["afar"], "Human Rights Watch", "hrw", "un_ngo", 30),
   it(9, "Red Sea shipping insurance rates climb again", ["red_sea"], "DW – Africa", "dw", "international", 40)]
+# Echte Schlagzeilen (Oktober 2026) für Geschichten, zeitlich so verschoben, dass die neueste vor einer halben Stunde erschien
+REAL = json.load(open(ROOT / "tests" / "fixtures" / "real_items.json"))
+_newest = max(time.mktime(time.strptime(x["published_at"], "%Y-%m-%dT%H:%M:%SZ")) for x in REAL)
+for x in REAL:
+    h = (_newest - time.mktime(time.strptime(x["published_at"], "%Y-%m-%dT%H:%M:%SZ"))) / 3600 + 0.5
+    x["published_at"] = x["fetched_at"] = iso(h); x["id"] += 100000
+items = items + REAL
 ev = lambda h, st, note, srcs: {"at": iso(h), "status": st, "note": note, "source_title": srcs[0][0] if srcs else None, "source_url": srcs[0][1] if srcs else None,
   "extra": [{"title": a, "url": b} for a, b in srcs[1:]], "admission": False}
 claims = [
@@ -118,12 +125,18 @@ with sync_playwright() as p:
             ctx = b.new_context(viewport={"width": vw, "height": vh}, device_scale_factor=2 if tag == "mob" else 1, locale="de-DE", timezone_id="Europe/Berlin",
                                 color_scheme="dark" if (mode == "owner" and tag == "desk") else "light")
             if mode == "owner":
-                ctx.add_init_script(f"localStorage.setItem('sb-mkcaioabbzccawjmtndw-auth-token', {json.dumps(json.dumps(SESSION))}); localStorage.setItem('hl:seen:v1', String(Date.now() - 4*3600e3));")
+                ctx.add_init_script(f"localStorage.setItem('sb-mkcaioabbzccawjmtndw-auth-token', {json.dumps(json.dumps(SESSION))}); localStorage.setItem('hl:seen:v1', String(Date.now() - 4*3600e3));" + ("" if tag == "mob" else "localStorage.setItem('hl:welcome:v1', '1');"))
             ctx.route("**/*.supabase.co/**", route)
             pg = ctx.new_page(); errs = []
             pg.on("pageerror", lambda e: errs.append(str(e)))
             pg.on("console", lambda m: m.type == "error" and errs.append(m.text))
             pre = f"{mode}-{tag}"
+            def scrolls(name, n=3):
+                # Innen scrollende Bildschirme Stück für Stück aufnehmen
+                for k in range(1, n + 1):
+                    pg.evaluate("(k) => { const els = [...document.querySelectorAll('div')].filter(e => e.scrollHeight > e.clientHeight + 20 && getComputedStyle(e).overflowY !== 'visible' && e.clientHeight > 300); const el = els[els.length - 1]; if (el) el.scrollTop = k * el.clientHeight * 0.85; }", k)
+                    pg.wait_for_timeout(300)
+                    pg.screenshot(path=str(SHOTS / f"{pre}-{name}-{k}.png"))
             def shot(name, path=None, wait=1200, full=False):
                 if path is not None: pg.goto(f"http://127.0.0.1:{PORT}{path}")
                 pg.wait_for_timeout(wait)
@@ -134,9 +147,28 @@ with sync_playwright() as p:
                 R[f"{pre} gate"] = pg.evaluate("document.body.innerText").replace("\n", " | ")[:200]
                 R[f"{pre} errors"] = errs[:5]
                 ctx.close(); continue
+            if mode == "owner" and tag == "mob":
+                # Erster Start: Einführung erscheint, drei Seiten, dann zurück zur Lage
+                pg.goto(f"http://127.0.0.1:{PORT}/"); pg.wait_for_timeout(2500)
+                shot("welcome1", None, 300)
+                R[f"{pre} welcome"] = pg.evaluate("document.body.innerText").replace("\n", " | ")[:160]
+                pg.get_by_text("Weiter", exact=True).click(); pg.wait_for_timeout(700); shot("welcome2", None, 200)
+                pg.get_by_text("Weiter", exact=True).click(); pg.wait_for_timeout(700); shot("welcome3", None, 200)
+                pg.get_by_text("Los geht’s", exact=True).click(); pg.wait_for_timeout(900)
+                R[f"{pre} after welcome"] = pg.evaluate("[location.pathname, localStorage.getItem('hl:welcome:v1')]")
             shot("lage", "/", 2500)
+            if tag == "mob": scrolls("lage", 4)
             R[f"{pre} lage text"] = pg.evaluate("document.body.innerText").replace("\n", " | ")[:400]
-            shot("news", "/news")
+            shot("news", "/news", 1500)
+            R[f"{pre} news text"] = pg.evaluate("document.body.innerText").replace("\n", " | ")[:300]
+            if mode == "owner":
+                shot("news-items", None, 100)
+                shot("story", f"/item/{6173 + 100000}", 1500)
+                R[f"{pre} story text"] = pg.evaluate("document.body.innerText").replace("\n", " | ")[:700]
+                if tag == "mob": scrolls("story", 2)
+                pg.get_by_label("Merken", exact=True).first.click(); pg.wait_for_timeout(400)
+                shot("saved", "/news?mode=saved", 1500)
+                R[f"{pre} saved text"] = pg.evaluate("document.body.innerText").replace("\n", " | ")[:200]
             if mode == "owner":
                 shot("claims", "/claims")
                 shot("claim", "/claim/4")
@@ -147,6 +179,17 @@ with sync_playwright() as p:
             # Markierung antippen: Assab
             box = pg.evaluate("(() => { const s = [...document.querySelectorAll('svg')].find(x => x.getAttribute('viewBox') && x.getBoundingClientRect().width > 300); const r = s.getBoundingClientRect(); return [r.x, r.y, r.width, r.height, s.getAttribute('viewBox')]; })()")
             R[f"{pre} map box"] = box
+            # Zoomen mit dem Mausrad über Asmara, dann eine Markierung antippen
+            pg.mouse.move(box[0] + box[2] * 0.45, box[1] + box[3] * 0.35)
+            for _ in range(3): pg.mouse.wheel(0, -200); pg.wait_for_timeout(250)
+            pg.wait_for_timeout(600)
+            R[f"{pre} map zoomed viewBox"] = pg.evaluate("(() => { const s = [...document.querySelectorAll('svg')].find(x => x.getAttribute('viewBox') && x.getBoundingClientRect().width > 300); return s.getAttribute('viewBox'); })()")
+            shot("map-zoom", None, 200)
+            # Ziehen verschiebt den Ausschnitt
+            pg.mouse.move(box[0] + box[2] * 0.5, box[1] + box[3] * 0.5); pg.mouse.down(); pg.mouse.move(box[0] + box[2] * 0.3, box[1] + box[3] * 0.4, steps=8); pg.mouse.up()
+            pg.wait_for_timeout(500)
+            R[f"{pre} map dragged viewBox"] = pg.evaluate("(() => { const s = [...document.querySelectorAll('svg')].find(x => x.getAttribute('viewBox') && x.getBoundingClientRect().width > 300); return s.getAttribute('viewBox'); })()")
+            pg.get_by_label("Ganze Karte").click(); pg.wait_for_timeout(500)
             shot("satellite", "/satellite", 2500)
             shot("more", "/more")
             if mode == "owner" and tag == "mob":

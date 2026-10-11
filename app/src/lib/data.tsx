@@ -7,7 +7,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { addTexts, de, deDates, resetTexts } from "./de";
 import { refreshPushOwner } from "./push";
 import { sb } from "./supabase";
-import type { Alert, Claim, Data, Report } from "./types";
+import type { Alert, Claim, Data, Item, Report } from "./types";
 
 const firmsUrl = (lat: number, lon: number) => `https://firms.modaps.eosdis.nasa.gov/map/#d:24hrs;@${lon},${lat},10z`;
 const platformOf = (item: string) => (/^S2([A-D])_/.test(item || "") ? `Sentinel-2${item[2]}` : "Sentinel-2");
@@ -122,7 +122,11 @@ type Ctx = {
   session: Session | null;
   authReady: boolean;
   seenBefore: number;          // Zeitpunkt des vorigen Besuchs: alles danach gilt als neu
+  firstVisit: boolean;         // erster Start auf diesem Gerät: dann zählen die letzten 24 Stunden als neu
   recovery: boolean;           // über den Link "Passwort vergessen" gekommen: neues Passwort setzen
+  saved: Item[];               // gemerkte Meldungen (nur auf diesem Gerät, je Konto, beim Abmelden gelöscht)
+  isSaved: (it: Item) => boolean;
+  toggleSaved: (it: Item) => void;
   endRecovery: () => void;
   refresh: () => Promise<void>;
 };
@@ -133,6 +137,8 @@ async function clearCaches() {
   try { const keys = (await AsyncStorage.getAllKeys()).filter((k) => k.startsWith("hl:cache:")); if (keys.length) await AsyncStorage.multiRemove(keys); } catch { /* egal */ }
 }
 const SEEN = "hl:seen:v1";
+// Gemerkte Meldungen liegen unter "hl:cache:", damit sie beim Abmelden mit gelöscht werden
+const SAVED = (uid: string | null) => `hl:cache:saved:${uid || "public"}`;
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const [data, setData] = useState<Data | null>(null);
@@ -144,8 +150,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [seenBefore, setSeenBefore] = useState<number>(Date.now());
+  const [firstVisit, setFirstVisit] = useState(false);
   const [recovery, setRecovery] = useState(false);
   const token = useRef(0);
+  const [saved, setSaved] = useState<Item[]>([]);
 
   const uid = session?.user?.id ?? null;
   useEffect(() => {
@@ -160,6 +168,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     // Voriger Besuch: was danach kam, ist neu. Der neue Zeitpunkt gilt ab dem nächsten Öffnen.
     AsyncStorage.getItem(SEEN).then((v) => {
       const prev = v ? Number(v) : Date.now() - 24 * 3600e3;
+      setFirstVisit(!v);
       setSeenBefore(prev);
       AsyncStorage.setItem(SEEN, String(Date.now())).catch(() => {});
     }).catch(() => {});
@@ -201,14 +210,39 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   }, [uid, gated]);
 
   useEffect(() => { if (authReady) load(false); }, [authReady, uid, load]);
+  const savedFor = useRef<string | null | undefined>(undefined); // Konto, dessen Merkliste geladen ist
+  useEffect(() => {
+    if (!authReady) return;
+    let live = true;
+    savedFor.current = undefined;
+    setSaved([]);
+    AsyncStorage.getItem(SAVED(uid)).then((v) => {
+      if (!live) return;
+      let x: Item[] = [];
+      try { const p = v ? JSON.parse(v) : []; if (Array.isArray(p)) x = p; } catch { /* kaputt: leer beginnen */ }
+      setSaved(x);
+      savedFor.current = uid;
+    }).catch(() => { if (live) savedFor.current = uid; });
+    return () => { live = false; };
+  }, [authReady, uid]);
+  const toggleSaved = useCallback((it: Item) => {
+    if (savedFor.current !== uid) return; // Merkliste noch nicht geladen oder Kontowechsel: nichts überschreiben
+    setSaved((prev) => {
+      const next = prev.some((x) => x.id === it.id) ? prev.filter((x) => x.id !== it.id) : [it, ...prev].slice(0, 200);
+      AsyncStorage.setItem(SAVED(uid), JSON.stringify(next)).catch(() => {});
+      return next;
+    });
+  }, [uid]);
+  const savedIds = useMemo(() => new Set(saved.map((x) => x.id)), [saved]);
   // Bei jedem Start einmal abgleichen, ob das Gerät private Benachrichtigungen bekommen darf
   useEffect(() => { if (authReady) refreshPushOwner().catch(() => {}); }, [authReady]);
 
   const value = useMemo<Ctx>(() => ({
-    data, loading, refreshing, error, offline, loadedAt, session, authReady, seenBefore, recovery,
+    data, loading, refreshing, error, offline, loadedAt, session, authReady, seenBefore, firstVisit, recovery,
+    saved, isSaved: (it: Item) => savedIds.has(it.id), toggleSaved,
     endRecovery: () => setRecovery(false),
     refresh: () => load(true),
-  }), [data, loading, refreshing, error, offline, loadedAt, session, authReady, seenBefore, recovery, load]);
+  }), [data, loading, refreshing, error, offline, loadedAt, session, authReady, seenBefore, firstVisit, recovery, load, saved, savedIds, toggleSaved]);
   return <DataCtx.Provider value={value}>{children}</DataCtx.Provider>;
 }
 

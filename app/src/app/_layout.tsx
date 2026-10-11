@@ -11,11 +11,13 @@ import { router, Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect } from "react";
 import { Platform } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { DataProvider, useData } from "../lib/data";
 import Login from "./login";
+import { WELCOME_KEY } from "./welcome";
 import SetPassword from "../components/SetPassword";
 import { pushSupported } from "../lib/push";
 import { font, useTheme } from "../lib/theme";
@@ -40,6 +42,7 @@ export default function Root() {
           contentStyle: { backgroundColor: t.bg },
         }}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false, title: "Horn Lens" }} />
+          <Stack.Screen name="item/[id]" options={{ title: "Meldung" }} />
           <Stack.Screen name="claim/[id]" options={{ title: "Behauptung" }} />
           <Stack.Screen name="claim-form" options={{ title: "Behauptung", presentation: "modal" }} />
           <Stack.Screen name="report/[date]" options={{ title: "Tagesbericht" }} />
@@ -47,7 +50,9 @@ export default function Root() {
           <Stack.Screen name="sources" options={{ title: "Quellen" }} />
           <Stack.Screen name="method" options={{ title: "So arbeitet Horn Lens" }} />
           <Stack.Screen name="login" options={{ title: "Anmelden", presentation: "modal" }} />
+          <Stack.Screen name="welcome" options={{ headerShown: false, presentation: "modal", gestureEnabled: true }} />
         </Stack>
+        <FirstRun />
         {pushSupported ? <NotificationRouter /> : null}
         </Gate>
       </DataProvider>
@@ -55,7 +60,7 @@ export default function Root() {
   );
 }
 
-// Die Web-Fassung ist privat: ohne Anmeldung nur der Anmeldebildschirm (Impressum und Datenschutz fehlen noch für eine öffentliche Seite)
+// Die Web-Fassung ist privat: ohne Anmeldung nur der Anmeldebildschirm (so gewünscht; Impressum und Datenschutz liegen unter /impressum.html und /datenschutz.html)
 const WEB_PRIVATE = true;
 function Gate({ children }: { children: React.ReactNode }) {
   const { session, authReady, recovery } = useData();
@@ -64,6 +69,23 @@ function Gate({ children }: { children: React.ReactNode }) {
   if (!session) return <Login gate />;
   if (recovery) return <SetPassword />;
   return <>{children}</>;
+}
+
+// Beim allerersten Start einmal die Einführung zeigen
+let welcomeChecked = false;
+function FirstRun() {
+  const { authReady } = useData();
+  useEffect(() => {
+    if (!authReady || welcomeChecked) return;
+    welcomeChecked = true;
+    AsyncStorage.getItem(WELCOME_KEY).then((v) => {
+      if (v) return;
+      // Gleich vermerken: auch wer die Einführung wegwischt, sieht sie nicht bei jedem Start erneut
+      AsyncStorage.setItem(WELCOME_KEY, "1").catch(() => {});
+      setTimeout(() => { try { router.push("/welcome"); } catch { /* Navigation noch nicht bereit */ } }, 350);
+    }).catch(() => {});
+  }, [authReady]);
+  return null;
 }
 
 // Antippen einer Benachrichtigung öffnet den passenden Bildschirm (jede Benachrichtigung nur einmal)
