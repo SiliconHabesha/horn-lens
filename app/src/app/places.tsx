@@ -1,14 +1,12 @@
 // Alle Orte: wie oft sie in Schlagzeilen vorkommen und was in der Nähe gemessen wurde.
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, Stack } from "expo-router";
 import React, { useMemo } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
-import { Group, Head, ListRow, Screen, T } from "../components/ui";
+import { View } from "react-native";
+import { Group, Head, ListRow, Screen } from "../components/ui";
 import { plural } from "../lib/de";
 import { useData } from "../lib/data";
 import { dossier, PLACES } from "../lib/places";
 import { dedupe, poolOf } from "../lib/stories";
-import { space, useTheme } from "../lib/theme";
 
 const GROUPS: [string, (c: string) => boolean][] = [
   ["Eritrea", (c) => c === "Eritrea"],
@@ -18,7 +16,6 @@ const GROUPS: [string, (c: string) => boolean][] = [
 ];
 
 export default function Places() {
-  const t = useTheme();
   const { data } = useData();
   const rows = useMemo(() => (data ? (() => { const pool = dedupe(poolOf(data)); return PLACES.map((p) => ({ p, d: dossier(p, data, pool) })); })() : []), [data]);
   return (

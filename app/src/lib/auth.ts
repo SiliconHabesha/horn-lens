@@ -26,7 +26,7 @@ export async function appleNativeAvailable() {
   try { return await AppleAuthentication.isAvailableAsync(); } catch { return false; }
 }
 
-const notReady = (p: Provider) => `Die Anmeldung mit ${NAME[p]} ist noch nicht eingerichtet. Die Anleitung „Anmeldung mit Google und Apple einrichten“ erklärt die Schritte.`;
+const notReady = (p: Provider) => `Die Anmeldung mit ${NAME[p]} ist noch nicht eingerichtet. Bitte vorerst mit E-Mail anmelden.`;
 
 /** Gibt eine Fehlermeldung auf Deutsch zurück, oder null bei Erfolg (bzw. wenn die Seite gleich zu Google/Apple wechselt) */
 export async function signInWith(p: Provider): Promise<string | null> {
@@ -86,7 +86,7 @@ export async function finishFromUrl(url: string): Promise<string | null> {
 function say(m: string, p: Provider) {
   if (/provider is not enabled|unsupported provider/i.test(m)) return notReady(p);
   if (/network|fetch/i.test(m)) return "Keine Verbindung. Bitte Internet prüfen.";
-  return `Die Anmeldung mit ${NAME[p]} hat nicht geklappt (${m}).`;
+  return `Die Anmeldung mit ${NAME[p]} hat nicht geklappt. Bitte gleich noch einmal versuchen.`;
 }
 
 /** Konto endgültig löschen (verlangen Apple und Google). Gibt eine Fehlermeldung oder null zurück. */

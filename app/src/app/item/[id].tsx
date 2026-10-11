@@ -5,13 +5,14 @@ import React, { useMemo, useState } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 import { ItemRow, shareItem, shareStory, titleStyle, whenOf } from "../../components/items";
 import { toast } from "../../components/Toast";
-import { Button, Card, Empty, openLink, Screen, T, tap } from "../../components/ui";
-import { fmtWhen, REGIONS, TYPE_NOTE, TYPE_ORDER, TYPES } from "../../lib/de";
+import { Button, Empty, openLink, Screen, T, tap } from "../../components/ui";
+import { fmtWhen, plural, TYPE_NOTE, TYPE_ORDER, TYPES } from "../../lib/de";
 import { knownItem, useData } from "../../lib/data";
 import { placesIn } from "../../lib/places";
 import { storiesOf, VOICE_TYPES } from "../../lib/stories";
 import { radius, space, useTheme } from "../../lib/theme";
 import type { Item } from "../../lib/types";
+import { Skeleton } from "../../components/Skeleton";
 
 export default function ItemDetail() {
   const t = useTheme();
@@ -27,7 +28,7 @@ export default function ItemDetail() {
     return (
       <Screen topInset={false} refresh={false}>
         <Stack.Screen options={{ title: "Meldung" }} />
-        <Empty icon="newspaper-outline" text={data ? "Diese Meldung ist nicht mehr in den letzten 72 Stunden. Gemerkte Meldungen bleiben unter „Gemerkt“." : "Wird geladen …"} />
+        {data ? <Empty icon="newspaper-outline" text="Diese Meldung ist älter als 72 Stunden und nicht mehr abrufbar. Gemerkte Meldungen bleiben unter „Gemerkt“." /> : <Skeleton rows={4} />}
       </Screen>
     );
   }
@@ -47,11 +48,11 @@ export default function ItemDetail() {
   return (
     <Screen topInset={false} refresh={false}>
       <Stack.Screen options={{ title: story && story.items.length > 1 ? "Geschichte" : "Meldung" }} />
-      <T v="title" style={titleStyle(it.title)} accessibilityRole="header">{it.title}</T>
+      <T v="title" style={titleStyle(it.title, true)} accessibilityRole="header">{it.title}</T>
       <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 8, rowGap: 4, marginTop: space.s, alignItems: "center" }}>
         <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: c }} />
         <T v="smallStrong" color={t.ink}>{it.origin_domain || it.source_name}</T>
-        <T v="small">{TYPES[it.source_type] || it.source_type} · {whenOf(it)}</T>
+        <T v="small">{TYPES[it.source_type] || it.source_type} · {it.published_at ? whenOf(it) : `ohne Zeitangabe der Quelle, ${whenOf(it)}`}</T>
       </View>
       {placesIn(it.title).length ? (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: space.s, alignItems: "center" }}>
@@ -68,7 +69,7 @@ export default function ItemDetail() {
       <View style={{ flexDirection: "row", gap: space.s, marginTop: space.l, flexWrap: "wrap" }}>
         <View style={{ flexGrow: 1 }}><Button label="Original lesen" icon="open-outline" onPress={() => openLink(it.url)} /></View>
         <Pressable onPress={() => { tap(); toggleSaved(it); toast(on ? "Nicht mehr gemerkt" : "Gemerkt. Zu finden unter Meldungen › Gemerkt", on ? "bookmark-outline" : "bookmark",
-            on ? { label: "Rückgängig", run: () => toggleSaved(it) } : undefined); }} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={on ? "Nicht mehr merken" : "Merken"}
+            { label: "Rückgängig", run: () => toggleSaved(it) }); }} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={on ? "Nicht mehr merken" : "Merken"}
           style={({ pressed }) => [sq(t), { opacity: pressed ? 0.6 : 1 }]}>
           <Ionicons name={on ? "bookmark" : "bookmark-outline"} size={20} color={on ? t.accent : t.ink} />
         </Pressable>
@@ -81,7 +82,7 @@ export default function ItemDetail() {
 
       {story && story.items.length > 1 ? (
         <>
-          <T v="h2" style={{ marginTop: space.xl }} accessibilityRole="header">Dieselbe Geschichte bei {story.sources} Medien</T>
+          <T v="h2" style={{ marginTop: space.xl }} accessibilityRole="header">Dieselbe Geschichte bei {plural(story.sources, "Medium", "Medien")}</T>
           <T v="caption" style={{ marginTop: 2 }}>Erste Meldung {fmtWhen(story.first)}, letzte {fmtWhen(story.last)}</T>
           {byType.map(([k, list]) => (
             <View key={k} style={{ marginTop: byType.length > 1 ? space.m : space.s }}>

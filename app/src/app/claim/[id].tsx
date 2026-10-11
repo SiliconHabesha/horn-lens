@@ -3,12 +3,13 @@ import { router, Stack, useLocalSearchParams } from "expo-router";
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Button, Card, Empty, ListRow, openLink, Screen, StatusPill, T, tap } from "../../components/ui";
-import { endDot, fmtDate, fmtIsoDay, REGIONS, STATUS } from "../../lib/de";
+import { endDot, fmtDate, fmtFull, isEnglish, fmtIsoDay, REGIONS, STATUS } from "../../lib/de";
 import { ItemRow } from "../../components/items";
 import { useData } from "../../lib/data";
 import { related } from "../../lib/stories";
 import { space, useTheme } from "../../lib/theme";
 import type { Claim, ClaimEvent, Ref } from "../../lib/types";
+import { Skeleton } from "../../components/Skeleton";
 
 const sourcesOf = (e: ClaimEvent): Ref[] => [
   ...(e.source_url ? [{ title: e.source_title, url: e.source_url }] : []),
@@ -20,8 +21,8 @@ export function SourceLinks({ list }: { list: Ref[] }) {
   return (
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
       {list.map((s, i) => (
-        <Pressable key={i} onPress={() => { tap(); openLink(s.url); }} accessibilityRole="link"
-          style={({ pressed }) => ({ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: t.cardAlt, opacity: pressed ? 0.6 : 1 })}>
+        <Pressable key={i} onPress={() => { tap(); openLink(s.url); }} accessibilityRole="link" accessibilityLabel={`Quelle öffnen: ${s.title || "Quelle"}`} hitSlop={{ top: 6, bottom: 6 }}
+          style={({ pressed }) => ({ paddingHorizontal: 12, minHeight: 32, justifyContent: "center", borderRadius: 999, backgroundColor: t.cardAlt, opacity: pressed ? 0.6 : 1 })}>
           <T v="caption" color={t.ink}>{s.title || "Quelle"} ↗</T>
         </Pressable>
       ))}
@@ -34,7 +35,7 @@ export default function ClaimDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data } = useData();
   const c = data?.claims.find((x) => String(x.id) === String(id));
-  if (!c) return <Screen topInset={false}><Stack.Screen options={{ title: "Behauptung" }} /><Empty text="Diese Behauptung gibt es nicht (mehr)." /></Screen>;
+  if (!c) return <Screen topInset={false}><Stack.Screen options={{ title: "Behauptung" }} />{data ? <Empty text="Diese Behauptung gibt es nicht mehr. Vielleicht wurde sie zusammengelegt oder entfernt." /> : <Skeleton rows={4} />}</Screen>;
   const evidence = c.events.find((e) => e.status === c.status && sourcesOf(e).length);
   const earlier = evidence ? null : c.events.find((e) => sourcesOf(e).length);
   let since: string | null = null;
@@ -44,9 +45,10 @@ export default function ClaimDetail() {
       <Stack.Screen options={{ title: "Behauptung" }} />
       <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
         <StatusPill status={c.status} />
-        {c.party_claim ? <T v="caption" style={{ borderWidth: 1, borderColor: t.rule, borderRadius: 4, paddingHorizontal: 5 }}>Konfliktpartei</T> : null}
+        {c.party_claim ? <T v="caption">· von einer Konfliktpartei</T> : null}
       </View>
       <T v="title" style={{ marginTop: space.s }}>{c.statement}</T>
+      {isEnglish(c.raw?.statement, c.statement) ? <T v="caption" style={{ marginTop: 4 }}>Originalwortlaut (Englisch), noch nicht übersetzt</T> : null}
       <T v="small" style={{ marginTop: space.s }}>{STATUS[c.status]?.[1]}</T>
 
       <Card style={{ marginTop: space.l, gap: 10 }}>
@@ -54,7 +56,7 @@ export default function ClaimDetail() {
         {c.disputed_by ? <View><T v="label" color={t.muted}>Wer bestreitet es</T><T v="body">{endDot(c.disputed_by)}</T></View> : null}
         <View style={{ flexDirection: "row", gap: space.xl, flexWrap: "wrap" }}>
           <View><T v="label" color={t.muted}>Region</T><T v="body">{REGIONS[c.region] || c.region}</T></View>
-          <View><T v="label" color={t.muted}>Zuerst gemeldet</T><T v="body">{fmtIsoDay(c.first_reported, { day: "numeric", month: "long", year: "numeric" })}</T></View>
+          <View><T v="label" color={t.muted}>Zuerst gemeldet</T><T v="body">{fmtIsoDay(c.first_reported, { day: "numeric", month: "short", year: "numeric" })}</T></View>
           {since ? <View><T v="label" color={t.muted}>Stufe seit</T><T v="body">{fmtDate(since)}</T></View> : null}
         </View>
         {evidence ? (
@@ -93,8 +95,8 @@ export default function ClaimDetail() {
             </View>
             <View style={{ flex: 1, paddingBottom: space.l }}>
               <View style={{ flexDirection: "row", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                <T v="smallStrong">{fmtDate(e.at)}</T>
-                <StatusPill status={e.status} small />
+                <T v="smallStrong">{fmtFull(e.at)}</T>
+                {c.events[i + 1]?.status === e.status ? <T v="caption">Stufe unverändert</T> : <StatusPill status={e.status} small />}
               </View>
               <T v="body" style={{ marginTop: 4 }}>{e.note}</T>
               {sourcesOf(e).length ? <SourceLinks list={sourcesOf(e)} /> : null}
@@ -126,7 +128,7 @@ function Related({ c }: { c: Claim }) {
               <Pressable onPress={() => { tap(); router.push({ pathname: "/claim-form", params: { mode: "status", id: String(c.id),
                 src_title: `${it.origin_domain || it.source_name}, ${fmtDate(it.published_at || it.fetched_at)}`, src_url: it.url } }); }}
                 accessibilityRole="button" accessibilityLabel={`${it.title} als Beleg übernehmen`} hitSlop={8}
-                style={({ pressed }) => ({ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule, backgroundColor: t.card, opacity: pressed ? 0.6 : 1 })}>
+                style={({ pressed }) => ({ paddingHorizontal: 12, minHeight: 36, justifyContent: "center", borderRadius: 999, borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule, backgroundColor: t.card, opacity: pressed ? 0.6 : 1 })}>
                 <T v="caption" color={t.ink}>Als Beleg übernehmen</T>
               </Pressable>
             </View>

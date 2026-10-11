@@ -7,7 +7,7 @@ export const TYPES: Record<string, string> = {
   progov_er: "Regierungsnahe Medien Eritreas",
   exile: "Eritreische Exilmedien",
   government_et: "Regierung Äthiopiens",
-  progov_et: "Staatsnahe Medien Äthiopiens",
+  progov_et: "Regierungsnahe Medien Äthiopiens",
   ethiopian_independent: "Unabhängige Medien Äthiopiens",
   tigray: "Tigrayische Medien",
   international: "Internationale Medien",
@@ -49,7 +49,7 @@ export const STATUS_ORDER = ["confirmed", "likely", "unconfirmed", "disputed", "
 export const LOC = "de-DE";
 const TZ = "Europe/Berlin";
 const fmt = (o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat(LOC, { timeZone: TZ, ...o });
-export const fmtTime = (d: string | number | Date) => fmt({ hour: "2-digit", minute: "2-digit" }).format(new Date(d));
+export const fmtTime = (d: string | number | Date) => fmt({ hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(d));
 export const fmtDay = (d: string | number | Date) => fmt({ weekday: "long", day: "numeric", month: "long" }).format(new Date(d));
 export const fmtDate = (d: string | number | Date) => fmt({ day: "numeric", month: "short", year: "numeric" }).format(new Date(d));
 export const fmtShort = (d: string | number | Date) => fmt({ day: "numeric", month: "short" }).format(new Date(d));
@@ -108,8 +108,8 @@ const deNum = (x: string) => String(x).replace(".", ",");
 const dePlace = (p: string) => {
   let t = String(p).trim();
   if (SEA[t]) return SEA[t];
-  t = t.replace(/^(\d+) km ([NSEW]{1,3}) of /, (_, n, dir) => `${n} km ${dir.replace(/E/g, "O")} von `);
-  t = t.replace(/^(\d+(?:\.\d+)?)\s?NM ([NSEW]{1,3}|North(?: ?East| ?West)?|South(?: ?East| ?West)?|East|West) of /i, (_, n, dir) => `${deNum(n)} sm ${dirDe(dir)} von `);
+  t = t.replace(/^(\d+) km ([NSEW]{1,3}) of /, (_, n, dir) => `${n} km ${dir.replace(/E/g, "O")} von `);
+  t = t.replace(/^(\d+(?:\.\d+)?)\s?NM ([NSEW]{1,3}|North(?: ?East| ?West)?|South(?: ?East| ?West)?|East|West) of /i, (_, n, dir) => `${deNum(n)} sm ${dirDe(dir)} von `);
   t = t.replace(/\bborder region\b/gi, "Grenzgebiet").replace(/\bcoast\b/gi, "Küste");
   for (const [en, d] of Object.entries({ ...COUNTRY, ...SEA })) t = t.replace(new RegExp(`\\b${en}\\b`, "g"), d);
   return t;
@@ -126,15 +126,15 @@ const fmtN = (x: string) => { const n = Number(x); return Number.isFinite(n) ? n
 type Rule = [RegExp, (...m: string[]) => string];
 const RULES: Rule[] = [
   [/^Earthquake (?:of unknown magnitude|M([\d.]+))(?:, (.+))?$/, (_, m, p) => `Erdbeben ${m ? `der Stärke ${deNum(m)}` : "unbekannter Stärke"}${p ? `, ${dePlace(p)}` : ""}`],
-  [/^(.+?)(?:, (.+))? \(UKMTO #(\d+)\)$/, (_, k, p, n) => `${INCIDENT[k.trim()] || k}${p ? `, ${dePlace(p)}` : ""} (UKMTO Nr. ${n})`],
+  [/^(.+?)(?:, (.+))? \(UKMTO #(\d+)\)$/, (_, k, p, n) => `${INCIDENT[k.trim()] || k}${p ? `, ${dePlace(p)}` : ""} (UKMTO Nr.\u00a0${n})`],
   [/^Internet connectivity (drop|dip) in (\w+) \(([\w-]+) (-?\d+)% below usual\)$/, (_, k, c, ds, n) =>
-    `${k === "drop" ? "Starker Einbruch" : "Leichter Rückgang"} der Internetverbindung in ${COUNTRY[c] || c} (${ds} ${n} % unter dem Üblichen)`],
+    `${k === "drop" ? "Starker Einbruch" : "Leichter Rückgang"} der Internetverbindung in ${COUNTRY[c] || c} (${ds} ${n} % unter dem Üblichen)`],
   [/^Internet connectivity alert in (\w+) \(([\w-]+)\)$/, (_, c, ds) => `Internet-Warnung für ${COUNTRY[c] || c} (${ds})`],
   [/^Internet connectivity drop in (\w+) \(([\w-]+), level (\w+)\)$/, (_, c, ds, l) => `Rückgang der Internetverbindung in ${COUNTRY[c] || c} (${ds}, Stufe „${l}“)`],
   [/^Major internet drop in (\w+)$/, (_, c) => `Starker Interneteinbruch in ${COUNTRY[c] || c}`],
   [/^Internet connectivity dip in (\w+)$/, (_, c) => `Leichter Rückgang der Internetverbindung in ${COUNTRY[c] || c}`],
   [/^IODA \(([^)]+)\) measured (\S+) against a usual (\S+?)(?: \(−(\d+)%\))?\. A measured drop is not proof of a deliberate shutdown\.$/, (_, ds, a, b, p) =>
-    `IODA (${ds}) hat ${fmtN(a)} gemessen, üblich sind ${fmtN(b)}${p ? ` (−${p} %)` : ""}. Ein gemessener Rückgang beweist keine absichtliche Abschaltung.`],
+    `IODA (${ds}) hat ${fmtN(a)} gemessen, üblich sind ${fmtN(b)}${p ? ` (−${p} %)` : ""}. Ein gemessener Rückgang beweist keine absichtliche Abschaltung.`],
   [/^(\d+) reports on Eritrea from (\d+) outlets in 6 hours$/, (_, a, b) => `${a} Meldungen zu Eritrea von ${b} Medien in 6 Stunden`],
   [/^Corrected: ([^."]+)\.(?: Previous wording: "([\s\S]*?)"\.)?(?: ([\s\S]*))?$/, (_, parts, old, rest) =>
     `Berichtigt: ${parts.split(", ").map((x) => CORR[x] || x).join(", ")}.${old ? ` Bisheriger Wortlaut: „${de(old)}“` : ""}${rest ? ` ${de(rest)}` : ""}`],
@@ -148,4 +148,9 @@ export function de<T extends string | null | undefined>(t: T): T {
   for (const [re, f] of RULES) if (re.test(s)) return s.replace(re, f as any) as T;
   return s as T;
 }
+/** Text wurde nicht übersetzt und ist offensichtlich Englisch */
+export const isEnglish = (orig: string | null | undefined, shown: string | null | undefined) =>
+  !!orig && orig === shown && /\b(the|and|of|to|is|was|has|have|were|by|from|with)\b/i.test(orig);
+/** Quellenname für Zeilen: ohne Zusatz in Klammern, Gedankenstrich statt Bindestrich („DW – Africa“) */
+export const srcName = (n: string | null | undefined) => String(n || "").replace(/\s*\([^)]*\)\s*$/, "").replace(/\s+-\s+/g, " – ").trim() || String(n || "");
 export const endDot = (t: string | null | undefined) => { const s = String(t || "").trim(); return /[.!?…“"]$/.test(s) ? s : `${s}.`; };

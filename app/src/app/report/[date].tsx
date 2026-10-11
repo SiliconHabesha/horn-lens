@@ -2,17 +2,18 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Platform, Pressable, Share, StyleSheet, View } from "react-native";
+import { Platform, Pressable, Share, StyleSheet, View } from "react-native";
 import { dedupe, ItemRow } from "../../components/items";
 import { toast } from "../../components/Toast";
 import { Banner, Card, Empty, Group, Head, ListRow, openLink, Screen, StatusPill, T, tap } from "../../components/ui";
-import { de, fmtFull, fmtIsoDay, fmtTime, num, REGION_ORDER, REGIONS, STATUS, STATUS_ORDER } from "../../lib/de";
+import { de, fmtFull, fmtIsoDay, num, REGION_ORDER, REGIONS, STATUS, STATUS_ORDER } from "../../lib/de";
 import { loadReport, useData } from "../../lib/data";
+import { Skeleton } from "../../components/Skeleton";
 import { CLAUDE_PAGE } from "../../lib/feeds";
 import { radius, space, useTheme } from "../../lib/theme";
 import type { Item, Report } from "../../lib/types";
 
-const KIND: Record<string, string> = { outage: "Internet", maritime: "Auf See", quake: "Erdbeben", surge: "Meldungen" };
+const KIND: Record<string, string> = { outage: "Internet-Einbruch", maritime: "Vorfall auf See", quake: "Erdbeben", surge: "Viele Meldungen" };
 
 // Klartext zum Teilen: Zusammenfassung mit Quellen, Messwerte, wichtigste Schlagzeilen
 function digest(rep: Report, regions: Record<string, Item[]>) {
@@ -20,7 +21,7 @@ function digest(rep: Report, regions: Record<string, Item[]>) {
   const lines = [`Horn Lens – Tagesbericht ${fmtIsoDay(rep.report_date)}`, ""];
   for (const s of rep.summary?.sentences || []) lines.push(`${s.text}${(s.cites || []).length ? ` (${(s.cites || []).map((c: any) => c.outlet).join(", ")})` : ""}`);
   if ((rep.summary?.sentences || []).length) lines.push("");
-  const m = [["Hitzepunkte (24 Std.)", sg.fires_24h], ["Internet-Warnungen (48 Std.)", sg.outages_48h], ["Vorfälle auf See (30 Tage)", sg.maritime_30d], ["Erdbeben (7 Tage)", sg.quakes_7d]]
+  const m = [["Hitzepunkte (24 Std.)", sg.fires_24h], ["Internet-Einbrüche (48 Std.)", sg.outages_48h], ["Vorfälle auf See (30 Tage)", sg.maritime_30d], ["Erdbeben (7 Tage)", sg.quakes_7d]]
     .filter(([, n]) => n != null).map(([l, n]) => `${l}: ${num(Number(n))}`);
   if (m.length) lines.push(`Gemessen: ${m.join(" · ")}`, "");
   for (const r of REGION_ORDER) {
@@ -42,12 +43,15 @@ export default function ReportScreen() {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(true);
   const [open, setOpen] = useState<Record<string, boolean>>({});
+  const [tries, setTries] = useState(0);
+  const valid = /^\d{4}-\d{2}-\d{2}$/.test(String(date)) && !isNaN(new Date(`${date}T12:00:00Z`).getTime());
   useEffect(() => {
+    if (!valid) { setBusy(false); return; }
     let live = true; setBusy(true); setErr(null); setOpen({});
     loadReport(String(date)).then((r) => { if (live) { setRep(r as any); setBusy(false); } })
       .catch((e) => { if (live) { setErr(de(String(e?.message || e))); setBusy(false); } });
     return () => { live = false; };
-  }, [date]);
+  }, [date, valid, tries]);
   const reps = data?.reports || [];
   const idx = reps.findIndex((r) => r.report_date === date);
   const older = idx >= 0 ? reps[idx + 1] : undefined, newer = idx > 0 ? reps[idx - 1] : undefined;
@@ -75,8 +79,8 @@ export default function ReportScreen() {
       <Ionicons name={icon} size={20} color={t.ink} />
     </Pressable>
   );
-  const sig = (n: any, one: string, many: string) => ({ big: n == null ? "–" : num(Number(n)), label: n == null ? `${many}: nicht erfasst` : Number(n) === 1 ? one : many });
 
+  if (!valid) return <Screen refresh={false} topInset={false}><Stack.Screen options={{ title: "Tagesbericht" }} /><Empty text="Diesen Tagesbericht gibt es nicht. Alle Berichte stehen in der Lage unter „Tagesbericht“." /></Screen>;
   return (
     <Screen refresh={false} topInset={false}>
       <Stack.Screen options={{ title: "Tagesbericht", headerRight: () => rep ? (
@@ -92,8 +96,12 @@ export default function ReportScreen() {
         {step(newer, "chevron-forward", "Späterer Bericht")}
       </View>
 
-      {busy ? <View style={{ paddingVertical: 60 }}><ActivityIndicator color={t.muted} /></View>
-        : err ? <Empty icon="alert-circle-outline" text={`Der Tagesbericht konnte nicht geladen werden (${err}).`} />
+      {busy ? <View style={{ marginTop: space.l }}><Skeleton rows={6} /></View>
+        : err ? (
+          <View style={{ marginTop: space.l }}>
+            <Banner icon="alert-circle-outline" tone="warn" text="Der Tagesbericht konnte nicht geladen werden. Bitte Verbindung prüfen." action="Erneut versuchen" onAction={() => setTries(tries + 1)} />
+          </View>
+        )
         : !rep ? <Empty text="Für dieses Datum gibt es keinen Tagesbericht." /> : (
         <>
           {rep._offline ? <View style={{ marginTop: space.m }}><Banner icon="cloud-offline-outline" tone="warn" text="Ohne Verbindung: gespeicherte Fassung dieses Berichts." /></View> : null}
@@ -116,8 +124,8 @@ export default function ReportScreen() {
 
           <Head title="Messwerte" />
           <Group>
-            {[["flame-outline", "Hitzepunkte", "24 Std.", sg.fires_24h], ["wifi-outline", "Internet-Warnungen", "48 Std.", sg.outages_48h],
-              ["boat-outline", "Vorfälle auf See", "30 Tage", sg.maritime_30d], ["pulse-outline", "Erdbeben", "7 Tage", sg.quakes_7d]].map(([icon, label, hint, n], i) => (
+            {[["flame-outline", "Hitzepunkte", "24 Std.", sg.fires_24h], ["wifi-outline", "Internet-Einbrüche", "48 Std.", sg.outages_48h],
+              ["boat-outline", "Vorfälle auf See", "30 Tage", sg.maritime_30d], ["pulse-outline", "Erdbeben", "7 Tage", sg.quakes_7d]].map(([icon, label, hint, n], i) => (
               <ListRow key={label as string} first={i === 0} icon={icon as any} label={label as string} hint={hint as string} value={n == null ? "–" : num(Number(n))} tone={n == null ? "none" : undefined} />
             ))}
           </Group>
@@ -151,8 +159,8 @@ export default function ReportScreen() {
           {(p.alerts || []).length ? (
             <>
               <Head title="Damalige Hinweise" />
-              <Group style={{ borderLeftWidth: 4, borderLeftColor: t.warn }}>
-                {(p.alerts || []).map((a, i) => <ListRow key={i} first={i === 0} tone="alert" icon="alert-circle-outline" label={a.title} sub={`${KIND[a.kind] || "Hinweis"} · ${fmtFull(a.t)}`}
+              <Group>
+                {(p.alerts || []).map((a, i) => <ListRow key={i} first={i === 0} icon="alert-circle-outline" label={a.title} sub={`${KIND[a.kind] || "Hinweis"} · ${fmtFull(a.t)}`}
                   external={!!a.url} onPress={a.url ? () => openLink(a.url) : undefined} />)}
               </Group>
             </>
@@ -163,7 +171,7 @@ export default function ReportScreen() {
             const all = open[r] || list.length <= 8;
             return (
               <View key={r}>
-                <Head title={`${REGIONS[r]} (${list.length})`} />
+                <Head title={REGIONS[r]} count={list.length} />
                 {(all ? list : list.slice(0, 6)).map((it, i) => (
                   <View key={it.id} style={i ? { borderTopWidth: StyleSheet.hairlineWidth, borderColor: t.rule } : undefined}><ItemRow it={it} /></View>
                 ))}

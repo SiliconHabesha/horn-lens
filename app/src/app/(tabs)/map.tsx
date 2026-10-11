@@ -1,17 +1,17 @@
 // Karte: Hitzepunkte, Erdbeben, Vorfälle auf See und Satelliten-Orte. Zoomen, verschieben, antippen für Herkunft und Einzelheiten.
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { router } from "expo-router";
-import React, { useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useState } from "react";
 import { LayoutChangeEvent, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { boxOf, Box, fit, FULL, Layers, Mark, ZoomMap } from "../../components/MapCanvas";
+import { boxOf, Box, fit, FULL, Layers, Mark, proj, ZoomMap } from "../../components/MapCanvas";
 import { Bone } from "../../components/Skeleton";
-import { Banner, Button, Chip, ChipRow, openLink, PlainRow, T, tap } from "../../components/ui";
-import { seaMeta } from "../../lib/places";
-import { ago, fmtFull, num, plural } from "../../lib/de";
+import { Banner, Button, Chip, ChipRow, Head, openLink, PlainRow, T, tap } from "../../components/ui";
+import { placeById, seaMeta } from "../../lib/places";
+import { ago, num, plural } from "../../lib/de";
 import { useData } from "../../lib/data";
 import { feedState, noData } from "../../lib/feeds";
-import { font, radius, space, useTheme } from "../../lib/theme";
+import { radius, space, useTheme } from "../../lib/theme";
 
 const VIEWS: Record<string, { label: string; box: Box }> = {
   all: { label: "Gesamt", box: FULL },
@@ -39,6 +39,18 @@ export default function MapScreen() {
   const since = Date.now() - span * 3600e3;
 
   const onLayout = (e: LayoutChangeEvent) => { const nw = Math.round(e.nativeEvent.layout.width); if (nw !== w) { setW(nw); setBox(null); setView("all"); } };
+  // Von einer Ortsseite kommend: auf etwa 150 km um den Ort zoomen
+  const { focus } = useLocalSearchParams<{ focus?: string }>();
+  useEffect(() => {
+    const p = focus ? placeById(String(focus)) : undefined;
+    if (!p || !mw || !h) return;
+    const [cx, cy] = proj(p.lat, p.lon), [ex] = proj(p.lat, p.lon + 1.4);
+    const half = ex - cx;
+    setBox(fit([cx - half, cy - half * (h / mw), half * 2, half * 2 * (h / mw)], h / mw));
+    setView("");
+    setSel(null);
+    router.setParams({ focus: undefined });
+  }, [focus, mw, h]);
   const pickView = (key: string) => { setView(key); setSel(null); setBox(mw ? fit(VIEWS[key].box, h / mw) : null); };
 
   const head = (
@@ -54,7 +66,7 @@ export default function MapScreen() {
           </Pressable>
         ) : null}
       </View>
-      {offline && loadedAt ? <Banner icon="cloud-offline-outline" tone="warn" text={`Keine Verbindung. Stand: ${ago(loadedAt)}.`} action="Erneut" onAction={refresh} /> : null}
+      {offline && loadedAt ? <Banner icon="cloud-offline-outline" tone="warn" text={`Keine Verbindung. Stand: ${ago(loadedAt)}.`} action="Erneut versuchen" onAction={refresh} /> : null}
       <ChipRow>
         {Object.entries(VIEWS).map(([key, v]) => <Chip key={key} label={v.label} active={view === key} onPress={() => pickView(key)} />)}
       </ChipRow>
@@ -111,8 +123,8 @@ export default function MapScreen() {
           {([
             ["fire", t.fire, "Hitzepunkte", data.firesError || !firms.ok ? "–" : `${data.firesCapped ? "≥ " : ""}${num(data.firesTotal)}`],
             ["quake", t.quake, "Erdbeben", usgs.ok ? num(span < 24 * 7 ? quakesIn : data.quakes.length) : "–"],
-            ["ship", t.ship, "Auf See", ukmto.ok ? num(shipsIn) : "–"],
-            ["sat", t.accent, "Satellit", num(data.sat.filter((p) => p.images.length).length)],
+            ["ship", t.ship, "Vorfälle auf See", ukmto.ok ? num(shipsIn) : "–"],
+            ["sat", t.accent, "Satellitenbilder", num(data.sat.filter((p) => p.images.length).length)],
           ] as [keyof Layers, string, string, string][]).map(([key, c, label, n]) => (
             <Chip key={key} label={label} count={n as any} color={c} active={layers[key]} onPress={() => { setLayers({ ...layers, [key]: !layers[key] }); setSel(null); }} />
           ))}
@@ -123,16 +135,29 @@ export default function MapScreen() {
         </View>
         </View>
         ) : null}
-        <T v="caption">Gestrichelt: Regionsgrenzen, West-Tigray umstritten.</T>
+        {/* Legende: welche Form steht wofür */}
+        <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: space.l, rowGap: 6 }} accessible accessibilityLabel="Legende: Punkt Hitzepunkt, Ring Erdbeben, Raute Vorfall auf See, Quadrat Satellitenbilder">
+          {([
+            ["Hitzepunkt", <View key="f" style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: t.fire }} />],
+            ["Erdbeben", <View key="q" style={{ width: 11, height: 11, borderRadius: 6, borderWidth: 2, borderColor: t.quake }} />],
+            ["Vorfall auf See", <View key="s" style={{ width: 9, height: 9, backgroundColor: t.ship, transform: [{ rotate: "45deg" }] }} />],
+            ["Satellitenbilder", <View key="a" style={{ width: 10, height: 10, borderWidth: 1.6, borderColor: t.accent }} />],
+          ] as [string, React.ReactNode][]).map(([label, icon]) => (
+            <View key={label} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <View style={{ width: 12, alignItems: "center" }}>{icon}</View><T v="caption" color={t.ink}>{label}</T>
+            </View>
+          ))}
+        </View>
+        <T v="caption" style={{ marginTop: 6 }}>{layers.fire ? `${fireNote.replace(/\.$/, "")}. ` : ""}Gestrichelt: Regionsgrenzen, West-Tigray umstritten.</T>
 
         {layers.ship && data.maritime.length ? (
           <>
-            <T v="h3" style={{ marginTop: space.xl, marginBottom: space.s }}>Vorfälle auf See</T>
+            <Head title="Vorfälle auf See" />
             {data.maritime.filter((m) => +new Date(m.t) >= since).length === 0 ? <T v="small">Keine Vorfälle in diesem Zeitraum.</T> : null}
             {data.maritime.filter((m) => +new Date(m.t) >= since).map((m, i) => (
               <PlainRow key={i} first={i === 0} title={m.title} meta={seaMeta(m)} external onPress={() => openLink(m.url || "https://www.ukmto.org/recent-incidents")} />
             ))}
-            {data.maritime.length - shipsIn > 0 ? <T v="caption" style={{ marginTop: 6 }}>{data.maritime.length - shipsIn} ältere ausgeblendet; auf der Karte blass.</T> : null}
+            {data.maritime.length - shipsIn > 0 ? <T v="caption" style={{ marginTop: 6 }}>{plural(data.maritime.length - shipsIn, "älterer Vorfall", "ältere Vorfälle")} ausgeblendet, auf der Karte blass.</T> : null}
           </>
         ) : null}
       </ScrollView>

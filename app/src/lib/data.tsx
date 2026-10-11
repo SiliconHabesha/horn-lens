@@ -5,7 +5,7 @@ import * as Haptics from "expo-haptics";
 import type { Session } from "@supabase/supabase-js";
 import { AppState, Platform } from "react-native";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { addTexts, de, deDates, resetTexts } from "./de";
+import { addTexts, de, deDates, resetTexts, srcName } from "./de";
 import { refreshPushOwner } from "./push";
 import { sb } from "./supabase";
 import type { Alert, Claim, Data, Item, Report } from "./types";
@@ -53,7 +53,7 @@ async function loadPublic(): Promise<Raw> {
     owner: false, texts: null,
     data: {
       now: new Date().toISOString(), sources, reports: [],
-      items: items.map((i) => ({ ...i, source_id: i.source.id, source_name: i.source.name, source_type: i.source.source_type })),
+      items: items.map((i) => ({ ...i, source_id: i.source.id, source_name: srcName(i.source.name), source_type: i.source.source_type })),
       signals: {
         fires_total: fires.length, fires_capped: fires.length >= PUBLIC_FIRE_CAP,
         fires: fires.map((x) => [x.lat, x.lon, Math.round(new Date(x.occurred_at).getTime() / 1000), x.detail?.satellite ?? null, x.detail?.frp_mw ?? null]),
@@ -88,7 +88,7 @@ function toData(raw: Raw): Data {
     owner: raw.owner,
     sources: (d.sources || []).map((x: any) => ({ ...x, name: de(x.name), stance_note: de(x.stance_note) })),
     reports: d.reports || [],
-    items: (d.items || []).map((i: any) => ({ ...i, source_name: de(i.source_name) })),
+    items: (d.items || []).map((i: any) => ({ ...i, source_name: srcName(de(i.source_name)) })),
     fires, firesTotal: Number(s.fires_total ?? fires.length), firesCapped: !!s.fires_capped,
     quakes: (s.quakes || []).map((x: any) => ({ ...x, title: de(x.title) })),
     maritime: (s.maritime || []).map((x: any) => ({ ...x, title: de(x.title) })),
@@ -133,7 +133,7 @@ export async function loadReport(date: string): Promise<Report | null> {
   if (!data) return null;
   const r = data as Report;
   const p = r.payload || {};
-  for (const reg of p.regions || []) { for (const it of reg.items || []) it.source_name = de(it.source_name); rememberItems(reg.items || []); }
+  for (const reg of p.regions || []) { for (const it of reg.items || []) it.source_name = srcName(de(it.source_name)); rememberItems(reg.items || []); }
   for (const c of p.changes || []) { c.statement = de(c.statement); c.note = de(c.note); c.source_title = deDates(c.source_title); }
   if (p.alerts) p.alerts = localizeAlerts(p.alerts);
   return r;

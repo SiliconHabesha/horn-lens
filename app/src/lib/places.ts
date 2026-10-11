@@ -10,6 +10,7 @@ export type Place = {
   weak?: { alias: string[]; ctx: string[] }; // mehrdeutige Namen: zählen nur, wenn die Schlagzeile auch eines der ctx-Wörter enthält
   major: boolean;         // auch auf der ganzen Karte beschriften (sonst erst beim Zoomen)
   left?: boolean;         // Beschriftung links vom Punkt
+  dy?: number;            // Beschriftung senkrecht verschieben (Bildschirmpunkte), wenn Namen sich überlappen
 };
 
 export const PLACES: Place[] = [
@@ -27,18 +28,18 @@ export const PLACES: Place[] = [
   { id: "afabet", name: "Afabet", lat: 16.193, lon: 38.69, country: "Eritrea", latin: ["afabet"], geez: ["ኣፍዓበት"], major: false },
   { id: "senafe", name: "Senafe", lat: 14.7, lon: 39.42, country: "Eritrea", latin: ["senafe"], geez: ["ሰንዓፈ"], major: false },
   { id: "badme", name: "Badme", lat: 14.726, lon: 37.803, country: "Grenzgebiet (umstritten)", latin: ["badme"], geez: ["ባድመ"], major: true },
-  { id: "zalambessa", name: "Zalambessa", lat: 14.517, lon: 39.383, country: "Äthiopien (Tigray)", latin: ["zalambessa", "zalambesa", "zalanbessa"], geez: ["ዛላምበሳ"], major: true, left: true },
+  { id: "zalambessa", name: "Zalambessa", lat: 14.517, lon: 39.383, country: "Äthiopien (Tigray)", latin: ["zalambessa", "zalambesa", "zalanbessa"], geez: ["ዛላምበሳ"], major: false, left: true },
   { id: "bure", name: "Bure", lat: 12.601, lon: 42.27, country: "Äthiopien (Afar)", latin: [], weak: { alias: ["bure"], ctx: ["afar", "assab", "eritrea", "eritrean", "border crossing"] }, major: true, left: true },
   { id: "adigrat", name: "Adigrat", lat: 14.277, lon: 39.462, country: "Äthiopien (Tigray)", latin: ["adigrat"], geez: ["ዓዲግራት", "ዓድግራት"], major: true },
   { id: "axum", name: "Aksum", lat: 14.121, lon: 38.723, country: "Äthiopien (Tigray)", latin: ["axum", "aksum"], geez: ["ኣኽሱም", "አክሱም"], major: false },
   { id: "adwa", name: "Adwa", lat: 14.165, lon: 38.896, country: "Äthiopien (Tigray)", latin: ["adwa", "adowa"], geez: ["ዓድዋ"], major: false },
-  { id: "shire", name: "Shire", lat: 14.104, lon: 38.284, country: "Äthiopien (Tigray)", latin: ["inda selassie", "endaselassie", "shire endaselassie"], weak: { alias: ["shire"], ctx: ["tigray", "tigrayan", "ethiopia", "ethiopian", "eritrea", "eritrean", "idp", "idps", "displaced"] }, major: true },
+  { id: "shire", name: "Shire", lat: 14.104, lon: 38.284, country: "Äthiopien (Tigray)", latin: ["inda selassie", "endaselassie", "shire endaselassie"], weak: { alias: ["shire"], ctx: ["tigray", "tigrayan", "ethiopia", "ethiopian", "eritrea", "eritrean", "idp", "idps", "displaced"] }, major: false },
   { id: "mekelle", name: "Mekelle", lat: 13.497, lon: 39.475, country: "Äthiopien (Tigray)", latin: ["mekelle", "mekele", "mek'ele", "makelle", "makale"], geez: ["መቐለ", "መቀሌ"], major: true },
   { id: "humera", name: "Humera", lat: 14.297, lon: 36.617, country: "Äthiopien (Westtigray, umstritten)", latin: ["humera"], geez: ["ሑመራ", "ሁመራ"], major: true },
   { id: "alamata", name: "Alamata", lat: 12.416, lon: 39.554, country: "Äthiopien (Raya, umstritten)", latin: ["alamata"], geez: ["ኣላማጣ", "አላማጣ"], major: true },
   { id: "semera", name: "Semera", lat: 11.792, lon: 41.006, country: "Äthiopien (Afar)", latin: ["semera"], geez: ["ሰመራ"], major: true },
   { id: "babelmandeb", name: "Bab el-Mandeb", lat: 12.583, lon: 43.333, country: "Meerenge", latin: ["bab el-mandeb", "bab al-mandab", "bab-el-mandeb", "bab el mandeb", "bab al-mandeb", "mandeb"], major: true },
-  { id: "mokha", name: "Mokka (Mokha)", lat: 13.32, lon: 43.25, country: "Jemen", latin: ["mokha", "al-mukha", "mukha"], weak: { alias: ["mocha"], ctx: ["yemen", "yemeni", "red sea", "houthi", "houthis", "port", "ship", "vessel"] }, major: true },
+  { id: "mokha", name: "Mokka", lat: 13.32, lon: 43.25, country: "Jemen", latin: ["mokha", "al-mukha", "mukha"], weak: { alias: ["mocha"], ctx: ["yemen", "yemeni", "red sea", "houthi", "houthis", "port", "ship", "vessel"] }, major: true },
   { id: "hodeidah", name: "Hudaida", lat: 14.798, lon: 42.954, country: "Jemen", latin: ["hodeidah", "hudaydah", "hodeida", "hudaida"], major: true },
   { id: "portsudan", name: "Port Sudan", lat: 19.616, lon: 37.216, country: "Sudan", latin: ["port sudan"], major: true },
   { id: "djibouti", name: "Dschibuti", lat: 11.588, lon: 43.145, country: "Dschibuti", latin: ["djibouti", "dschibuti"], geez: ["ጅቡቲ"], major: true },
@@ -95,5 +96,5 @@ export function nearest(lat: number, lon: number) {
 // Eine Zeile für Vorfälle auf See, überall gleich: Zeit · UKMTO · nächster Ort
 export const seaMeta = (m: { t: string; lat: number; lon: number }, extra?: string) => {
   const n = nearest(m.lat, m.lon);
-  return `${fmtFull(m.t)} · UKMTO · ${n.d < 8 ? `bei ${n.p.name}` : `etwa ${Math.round(n.d)} km von ${n.p.name}`}${extra ? ` · ${extra}` : ""}`;
+  return `${fmtFull(m.t)} · UKMTO · ${n.d < 8 ? `bei ${n.p.name}` : `etwa ${Math.round(n.d)} km von ${n.p.name}`}${extra ? ` · ${extra}` : ""}`;
 };

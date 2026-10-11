@@ -32,8 +32,8 @@ export function PushSettings() {
         const err = await enablePush(a, r && !!data?.owner);
         if (err) setMsg(err); else { setAlerts(a); setReport(r && !!data?.owner); setDenied(false); }
       }
-    } catch (e: any) {
-      setMsg(`Das hat nicht geklappt (${String(e?.message || e)}). Bitte Verbindung prüfen und noch einmal versuchen.`);
+    } catch {
+      setMsg("Das hat nicht geklappt. Bitte Verbindung prüfen und erneut versuchen.");
     } finally { setBusy(false); }
   };
   const test = async () => {
@@ -58,7 +58,7 @@ export function PushSettings() {
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12 }}>
               <View style={{ flex: 1 }}>
                 <T v="bodyStrong">Tagesbericht</T>
-                <T v="caption">Jeden Morgen gegen 7:15 Uhr</T>
+                <T v="caption">Jeden Morgen gegen 7:15 Uhr (deutsche Zeit)</T>
               </View>
               <Switch value={report && !denied} disabled={busy || !pushSupported} onValueChange={(v) => apply(alerts, v)} accessibilityLabel="Tagesbericht als Benachrichtigung" />
             </View>

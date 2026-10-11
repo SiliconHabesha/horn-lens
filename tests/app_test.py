@@ -95,6 +95,9 @@ def route(r):
     u = r.request.url; path = u.split(".supabase.co")[1]
     calls.append((r.request.method, path.split("?")[0]))
     body = None; headers = {"content-type": "application/json", "access-control-allow-origin": "*"}
+    if path.startswith("/rest/v1/rpc/app_data") and STATE["member"]:
+        # Angemeldet, aber nicht freigeschaltet: die Datenbank lehnt ab, die App zeigt die offene Ausgabe
+        return r.fulfill(status=400, headers=headers, body=json.dumps({"code": "42501", "message": "not allowed"}))
     if path.startswith("/rest/v1/rpc/app_data"): body = owner_data
     elif path.startswith("/rest/v1/rpc/app_texts"): body = {}
     elif path.startswith("/rest/v1/rpc/app_report"): body = report
@@ -118,6 +121,7 @@ def route(r):
 SESSION = {"access_token": "test.test.test", "refresh_token": "r", "expires_in": 3600, "expires_at": int(now) + 3600, "token_type": "bearer",
            "user": {"id": "00000000-0000-0000-0000-000000000001", "email": "betreiber@example.org", "aud": "authenticated", "role": "authenticated"}}
 R = {}
+STATE = {"member": False}
 with sync_playwright() as p:
     b = p.chromium.launch()
     for mode in ("owner", "public"):
@@ -220,6 +224,24 @@ with sync_playwright() as p:
             if mode == "public": shot("login", "/login")
             R[f"{pre} errors"] = errs[:5]
             ctx.close()
+    # Rundgang für die Durchsicht: Handy dunkel (Betreiber) und Handy hell (angemeldet, nicht freigeschaltet)
+    TOUR = ["/", "/news", "/claims", "/map", "/satellite", f"/item/{6173 + 100000}", "/claim/4", "/report/2026-10-11", "/place/asmara", "/places",
+            "/signal/fires", "/signal/sea", "/search", "/more", "/sources", "/method"]
+    for who, scheme in (("ownerdark", "dark"), ("member", "light")):
+        STATE["member"] = who == "member"
+        ctx = b.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, locale="de-DE", timezone_id="Europe/Berlin", color_scheme=scheme)
+        ctx.add_init_script(f"localStorage.setItem('sb-mkcaioabbzccawjmtndw-auth-token', {json.dumps(json.dumps(SESSION))}); localStorage.setItem('hl:seen:v1', String(Date.now() - 4*3600e3)); localStorage.setItem('hl:welcome:v1', '1');")
+        ctx.route("**/*.supabase.co/**", route)
+        pg = ctx.new_page(); errs = []
+        pg.on("pageerror", lambda e: errs.append(str(e)))
+        for path in TOUR:
+            if who == "member" and path in ("/claims", "/claim/4", "/report/2026-10-11"): continue
+            pg.goto(f"http://127.0.0.1:{PORT}{path}"); pg.wait_for_timeout(1500)
+            name = path.strip("/").replace("/", "-") or "lage"
+            pg.screenshot(path=str(SHOTS / f"tour-{who}-{name}.png"))
+        R[f"tour-{who} errors"] = errs[:5]
+        ctx.close()
+    STATE["member"] = False
     b.close()
 srv.shutdown()
 R["calls"] = sorted(set(c[1] for c in calls))

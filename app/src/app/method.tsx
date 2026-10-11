@@ -19,6 +19,7 @@ export default function Method() {
       <T v="h2" style={{ marginTop: space.xl, marginBottom: space.s }}>Was du siehst</T>
       <View style={{ gap: 6 }}>
         <B>Meldungen: die Schlagzeile, ein Link zum Original und wer sie veröffentlicht hat. Wir kopieren keine Artikel. Eine Meldung ist keine bestätigte Tatsache.</B>
+        {data?.owner ? <B>Geschichten: Nennen mehrere Medien in ähnlichen Worten dasselbe, fasst Horn Lens ihre Meldungen automatisch zusammen. Das sagt nichts darüber, ob es stimmt, nur wer darüber berichtet.</B> : null}
         <B>Messwerte: Messungen von Satelliten und Sensoren. Sie zeigen, dass an einem Ort zu einer Zeit etwas geschah, nie wer es war oder warum.</B>
         <B>Satellitenbilder: Sentinel-2-Ausschnitte mit genauer Aufnahmezeit, nur mit höchstens 3 % Wolken.</B>
         <B>{`Zeiten sind Berliner Zeit (derzeit ${tzName()}), außer den Aufnahmezeiten der Satelliten in UTC.`}</B>
@@ -26,7 +27,7 @@ export default function Method() {
       </View>
       {data?.owner ? (
         <>
-          <T v="h2" style={{ marginTop: space.xl, marginBottom: space.s }}>Wie eine Behauptung ihren Status bekommt</T>
+          <T v="h2" style={{ marginTop: space.xl, marginBottom: space.s }}>Wie eine Behauptung ihre Stufe bekommt</T>
           <View style={{ gap: 6 }}>
             {STATUS_ORDER.map((k) => <B key={k}>{`${STATUS[k][0]}: ${STATUS[k][1]}`}</B>)}
             <B>Zwei Quellen gelten nur als unabhängig, wenn es verschiedene Organisationen sind. Eine Reuters-Meldung, die ein anderes Medium übernimmt, zählt einmal.</B>
@@ -37,7 +38,7 @@ export default function Method() {
       <T v="h2" style={{ marginTop: space.xl, marginBottom: space.s }}>Was wir nicht sehen können</T>
       <View style={{ gap: 6 }}>
         <B>In Eritrea gibt es fast keine unabhängigen Medien. Die meisten Berichte stammen von der Regierung, aus der Diaspora oder aus dem Ausland.</B>
-        <B>Kurze Internet-Ausfälle in Eritrea können unbemerkt bleiben, das Messsignal ist schwach.</B>
+        {data?.owner ? <B>Kurze Internet-Einbrüche in Eritrea können unbemerkt bleiben, das Messsignal ist schwach.</B> : null}
         <B>Kleinere Erdbeben in dieser Region erfasst USGS nur lückenhaft.</B>
         <B>Vorfälle auf See sind die, die UKMTO meldet. Was nur andere Marinen oder Reedereien melden, kann fehlen.</B>
         <B>Bei 10 m pro Pixel zeigen Satelliten große Gebäude, Schiffe und Landebahnen, keine Menschen oder einzelnen Fahrzeuge.</B>

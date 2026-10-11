@@ -4,7 +4,7 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
-import { Banner, Button, Chip, T, tap } from "../components/ui";
+import { Banner, Button, Chip, openLink, T, tap } from "../components/ui";
 import { Provider, signInWith } from "../lib/auth";
 import { WEB_URL } from "../lib/feeds";
 import { sb } from "../lib/supabase";
@@ -18,7 +18,7 @@ const MSG: [RegExp, string][] = [
   [/rate limit|too many/i, "Gerade zu viele Versuche. Bitte in ein paar Minuten noch einmal."],
   [/network|fetch/i, "Keine Verbindung. Bitte Internet prüfen."],
 ];
-const say = (e: any) => { const m = String(e?.message || e); return MSG.find(([re]) => re.test(m))?.[1] || `Das hat nicht geklappt (${m}).`; };
+const say = (e: any) => { const m = String(e?.message || e); return MSG.find(([re]) => re.test(m))?.[1] || "Das hat nicht geklappt. Bitte gleich noch einmal versuchen."; };
 
 const close = () => { try { if (router.canGoBack()) router.back(); } catch { /* Anmeldebildschirm ohne Navigation: die Seite wechselt von selbst */ } };
 
@@ -90,7 +90,7 @@ export default function Login({ gate }: { gate?: boolean } = {}) {
           <Image source={require("../../assets/icon.png")} style={{ width: 76, height: 76, borderRadius: 18 }} accessibilityIgnoresInvertColors />
           <T v="display" style={{ textAlign: "center" }}>Horn Lens</T>
           <T v="small" style={{ textAlign: "center" }}>Lagebild zum Horn von Afrika, Eritrea zuerst. Nachprüfbar, ruhig, ohne Werbung.</T>
-          <T v="caption">powered by <T v="caption" color={t.ink} style={{ fontWeight: "800", letterSpacing: 1 }}>BELES</T></T>
+          <T v="caption">powered by <T v="caption" color={t.ink} style={{ fontFamily: font.black, letterSpacing: 1 }}>BELES</T></T>
         </View>
 
         <ProviderButton p="apple" busy={busy === "apple"} onPress={() => social("apple")} />
@@ -130,6 +130,13 @@ export default function Login({ gate }: { gate?: boolean } = {}) {
           {gate ? "Diese Fassung ist privat. Voller Zugang nur für freigeschaltete Konten." : "Ohne Anmeldung siehst du die offene Ausgabe. Voller Zugang nur für freigeschaltete Konten."}
           {" "}Gespeichert wird nur, was für die Anmeldung nötig ist. Kein Tracking, keine Werbung.
         </T>
+        <View style={{ flexDirection: "row", justifyContent: "center", gap: space.xl }}>
+          {[["Impressum", "impressum"], ["Datenschutz", "datenschutz"]].map(([label, f]) => (
+            <Pressable key={f} onPress={() => openLink(`${WEB_URL}/${f}.html`)} accessibilityRole="link" hitSlop={8} style={{ minHeight: 44, justifyContent: "center" }}>
+              <T v="caption" color={t.muted} style={{ textDecorationLine: "underline" }}>{label}</T>
+            </Pressable>
+          ))}
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );

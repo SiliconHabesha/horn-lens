@@ -20,7 +20,7 @@ const light = {
   border: "#9FB0B2",
   fire: "#D4531C",
   quake: "#6A4C9C",
-  ship: "#9A3A12",
+  ship: "#B0245A",
   tab: "#F9FAF9",
   type: {
     government_er: "#9B5D00", progov_er: "#826626", government_et: "#8F4F2A", progov_et: "#965D45",
@@ -50,7 +50,7 @@ const dark: Theme = {
   border: "#4C6670",
   fire: "#FF8A4C",
   quake: "#B9A0E6",
-  ship: "#E58A5E",
+  ship: "#F2C14E",
   tab: "#132329",
   type: {
     government_er: "#E3A23B", progov_er: "#D4B46A", government_et: "#D08A5F", progov_et: "#DCA285",
@@ -73,6 +73,7 @@ export const font = {
   bold: "SG_700",
   black: "SG_800",
   ethiopic: "NotoSansEthiopic_400Regular",
+  ethiopicBold: "NotoSansEthiopic_600SemiBold",
 };
 
 export const space = { xs: 4, s: 8, m: 12, l: 16, xl: 24, xxl: 32 };

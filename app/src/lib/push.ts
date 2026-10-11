@@ -37,7 +37,7 @@ export async function enablePush(alerts: boolean, report: boolean): Promise<stri
   const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
   const kinds = [alerts && "alerts", report && "report"].filter(Boolean) as string[];
   const { error } = await sb.rpc("app_push_register", { p_token: token, p_kinds: kinds });
-  if (error) return `Anmeldung für Benachrichtigungen fehlgeschlagen (${error.message}).`;
+  if (error) return "Benachrichtigungen ließen sich nicht einschalten. Bitte Verbindung prüfen und erneut versuchen.";
   await savePrefs({ token, alerts, report });
   return null;
 }

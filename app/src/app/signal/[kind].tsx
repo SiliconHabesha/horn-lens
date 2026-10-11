@@ -2,24 +2,25 @@
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import React, { useMemo } from "react";
 import { View } from "react-native";
-import { Button, Empty, Group, Head, ListRow, openLink, PlainRow, Screen, T } from "../../components/ui";
+import { Button, Empty, Group, Head, ListRow, openLink, Screen, T } from "../../components/ui";
 import { fmtFull, num } from "../../lib/de";
 import { useData } from "../../lib/data";
 import { feedState } from "../../lib/feeds";
 import { nearest, seaMeta } from "../../lib/places";
 import { space } from "../../lib/theme";
+import { Skeleton } from "../../components/Skeleton";
 
 type Kind = "internet" | "fires" | "quakes" | "sea";
 const META: Record<Kind, { title: string; feed: string; who: string; about: string; url: string }> = {
-  internet: { title: "Internet", feed: "ioda", who: "IODA", about: "Zeigt, wenn weniger Netze erreichbar sind, nicht warum.", url: "https://ioda.inetintel.cc.gatech.edu/" },
-  fires: { title: "Hitzepunkte", feed: "firms", who: "NASA FIRMS", about: "Heiße Stellen aus dem All: Kämpfe, aber auch Feldbrände oder Gasfackeln.", url: "https://firms.modaps.eosdis.nasa.gov/map/" },
+  internet: { title: "Internet-Einbrüche", feed: "ioda", who: "IODA", about: "Zeigt, wenn weniger Netze erreichbar sind, nicht warum. Kurze Einbrüche in Eritrea können unbemerkt bleiben.", url: "https://ioda.inetintel.cc.gatech.edu/" },
+  fires: { title: "Hitzepunkte", feed: "firms", who: "NASA FIRMS", about: "Ein Hitzepunkt zeigt Hitze, nicht die Ursache: oft Feldbrände oder Gasfackeln, manchmal Kämpfe.", url: "https://firms.modaps.eosdis.nasa.gov/map/" },
   quakes: { title: "Erdbeben", feed: "usgs", who: "USGS", about: "Ab Stärke 2,5 in 7 Tagen. Das Afar-Dreieck bebt häufig.", url: "https://earthquake.usgs.gov/earthquakes/map/" },
   sea: { title: "Vorfälle auf See", feed: "ukmto", who: "UKMTO", about: "Britische Schifffahrtsstelle; nennt keine Verantwortlichen, Orte sind ungefähr.", url: "https://www.ukmto.org/recent-incidents" },
 };
 const COUNTRY: Record<string, string> = { ER: "Eritrea", ET: "Äthiopien" };
 // Fachbegriffe aus der Messung kürzen: „(PING-SLASH24 12 % unter dem Üblichen)“ → „(−12 %)“
-const plain = (s: string) => s.replace(/\s*\((?:PING-SLASH24|BGP|ACTIVE PROBING|MERIT-NT)[^)]*?(\d+)\s*%[^)]*\)/i, " (−$1 %)");
-const where = (lat: number, lon: number) => { const n = nearest(lat, lon); return n.d < 8 ? `bei ${n.p.name}` : `etwa ${num(Math.round(n.d))} km von ${n.p.name}`; };
+const plain = (s: string) => s.replace(/\s*\((?:PING-SLASH24|BGP|ACTIVE PROBING|MERIT-NT)[^)]*?(\d+)\s*%[^)]*\)/i, " (−$1 %)");
+const where = (lat: number, lon: number) => { const n = nearest(lat, lon); return n.d < 8 ? `bei ${n.p.name}` : `etwa ${num(Math.round(n.d))} km von ${n.p.name}`; };
 
 export default function Signal() {
   const { kind: raw } = useLocalSearchParams<{ kind: string }>();
@@ -39,15 +40,16 @@ export default function Signal() {
       cur.n++;
       by.set(key, cur);
     }
-    return [...by.values()].sort((a, b) => b.n - a.n);
+    return [...by.values()].sort((a, b) => (a.id === "_far" ? 1 : 0) - (b.id === "_far" ? 1 : 0) || b.n - a.n);
   }, [data, kind]);
 
-  if (!known) return <Screen topInset={false} refresh={false}><Stack.Screen options={{ title: "Messwerte" }} /><Empty text="Diesen Messwert gibt es nicht." /></Screen>;
-  if (!data) return <Screen topInset={false} refresh={false}><Stack.Screen options={{ title: m.title }} /><Empty text="Wird geladen …" /></Screen>;
-  if (kind === "internet" && !data.owner) return <Screen topInset={false} refresh={false}><Stack.Screen options={{ title: m.title }} /><Empty text="Internet-Messwerte gibt es in der vollen Ausgabe." /></Screen>;
+  if (!known) return <Screen topInset={false} refresh={false}><Stack.Screen options={{ title: "Messwerte" }} /><Empty text="Diese Seite gibt es nicht. Alle Messwerte stehen in der Lage." /></Screen>;
+  if (!data) return <Screen topInset={false} refresh={false}><Stack.Screen options={{ title: m.title }} /><Skeleton rows={5} /></Screen>;
+  if (kind === "internet" && !data.owner) return <Screen topInset={false} refresh={false}><Stack.Screen options={{ title: m.title }} /><Empty text="Internet-Messwerte gibt es nur in der vollen Ausgabe." /></Screen>;
   const st = feedState(data, m.feed);
   const down = !st.ok || (kind === "fires" && !!data.firesError);
   // Ohne aktuelle Daten nie „alles ruhig“ anzeigen
+  const sample = data.firesCapped || data.firesTotal > data.fires.length;
   const none = (okText: string) => <T v="small">{down ? `Keine aktuellen Daten von ${m.who}.` : okText}</T>;
 
   return (
@@ -70,10 +72,11 @@ export default function Signal() {
 
       {kind === "fires" ? (
         <>
-          <Head title={`${data.firesCapped ? "≥ " : ""}${num(data.firesTotal)} in 24 Stunden`} />
+          <Head title={sample ? `${num(data.fires.length)} von ${data.firesCapped ? "mindestens " : ""}${num(data.firesTotal)} Hitzepunkten, nach Ort` : `${num(data.firesTotal)} in 24 Stunden, nach Ort`} />
+          {sample ? <T v="caption" style={{ marginBottom: space.s }}>Horn Lens lädt nur eine Auswahl. Die Verteilung nach Orten ist deshalb ungefähr; alle Punkte zeigt NASA FIRMS.</T> : null}
           {areas.length ? (
-            <Group>{areas.map((a, i) => <ListRow key={a.id} first={i === 0} label={a.id === "_far" ? a.name : `Bei ${a.name}`} value={num(a.n)}
-              onPress={a.id !== "_far" ? () => router.push(`/place/${a.id}`) : undefined} />)}</Group>
+            <Group>{areas.map((a, i) => <ListRow key={a.id} first={i === 0} label={a.id === "_far" ? a.name : `Bei ${a.name}`} hint={a.id === "_far" ? "über 60 km" : undefined} value={num(a.n)}
+              onPress={a.id !== "_far" ? () => router.push(`/place/${a.id}`) : undefined} align />)}</Group>
           ) : none("Keine Hitzepunkte in 24 Stunden.")}
         </>
       ) : null}
@@ -83,7 +86,7 @@ export default function Signal() {
           <Head title="Letzte 7 Tage" />
           {data.quakes.length ? (
             <Group>{[...data.quakes].sort((a, b) => (a.t < b.t ? 1 : -1)).map((q, i) => (
-              <ListRow key={i} first={i === 0} label={q.mag != null ? `Stärke ${String(q.mag).replace(".", ",")}, ${where(q.lat, q.lon)}` : q.title} sub={fmtFull(q.t)}
+              <ListRow key={i} first={i === 0} label={q.mag != null ? `Stärke ${Number(q.mag).toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}, ${where(q.lat, q.lon)}` : q.title} sub={fmtFull(q.t)}
                 external={!!q.url} onPress={q.url ? () => openLink(q.url) : undefined} />
             ))}</Group>
           ) : none("Keine Erdbeben ab Stärke 2,5.")}
@@ -93,7 +96,7 @@ export default function Signal() {
       {kind === "sea" ? (
         <>
           <Head title="Letzte 30 Tage" />
-          {data.maritime.length ? data.maritime.map((x, i) => <PlainRow key={i} first={i === 0} title={x.title} meta={seaMeta(x)} external onPress={() => openLink(x.url || m.url)} />)
+          {data.maritime.length ? <Group>{[...data.maritime].sort((a, b) => (a.t < b.t ? 1 : -1)).map((x, i) => <ListRow key={i} first={i === 0} icon="boat-outline" label={x.title} sub={seaMeta(x)} external onPress={() => openLink(x.url || m.url)} />)}</Group>
             : none("Keine Vorfälle.")}
         </>
       ) : null}

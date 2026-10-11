@@ -5,7 +5,7 @@ import * as WebBrowser from "expo-web-browser";
 import React from "react";
 import { Linking, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextProps, View, ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ago, STATUS } from "../lib/de";
+import { ago, num, STATUS } from "../lib/de";
 import { useData } from "../lib/data";
 import { font, radius, space, useTheme } from "../lib/theme";
 
@@ -56,12 +56,14 @@ export function Card({ children, style, onPress, accessibilityLabel }: { childre
   );
 }
 
-export function Chip({ label, count, active, onPress, color }: { label: string; count?: number; active?: boolean; onPress: () => void; color?: string }) {
+export function Chip({ label, count, active, onPress, color, disabled }: { label: string; count?: number; active?: boolean; onPress: () => void; color?: string; disabled?: boolean }) {
   const t = useTheme();
   return (
-    <Pressable accessibilityRole="button" accessibilityState={{ selected: !!active }} onPress={() => { tap(); onPress(); }}
-      style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 13, height: 34, borderRadius: radius.pill,
-        backgroundColor: active ? t.ink : t.card, borderWidth: StyleSheet.hairlineWidth, borderColor: active ? t.ink : t.rule, opacity: pressed ? 0.7 : 1 })}>
+    <Pressable accessibilityRole="button" accessibilityState={{ selected: !!active, disabled: !!disabled }} disabled={disabled} onPress={() => { tap(); onPress(); }}
+      hitSlop={{ top: 4, bottom: 4 }}
+      style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 13, minHeight: 36, paddingVertical: 4, borderRadius: radius.pill,
+        backgroundColor: active ? t.ink : t.card, borderWidth: StyleSheet.hairlineWidth, borderColor: active ? t.ink : t.rule, borderStyle: disabled ? "dashed" : "solid",
+        opacity: disabled ? 0.5 : pressed ? 0.7 : 1 })}>
       {color ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: color }} /> : null}
       <T v="smallStrong" color={active ? t.bg : t.ink}>{label}</T>
       {count != null ? <T v="caption" color={active ? t.bg : t.muted}>{count}</T> : null}
@@ -84,7 +86,7 @@ export function StatusPill({ status, small }: { status: string; small?: boolean 
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start" }}>
       <View style={{ width: small ? 7 : 9, height: small ? 7 : 9, borderRadius: 5, backgroundColor: c }} />
-      <T v="label" color={c}>{STATUS[status]?.[0] || status}</T>
+      <T v="label" color={c}>{STATUS[status]?.[0] || "Stufe unbekannt"}</T>
     </View>
   );
 }
@@ -114,7 +116,8 @@ export function Banner({ icon, text, tone = "info", action, onAction }: { icon: 
     <View style={{ flexDirection: "row", gap: 10, alignItems: "center", backgroundColor: bg, borderRadius: radius.m, padding: space.m, marginBottom: space.m }}>
       <Ionicons name={icon} size={18} color={fg} />
       <T v="small" color={fg} style={{ flex: 1 }}>{text}</T>
-      {action && onAction ? <Pressable onPress={onAction} hitSlop={8}><T v="smallStrong" color={fg}>{action}</T></Pressable> : null}
+      {action && onAction ? <Pressable onPress={() => { tap(); onAction(); }} hitSlop={10} accessibilityRole="button" accessibilityLabel={action}
+        style={{ minHeight: 32, justifyContent: "center" }}><T v="smallStrong" color={fg}>{action}</T></Pressable> : null}
     </View>
   );
 }
@@ -146,7 +149,7 @@ export function Screen({ title, sub, right, children, scroll = true, refresh = t
     </View>
   ) : null;
   const offlineBanner = offline && loadedAt ? (
-    <Banner icon="cloud-offline-outline" tone="warn" text={`Keine Verbindung. Stand: ${ago(loadedAt)}.`} action="Erneut" onAction={doRefresh} />
+    <Banner icon="cloud-offline-outline" tone="warn" text={`Keine Verbindung. Stand: ${ago(loadedAt)}.`} action="Erneut versuchen" onAction={doRefresh} />
   ) : loadedAt && Date.now() - loadedAt > 3600e3 && !refreshing ? (
     <Banner icon="time-outline" text={`Diese Ansicht ist von ${ago(loadedAt)}.`} action="Aktualisieren" onAction={doRefresh} />
   ) : null;
@@ -191,8 +194,9 @@ export function Button({ label, onPress, kind = "primary", icon, disabled }: { l
 }
 
 /** Eine Zeile in einer gruppierten Liste (Messwerte, Weiter zu, Orte): Symbol, Text, Zusatz, Wert rechts, Pfeil */
-export function ListRow({ icon, label, hint, sub, value, tone, onPress, first, external }: {
+export function ListRow({ icon, label, hint, sub, value, tone, onPress, first, external, align }: {
   icon?: keyof typeof Ionicons.glyphMap; label: string; hint?: string; sub?: string; value?: string; tone?: "alert" | "none"; onPress?: () => void; first?: boolean; external?: boolean;
+  /** Platz für den Pfeil freihalten, damit Werte bündig mit antippbaren Zeilen stehen */ align?: boolean;
 }) {
   const t = useTheme();
   const c = tone === "alert" ? t.warn : tone === "none" ? t.muted : t.ink;
@@ -207,7 +211,7 @@ export function ListRow({ icon, label, hint, sub, value, tone, onPress, first, e
         {sub ? <T v="caption" numberOfLines={2}>{sub}</T> : null}
       </View>
       {value ? <T v="bodyStrong" color={c}>{value}</T> : null}
-      {onPress ? <Ionicons name={external ? "open-outline" : "chevron-forward"} size={16} color={t.faint} /> : null}
+      {onPress ? <Ionicons name={external ? "open-outline" : "chevron-forward"} size={16} color={t.faint} /> : align ? <View style={{ width: 16 }} /> : null}
     </Pressable>
   );
 }
@@ -219,11 +223,12 @@ export function Group({ children, style }: { children: React.ReactNode; style?: 
 }
 
 /** Abschnittsüberschrift mit optionalem Link rechts */
-export function Head({ title, action, onAction, first }: { title: string; action?: string; onAction?: () => void; first?: boolean }) {
+export function Head({ title, action, onAction, first, count }: { title: string; action?: string; onAction?: () => void; first?: boolean; count?: number }) {
   const t = useTheme();
   return (
     <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: first ? 0 : space.xl, marginBottom: space.s }}>
-      <T v="h2" accessibilityRole="header">{title}</T>
+      <T v="h2" accessibilityRole="header" accessibilityLabel={count != null ? `${title}, ${count}` : undefined}>{title}</T>
+      {count != null && !(action && onAction) ? <T v="small" color={t.muted}>{num(count)}</T> : null}
       {action && onAction ? (
         <Pressable onPress={() => { tap(); onAction(); }} hitSlop={12} accessibilityRole="button" accessibilityLabel={`${title}: ${action}`}>
           <T v="smallStrong" color={t.accent}>{action}</T>

@@ -5,8 +5,9 @@ import { router, Stack } from "expo-router";
 import React, { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
 import { ItemRow, itemTime } from "../components/items";
-import { Card, StatusPill, T, tap } from "../components/ui";
-import { TYPES } from "../lib/de";
+import { StatusPill, T, tap } from "../components/ui";
+import { num, TYPES } from "../lib/de";
+import { Skeleton } from "../components/Skeleton";
 import { useData } from "../lib/data";
 import { mentions, PLACES } from "../lib/places";
 import { dedupe, poolOf } from "../lib/stories";
@@ -19,9 +20,9 @@ function Section({ title, count, children }: { title: string; count: number; chi
   const t = useTheme();
   return (
     <View style={{ marginTop: space.xl }}>
-      <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, marginBottom: space.s }}>
-        <T v="label" color={t.muted}>{title}</T>
-        <T v="caption">{count}</T>
+      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: space.s }}>
+        <T v="label" color={t.muted} accessibilityRole="header">{title}</T>
+        <T v="caption">{num(count)}</T>
       </View>
       <View>{children}</View>
     </View>
@@ -35,6 +36,7 @@ export default function Search() {
   const [q, setQ] = useState("");
   const [recent, setRecent] = useState<string[]>([]);
   useEffect(() => { AsyncStorage.getItem(RECENT(uid)).then((v) => { try { const x = JSON.parse(v || "[]"); if (Array.isArray(x)) setRecent(x); } catch { /* leer */ } }).catch(() => {}); }, [uid]);
+  const forget = () => { tap(); setRecent([]); AsyncStorage.removeItem(RECENT(uid)).catch(() => {}); };
   const remember = (s: string) => {
     const v = s.trim();
     if (v.length < 2) return;
@@ -80,9 +82,13 @@ export default function Search() {
       </View>
       <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
         contentContainerStyle={{ paddingHorizontal: space.l, paddingBottom: space.xxl * 2, maxWidth: 760, width: "100%", alignSelf: "center" }}>
-        {!res ? (
+        {!data ? <View style={{ marginTop: space.l }}><Skeleton rows={4} /></View> : !res ? (
           <View style={{ marginTop: space.l }}>
-            <T v="label" color={t.muted}>{recent.length ? "Zuletzt gesucht" : "Zum Beispiel"}</T>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", minHeight: 32 }}>
+              <T v="label" color={t.muted}>{recent.length ? "Zuletzt gesucht" : "Zum Beispiel"}</T>
+              {recent.length ? <Pressable onPress={forget} accessibilityRole="button" hitSlop={8} style={{ minHeight: 32, justifyContent: "center" }}>
+                <T v="smallStrong" color={t.accent}>Verlauf löschen</T></Pressable> : null}
+            </View>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: space.s }}>
               {suggestions.map((s) => (
                 <Pressable key={s} onPress={() => { tap(); setQ(s); }} accessibilityRole="button" accessibilityLabel={`Nach ${s} suchen`}
@@ -98,7 +104,7 @@ export default function Search() {
         ) : total === 0 ? (
           <View style={{ alignItems: "center", paddingVertical: space.xxl, gap: 8 }}>
             <Ionicons name="search-outline" size={28} color={t.faint} />
-            <T v="small" style={{ textAlign: "center" }}>Nichts gefunden zu „{q.trim()}“. Andere Schreibweise versuchen, z. B. Aseb statt Assab, oder auf Englisch.</T>
+            <T v="small" style={{ textAlign: "center" }}>Nichts gefunden zu „{q.trim()}“. Andere Schreibweise versuchen, z. B. Aseb statt Assab, oder auf Englisch. Gesucht wird in den Schlagzeilen der letzten 72 Stunden.</T>
           </View>
         ) : (
           <>
@@ -127,7 +133,7 @@ export default function Search() {
               </Section>
             ) : null}
             {res.items.length ? (
-              <Section title="Meldungen" count={res.items.length}>
+              <Section title="Meldungen, 72 Std." count={res.items.length}>
                 {res.items.slice(0, 30).map((it, i) => (
                   <View key={it.id} style={i ? { borderTopWidth: StyleSheet.hairlineWidth, borderColor: t.rule } : undefined}>
                     <ItemRow it={it} isNew={new Date(it.fetched_at).getTime() > seenBefore} onOpen={() => remember(q)} />

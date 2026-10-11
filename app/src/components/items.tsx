@@ -1,9 +1,8 @@
 // Meldungen: eine Zeile je Schlagzeile, mit Herkunft, Art der Quelle und Zeit.
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import React from "react";
 import { Platform, Pressable, Share, StyleSheet, View } from "react-native";
-import { fmtIsoDay, fmtWhen, TYPE_ORDER, TYPES } from "../lib/de";
+import { fmtIsoDay, fmtWhen, plural, TYPE_ORDER, TYPES } from "../lib/de";
 import { font, useTheme } from "../lib/theme";
 import type { Story } from "../lib/stories";
 import type { Item } from "../lib/types";
@@ -17,10 +16,10 @@ export { dedupe } from "../lib/stories";
 
 export const itemTime = (it: Item) => it.published_at || it.fetched_at;
 
-export const whenOf = (it: Item) => !it.published_at ? `Zeit nicht angegeben, abgerufen ${fmtWhen(it.fetched_at)}`
+export const whenOf = (it: Item) => !it.published_at ? `abgerufen ${fmtWhen(it.fetched_at)}`
   : DATE_ONLY.has(it.source_id) ? fmtIsoDay(String(it.published_at).slice(0, 10), { day: "numeric", month: "short" })
   : fmtWhen(it.published_at);
-export const titleStyle = (title: string) => [ETHIOPIC.test(title) && { fontFamily: font.ethiopic }, ARABIC.test(title) && { textAlign: "right" as const, writingDirection: "rtl" as const }];
+export const titleStyle = (title: string, strong = false) => [ETHIOPIC.test(title) && { fontFamily: strong ? font.ethiopicBold : font.ethiopic }, ARABIC.test(title) && { textAlign: "right" as const, writingDirection: "rtl" as const }];
 
 export async function shareItem(it: Item) {
   tap();
@@ -35,7 +34,7 @@ export async function shareItem(it: Item) {
 export async function shareStory(s: Story) {
   tap();
   const seen = new Set<string>();
-  const lines = [`Bei ${s.sources} Medien: ${s.lead.title}`, ""];
+  const lines = [`Bei ${plural(s.sources, "Medium", "Medien")}: ${s.lead.title}`, ""];
   for (const it of s.items) {
     const who = it.origin_domain || it.source_name;
     if (seen.has(who) || seen.size >= 6) continue;
@@ -67,7 +66,7 @@ function NewsRow({ title, types, who, when, isNew, onPress, a11y }: { title: str
     <Pressable onPress={() => { tap(); onPress(); }} accessibilityRole="button" accessibilityLabel={a11y} accessibilityHint="Öffnet Einzelheiten"
       style={({ pressed }) => ({ paddingVertical: 13, gap: 5, opacity: pressed ? 0.6 : 1 })}>
       {/* Neu seit dem letzten Besuch: Schlagzeile kräftig; Älteres normal */}
-      <T v={isNew ? "bodyStrong" : "body"} color={t.ink} style={titleStyle(title)} numberOfLines={3}>{title}</T>
+      <T v={isNew ? "bodyStrong" : "body"} color={t.ink} style={titleStyle(title, isNew)} numberOfLines={3}>{title}</T>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
         <Dots types={types} />
         <T v="caption" color={t.ink} numberOfLines={1} style={{ flexShrink: 1 }}>{who}</T>
@@ -134,9 +133,9 @@ export function StoryCard({ s, seenBefore }: { s: Story; seenBefore?: number }) 
   const isNew = seenBefore != null && s.items.some((i) => new Date(i.fetched_at).getTime() > seenBefore);
   const types = TYPE_ORDER.filter((k) => s.types[k]);
   return (
-    <NewsRow title={s.lead.title} types={types} who={`${s.sources} Medien${s.total ? ` (${s.items.length} von ${s.total} passen)` : ""}`} when={fmtWhen(s.last)} isNew={isNew}
+    <NewsRow title={s.lead.title} types={types} who={`${plural(s.sources, "Medium", "Medien")}${s.total ? ` · ${s.items.length} von ${s.total} Meldungen` : ""}`} when={fmtWhen(s.last)} isNew={isNew}
       onPress={() => router.push(`/item/${s.lead.id}`)}
-      a11y={`Geschichte bei ${s.sources} Medien: ${s.lead.title}. Quellenarten: ${types.map((k) => TYPES[k]).join(", ")}. Zuletzt ${fmtWhen(s.last)}${isNew ? ", neu" : ""}.`} />
+      a11y={`Geschichte bei ${plural(s.sources, "Medium", "Medien")}: ${s.lead.title}. Quellenarten: ${types.map((k) => TYPES[k]).join(", ")}. Zuletzt ${fmtWhen(s.last)}${isNew ? ", neu" : ""}.`} />
   );
 }
 

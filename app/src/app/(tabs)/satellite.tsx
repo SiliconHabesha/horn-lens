@@ -5,7 +5,9 @@ import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, LayoutChangeEvent, PanResponder, Pressable, View } from "react-native";
 import { Card, Chip, ChipRow, Empty, openLink, Screen, T, tap } from "../../components/ui";
-import { fmtCap, fmtCapDay, num } from "../../lib/de";
+import { fmtCap, fmtCapDay, isEnglish, num } from "../../lib/de";
+import { nearest as nearestPlace } from "../../lib/places";
+import { Bone } from "../../components/Skeleton";
 import { satImageUri, useData } from "../../lib/data";
 import { toast } from "../../components/Toast";
 import { radius, space, useTheme } from "../../lib/theme";
@@ -48,7 +50,7 @@ function Stepper({ label, list, value, onChange }: { label: string; list: SatIma
       {btn(1, "chevron-back", `${label}: ein Bild früher`)}
       <View style={{ flex: 1, alignItems: "center" }}>
         <T v="caption">{label}</T>
-        <T v="smallStrong" numberOfLines={1}>{new Intl.DateTimeFormat("de-DE", { timeZone: "UTC", day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value.t))}</T>
+        <T v="smallStrong" numberOfLines={1} accessibilityLabel={`${label}: ${fmtCapDay(value.t)}`}>{fmtCapDay(value.t)}</T>
       </View>
       {btn(-1, "chevron-forward", `${label}: ein Bild später`)}
     </View>
@@ -106,7 +108,7 @@ export default function Satellite() {
     onPanResponderMove: (_e, g) => { if (wRef.current) setSplit(Math.max(0, Math.min(1, startRef.current + g.dx / wRef.current))); },
   }), []);
 
-  if (!data) return <Screen title="Satellit"><ActivityIndicator /></Screen>;
+  if (!data) return <Screen title="Satellit"><Bone h={36} w={240} style={{ borderRadius: radius.pill }} /><Bone h={320} style={{ marginTop: space.m, borderRadius: radius.l }} /></Screen>;
   if (!places.length) return <Screen title="Satellit"><Empty icon="planet-outline" text={data.satError ? "Die Satellitenbilder konnten nicht geladen werden." : "Noch kein klares Bild gesammelt."} /></Screen>;
 
   const years = [...new Set(places.flatMap((x) => x.images.map((i) => new Date(i.t).getUTCFullYear())))].sort();
@@ -117,11 +119,13 @@ export default function Satellite() {
     const usable = img.id !== place.images[0].id && off <= 45;
     const active = after?.id === place.images[0].id && before?.id === img.id;
     return (
-      <Chip key={label} label={usable ? `${label} (${fmtCapDay(img.t)})` : `${label}: kein passendes Bild`} active={active}
-        onPress={() => { if (!usable) return; setAfterId(place.images[0].id); setBeforeId(img.id); setSplit(0.5); }} />
+      <Chip key={label} label={usable ? `${label} · ${fmtCapDay(img.t)}` : label} active={active} disabled={!usable}
+        onPress={() => { setAfterId(place.images[0].id); setBeforeId(img.id); setSplit(0.5); }} />
     );
   };
 
+  const np = nearestPlace(place.lat, place.lon);
+  const near = np.d <= 40 ? np.p : null;
   const scalePct = place.half_km > 0 ? 100 / (2 * place.half_km) : 0;
 
   return (
@@ -132,7 +136,10 @@ export default function Satellite() {
 
       <View onLayout={(e: LayoutChangeEvent) => setW(e.nativeEvent.layout.width)}
         style={{ marginTop: space.m, aspectRatio: 1, borderRadius: radius.l, overflow: "hidden", backgroundColor: t.cardAlt }}
-        {...(single ? {} : pan.panHandlers)} accessibilityLabel={single ? "Satellitenbild" : "Vergleich: links Vorher, rechts Nachher. Wischen verschiebt die Trennlinie."}>
+        {...(single ? {} : pan.panHandlers)} accessible accessibilityLabel={single ? `Satellitenbild ${place.name}` : `Vergleich ${place.name}: links Vorher, rechts Nachher. Wischen verschiebt die Trennlinie.`}
+        accessibilityRole={single ? "image" : "adjustable"} accessibilityValue={single ? undefined : { text: `Trennlinie bei ${Math.round(split * 100)} Prozent` }}
+        accessibilityActions={single ? undefined : [{ name: "increment" }, { name: "decrement" }]}
+        onAccessibilityAction={(e) => setSplit((v) => Math.max(0, Math.min(1, v + (e.nativeEvent.actionName === "increment" ? 0.1 : -0.1))))}>
         {/* Unten das Vorher-Bild, darüber rechts das Nachher-Bild */}
         {single ? (A.uri ? <Image source={{ uri: A.uri }} style={{ width: "100%", height: "100%" }} contentFit="cover" transition={150} /> : null) : (
           <>
@@ -164,10 +171,10 @@ export default function Satellite() {
             <ActivityIndicator color={t.muted} /><T v="caption" style={{ marginTop: 6 }}>Bild wird geladen …</T>
           </View>
         ) : null}
-        {A.err || B.err ? <View style={{ position: "absolute", inset: 0, alignItems: "center", justifyContent: "center", padding: 20, gap: 10 } as any}>
+        {A.err || B.err ? <View style={{ position: "absolute", inset: 0, alignItems: "center", justifyContent: "center", padding: 20, gap: 10, backgroundColor: t.cardAlt } as any}>
           <T v="small" style={{ textAlign: "center" }}>Das Bild konnte nicht geladen werden.</T>
           <Pressable onPress={() => { tap(); if (A.err) A.retry(); if (B.err) B.retry(); }} accessibilityRole="button" hitSlop={6}
-            style={({ pressed }) => ({ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999, backgroundColor: t.card, opacity: pressed ? 0.6 : 1 })}>
+            style={({ pressed }) => ({ paddingHorizontal: 16, minHeight: 44, justifyContent: "center", borderRadius: 999, backgroundColor: t.card, opacity: pressed ? 0.6 : 1 })}>
             <T v="smallStrong">Erneut versuchen</T>
           </Pressable>
         </View> : null}
@@ -175,10 +182,10 @@ export default function Satellite() {
 
       <T v="smallStrong" style={{ marginTop: space.m, marginBottom: 6 }}>Neuestes Bild vergleichen mit</T>
       <ChipRow>
-        {preset("vor einem Jahr", new Date(place.images[0].t).getTime() - 365 * DAY)}
-        {preset("Okt. 2020, vor dem Tigray-Krieg", Date.UTC(2020, 9, 20))}
-        {preset("ältestes Bild", null, place.images[place.images.length - 1])}
-        {preset("voriges Bild", null, place.images[1] || place.images[0])}
+        {preset("Voriges Bild", null, place.images[1] || place.images[0])}
+        {preset("Vor einem Jahr", new Date(place.images[0].t).getTime() - 365 * DAY)}
+        {preset("Vor dem Tigray-Krieg", Date.UTC(2020, 9, 20))}
+        {preset("Ältestes Bild", null, place.images[place.images.length - 1])}
       </ChipRow>
 
       {single ? (
@@ -198,12 +205,15 @@ export default function Satellite() {
 
       <Card style={{ marginTop: space.l, gap: 8 }}>
         <T v="h3">{place.name}</T>
-        <T v="small">{[place.country, place.why].filter(Boolean).join(". ")}</T>
+        <T v="small">{[place.country, isEnglish(place.why, place.why) ? null : place.why].filter(Boolean).join(". ")}</T>
+        {near ? <Pressable onPress={() => { tap(); router.push(`/place/${near.id}`); }} accessibilityRole="button" style={{ minHeight: 36, justifyContent: "center", alignSelf: "flex-start" }}>
+          <T v="smallStrong" color={t.accent}>Mehr zu {near.name}</T>
+        </Pressable> : null}
         {(single ? [["Bild", after]] : [["Vorher", before], ["Nachher", after]]).map(([k, i]: any) => (
           <View key={k} style={{ gap: 2 }}>
             <T v="label" color={t.muted}>{k}</T>
-            <T v="small" color={t.ink}>Aufgenommen {fmtCap(i.t)} von {i.platform}. Wolken: {num(Number(i.cloud))} %.</T>
-            <Pressable onPress={() => { tap(); openLink(`https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/${encodeURIComponent(i.item)}`); }} accessibilityRole="link">
+            <T v="small" color={t.ink}>Aufgenommen {fmtCap(i.t)} von {i.platform}. Wolken: {num(Number(i.cloud))} %.</T>
+            <Pressable style={{ minHeight: 32, justifyContent: "center", alignSelf: "flex-start" }} onPress={() => { tap(); openLink(`https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/${encodeURIComponent(i.item)}`); }} accessibilityRole="link">
               <T v="caption" color={t.accent}>Datensatz der Quelle ↗</T>
             </Pressable>
           </View>

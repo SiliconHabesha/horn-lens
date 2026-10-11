@@ -5,37 +5,16 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useMemo, useState } from "react";
 import { FlatList, Pressable, RefreshControl, StyleSheet, Switch, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { dedupe, ItemRow, itemTime, StoryCard, Voices } from "../../components/items";
+import { dedupe, ItemRow, itemTime, StoryCard } from "../../components/items";
 import { Skeleton } from "../../components/Skeleton";
 import { Banner, Chip, ChipRow, Empty, IconButton, T, tap } from "../../components/ui";
-import { ago, plural, REGION_ORDER, REGIONS, TYPE_ORDER, TYPES } from "../../lib/de";
+import { ago, REGION_ORDER, REGIONS, TYPE_ORDER, TYPES } from "../../lib/de";
 import { useData } from "../../lib/data";
 import { narrow, storiesOf, type Story } from "../../lib/stories";
 import { noOutline, font, radius, space, useTheme } from "../../lib/theme";
 import type { Item } from "../../lib/types";
 
 type Mode = "stories" | "items" | "saved";
-const MODES: [Mode, string][] = [["stories", "Geschichten"], ["items", "Einzeln"], ["saved", "Gemerkt"]];
-
-function Segmented({ value, onChange, saved }: { value: Mode; onChange: (m: Mode) => void; saved: number }) {
-  const t = useTheme();
-  return (
-    <View accessibilityRole="tablist" style={{ flexDirection: "row", backgroundColor: t.cardAlt, borderRadius: radius.m, padding: 3 }}>
-      {MODES.map(([m, label]) => {
-        const on = value === m;
-        return (
-          <Pressable key={m} onPress={() => { tap(); onChange(m); }} accessibilityRole="tab" accessibilityState={{ selected: on }}
-            style={{ flex: 1, minHeight: 40, borderRadius: radius.m - 3, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 5,
-              backgroundColor: on ? t.card : "transparent", ...(on ? { shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 3, shadowOffset: { width: 0, height: 1 }, elevation: 1 } : {}) }}>
-            <T v="smallStrong" color={on ? t.ink : t.muted}>{label}</T>
-            {m === "saved" && saved ? <T v="caption" color={on ? t.ink : t.muted}>{saved}</T> : null}
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-
 export default function News() {
   const t = useTheme();
   const ins = useSafeAreaInsets();
@@ -78,7 +57,14 @@ export default function News() {
     const pool = owner ? data.items : data.items.filter((i) => i.regions.length === 1 && i.regions[0] === "red_sea");
     return pool.filter((i) => Date.now() - new Date(itemTime(i)).getTime() < hours * 3600e3);
   }, [data, owner, hours]);
-  const counts = useMemo(() => Object.fromEntries(REGION_ORDER.map((r) => [r, dedupe(base.filter((i) => i.regions.includes(r))).length])), [base]);
+  // Zahlen an den Regionen: so viele Einträge, wie man nach dem Antippen sieht (Geschichten oder einzelne Meldungen)
+  const counts = useMemo(() => {
+    if (!data) return {} as Record<string, number>;
+    if (mode !== "stories") return Object.fromEntries(REGION_ORDER.map((r) => [r, dedupe(base.filter((i) => i.regions.includes(r))).length]));
+    const ids = new Set(base.map((i) => i.id));
+    const all = storiesOf(data);
+    return Object.fromEntries(REGION_ORDER.map((r) => [r, all.filter((x) => x.items.some((i) => ids.has(i.id) && i.regions.includes(r))).length]));
+  }, [data, base, mode]);
   const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
   const match = (i: Item) => words.every((w) => `${i.title} ${i.origin_domain || ""} ${i.source_name}`.toLowerCase().includes(w));
   const list = useMemo(() => dedupe(base.filter((i) => (region === "all" || i.regions.includes(region))
@@ -95,7 +81,6 @@ export default function News() {
   const savedList = useMemo(() => saved.filter(match), [saved, q]);
   const typesPresent = useMemo(() => TYPE_ORDER.filter((k) => base.some((i) => i.source_type === k && (region === "all" || i.regions.includes(region)))), [base, region]);
   const active = (hours !== 24 ? 1 : 0) + (type ? 1 : 0) + (onlyNew ? 1 : 0) + (most && mode === "stories" ? 1 : 0) + (mode === "items" ? 1 : 0);
-  const multi = stories.filter((s) => s.items.length > 1).length;
 
   const header = (
     <View style={{ paddingTop: ins.top + space.m, gap: space.m, paddingBottom: space.s, maxWidth: 760, width: "100%", alignSelf: "center" }}>
@@ -104,12 +89,12 @@ export default function News() {
         <IconButton icon={mode === "saved" ? "close" : "bookmark-outline"} label={mode === "saved" ? "Gemerkt schließen" : `Gemerkt (${saved.length})`}
           onPress={() => setMode(mode === "saved" ? (grouped ? "stories" : "items") : "saved")} />
       </View>
-      {offline && loadedAt ? <Banner icon="cloud-offline-outline" tone="warn" text={`Keine Verbindung. Stand: ${ago(loadedAt)}.`} action="Erneut" onAction={refresh} /> : null}
+      {offline && loadedAt ? <Banner icon="cloud-offline-outline" tone="warn" text={`Keine Verbindung. Stand: ${ago(loadedAt)}.`} action="Erneut versuchen" onAction={refresh} /> : null}
       <View style={{ flexDirection: "row", gap: 8 }}>
         <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: t.card, borderRadius: radius.m, paddingHorizontal: 12, height: 44,
           borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule }}>
           <Ionicons name="search" size={17} color={t.faint} />
-          <TextInput value={q} onChangeText={setQ} placeholder={mode === "saved" ? "Gemerktes durchsuchen" : "Suchen"} placeholderTextColor={t.faint}
+          <TextInput value={q} onChangeText={setQ} placeholder={mode === "saved" ? "Gemerktes durchsuchen" : "In Meldungen suchen"} placeholderTextColor={t.faint}
             style={{ ...noOutline, flex: 1, fontFamily: font.regular, fontSize: 16, color: t.ink, height: 42 }} returnKeyType="search" clearButtonMode="while-editing"
             accessibilityLabel="Meldungen durchsuchen" autoCorrect={false} />
           {q ? <Pressable onPress={() => setQ("")} accessibilityRole="button" accessibilityLabel="Suche löschen" hitSlop={10}><Ionicons name="close-circle" size={18} color={t.faint} /></Pressable> : null}
@@ -131,11 +116,11 @@ export default function News() {
             <Chip label="24 Stunden" active={hours === 24} onPress={() => setHours(24)} />
             <Chip label="3 Tage" active={hours === 72} onPress={() => setHours(72)} />
           </View>
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: 44 }}>
-            <T v="body">Nur neue seit dem letzten Besuch</T>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.m, minHeight: 44 }}>
+            <T v="body" style={{ flex: 1 }}>Nur neue seit dem letzten Besuch</T>
             <Switch value={onlyNew} onValueChange={(v) => { tap(); setOnlyNew(v); }} accessibilityLabel="Nur neue Meldungen" />
           </View>
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: 44 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.m, minHeight: 44 }}>
             <T v="body" style={{ flex: 1 }}>Gleiche Geschichte zusammenfassen</T>
             <Switch value={grouped} onValueChange={(v) => { tap(); setMode(v ? "stories" : "items"); }} accessibilityLabel="Gleiche Geschichte zusammenfassen" />
           </View>
@@ -158,11 +143,11 @@ export default function News() {
           ) : null}
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
             {active ? (
-              <Pressable onPress={() => { tap(); setHours(24); setType(null); setOnlyNew(false); setMost(false); setMode("stories"); }} accessibilityRole="button" hitSlop={8} style={{ paddingVertical: 6 }}>
+              <Pressable onPress={() => { tap(); setHours(24); setType(null); setOnlyNew(false); setMost(false); setMode("stories"); }} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center" }}>
                 <T v="smallStrong" color={t.accent}>Zurücksetzen</T>
               </Pressable>
             ) : <View />}
-            <Pressable onPress={() => { tap(); setShowFilters(false); }} accessibilityRole="button" hitSlop={8} style={{ paddingVertical: 6 }}>
+            <Pressable onPress={() => { tap(); setShowFilters(false); }} accessibilityRole="button" style={{ minHeight: 44, minWidth: 44, justifyContent: "center", alignItems: "flex-end" }}>
               <T v="smallStrong">Fertig</T>
             </Pressable>
           </View>

@@ -6,6 +6,7 @@ const SG_600 = require("@expo-google-fonts/schibsted-grotesk/600SemiBold/Schibst
 const SG_700 = require("@expo-google-fonts/schibsted-grotesk/700Bold/SchibstedGrotesk_700Bold.ttf");
 const SG_800 = require("@expo-google-fonts/schibsted-grotesk/800ExtraBold/SchibstedGrotesk_800ExtraBold.ttf");
 const NotoSansEthiopic_400Regular = require("@expo-google-fonts/noto-sans-ethiopic/400Regular/NotoSansEthiopic_400Regular.ttf");
+const NotoSansEthiopic_600SemiBold = require("@expo-google-fonts/noto-sans-ethiopic/600SemiBold/NotoSansEthiopic_600SemiBold.ttf");
 import * as Notifications from "expo-notifications";
 import { router, Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -28,7 +29,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function Root() {
   const t = useTheme();
-  const [loaded] = useFonts({ SG_400, SG_500, SG_600, SG_700, SG_800, NotoSansEthiopic_400Regular });
+  const [loaded] = useFonts({ SG_400, SG_500, SG_600, SG_700, SG_800, NotoSansEthiopic_400Regular, NotoSansEthiopic_600SemiBold });
   useEffect(() => { SystemUI.setBackgroundColorAsync(t.bg).catch(() => {}); }, [t.bg]);
   useEffect(() => { if (loaded) SplashScreen.hideAsync().catch(() => {}); }, [loaded]);
   useEffect(() => { if (Platform.OS === "web") { try { document.documentElement.lang = "de"; document.title = "Horn Lens"; } catch { /* egal */ } } }, []);
@@ -58,6 +59,7 @@ export default function Root() {
           <Stack.Screen name="sources" options={{ title: "Quellen" }} />
           <Stack.Screen name="method" options={{ title: "So arbeitet Horn Lens" }} />
           <Stack.Screen name="login" options={{ title: "Anmelden", presentation: "modal" }} />
+          <Stack.Screen name="auth-callback" options={{ headerShown: false }} />
           <Stack.Screen name="welcome" options={{ headerShown: false, presentation: "modal", gestureEnabled: true }} />
         </Stack>
         <FirstRun />
@@ -102,7 +104,7 @@ function FirstRun() {
       if (v) return;
       // Gleich vermerken: auch wer die Einführung wegwischt, sieht sie nicht bei jedem Start erneut
       AsyncStorage.setItem(WELCOME_KEY, "1").catch(() => {});
-      setTimeout(() => { try { router.push("/welcome"); } catch { /* Navigation noch nicht bereit */ } }, 350);
+      setTimeout(() => { try { router.push("/welcome?first=1"); } catch { /* Navigation noch nicht bereit */ } }, 350);
     }).catch(() => {});
   }, [authReady]);
   return null;
@@ -114,7 +116,8 @@ function NotificationRouter() {
   const r = Notifications.useLastNotificationResponse();
   const { authReady, data } = useData();
   useEffect(() => {
-    if (!r || !authReady) return;
+    // Erst wenn die Daten da sind: sonst zeigt der Zielbildschirm kurz „gibt es nicht“
+    if (!r || !authReady || !data) return;
     const id = r.notification.request.identifier;
     if (handled.has(id)) return;
     handled.add(id);
@@ -123,6 +126,6 @@ function NotificationRouter() {
     if (path.startsWith("/report") && data && !data.owner) return;
     setTimeout(() => { try { router.push(path as any); } catch { /* Navigation noch nicht bereit */ } }, 400);
     Notifications.clearLastNotificationResponseAsync?.().catch(() => {});
-  }, [r, authReady]);
+  }, [r, authReady, data]);
   return null;
 }

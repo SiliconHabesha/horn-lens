@@ -18,7 +18,7 @@ export default function SetPassword() {
     setBusy(true);
     const { error } = await sb.auth.updateUser({ password: pw });
     setBusy(false);
-    if (error) return setErr(`Das hat nicht geklappt (${error.message}).`);
+    if (error) return setErr(/weak|short|at least/i.test(error.message) ? "Das Passwort ist zu kurz oder zu einfach: mindestens 8 Zeichen, besser 12 oder mehr." : /same|different/i.test(error.message) ? "Das neue Passwort muss sich vom alten unterscheiden." : "Das hat nicht geklappt. Bitte erneut versuchen.");
     endRecovery();
   };
   return (
@@ -30,6 +30,7 @@ export default function SetPassword() {
         onSubmitEditing={save} accessibilityLabel="Neues Passwort" />
       {err ? <Banner icon="alert-circle-outline" tone="warn" text={err} /> : null}
       <Button label={busy ? "Speichert …" : "Passwort speichern"} onPress={save} disabled={busy} />
+      <Button label="Später" kind="secondary" onPress={endRecovery} disabled={busy} />
     </ScrollView>
   );
 }

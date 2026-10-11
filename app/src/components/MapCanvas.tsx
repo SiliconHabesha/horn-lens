@@ -2,7 +2,7 @@
 // doppelt tippen vergrößert; im Browser auch Mausrad. Während der Geste wird nur das fertige Bild verschoben (flüssig),
 // beim Loslassen neu gezeichnet (scharf).
 import Ionicons from "@expo/vector-icons/Ionicons";
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { Animated, PanResponder, Platform, Pressable, StyleSheet, View } from "react-native";
 import Svg, { Circle, G, Path, Rect, Text as SvgText } from "react-native-svg";
 import MAP from "../data/map.json";
@@ -25,7 +25,7 @@ export const boxOf = (north: number, west: number, south: number, east: number):
 };
 
 const MINI_NAMES = new Set(["asmara", "massawa", "assab", "mekelle", "portsudan", "djibouti"]);
-const LABELS: [string, number, number][] = [["ERITREA", 15.9, 38.2], ["ÄTHIOPIEN", 11.3, 37.6], ["SUDAN", 17.6, 35.4], ["JEMEN", 15.6, 44.6], ["SAUDI-ARABIEN", 19.3, 41.9], ["DSCHIBUTI", 11.15, 42.3]];
+const LABELS: [string, number, number][] = [["ERITREA", 15.9, 38.2], ["ÄTHIOPIEN", 10.7, 37.9], ["SUDAN", 17.6, 35.4], ["JEMEN", 15.6, 44.6], ["SAUDI-ARABIEN", 19.3, 41.9], ["DSCHIBUTI", 11.15, 42.3]];
 
 export type Layers = { fire: boolean; quake: boolean; ship: boolean; sat: boolean };
 export type Mark = { x: number; y: number; kind: string; at: number; when: string; text: string; place?: string; url?: string | null; src?: string; sat?: string; pid?: string; name?: string; minor?: boolean };
@@ -46,6 +46,9 @@ export function marksOf(data: Data, layers: Layers): Mark[] {
   return out;
 }
 
+/** Ab dieser Vergrößerung (Kartenpunkte je Bildschirmpunkt) werden auch kleinere Orte beschriftet */
+export const MINOR_K = 0.35;
+
 /** Nur die Zeichnung (ohne Gesten). k = Kartenpunkte je Bildschirmpunkt, damit Zeichen beim Zoomen gleich groß bleiben. */
 export function MapSvg({ data, layers, box, w, h, sel, since, mini }: {
   data: Data; layers: Layers; box: Box; w: number; h: number; sel?: Mark | null; since?: number; mini?: boolean;
@@ -61,7 +64,7 @@ export function MapSvg({ data, layers, box, w, h, sel, since, mini }: {
       <Path d={(REG as any).Eritrea} fill="none" stroke={t.border} strokeWidth={0.8 * k} strokeDasharray={`${3 * k} ${3 * k}`} />
       {mini ? null : LABELS.map(([n, la, lo]) => { const [x, y] = proj(la, lo); return <SvgText fontFamily={font.semibold} key={n} x={x} y={y} fontSize={11 * k} fontWeight="700" letterSpacing={1.5 * k} fill={t.muted} textAnchor="middle">{n}</SvgText>; })}
       {mini ? null : (() => { const [x, y] = proj(16.9, 40.4); return <SvgText fontFamily={font.semibold} x={x} y={y} fontSize={12 * k} fontStyle="italic" fill={t.accent} textAnchor="middle" transform={`rotate(-32 ${x} ${y})`}>Rotes Meer</SvgText>; })()}
-      {mini ? null : [["TIGRAY", 13.78, 38.44], ["AFAR", 12.55, 40.45], ["AMHARA", 11.58, 38.05]].map(([n, la, lo]) => { const [x, y] = proj(la as number, lo as number);
+      {mini ? null : [["TIGRAY", 13.78, 38.44], ["AFAR", 13.3, 40.3], ["AMHARA", 11.58, 38.05]].map(([n, la, lo]) => { const [x, y] = proj(la as number, lo as number);
         return <SvgText fontFamily={font.semibold} key={n as string} x={x} y={y} fontSize={9.5 * k} fontStyle="italic" fontWeight="700" letterSpacing={1 * k} fill={t.faint} textAnchor="middle">{n as string}</SvgText>; })}
     </G>
   ), [t, k, mini]);
@@ -81,14 +84,19 @@ export function MapSvg({ data, layers, box, w, h, sel, since, mini }: {
         return <Circle key={`q${i}`} cx={x} cy={y} r={(4 + 2 * Math.max(0, (q.mag || 2.5) - 2.5)) * k} fill="none" stroke={t.quake} strokeWidth={2 * k} opacity={old(q.t) ? 0.25 : 1} />; })}
       {layers.sat && data.sat.filter((p) => p.images.length).map((p) => { const [x, y] = proj(p.lat, p.lon); const s = 9 * k;
         return <Rect key={p.id} x={x - s / 2} y={y - s / 2} width={s} height={s} fill="none" stroke={t.accent} strokeWidth={1.6 * k} />; })}
-      {PLACES.filter((p) => (mini ? MINI_NAMES.has(p.id) : p.major || box[2] < 260)).map(({ name: n, lat: la, lon: lo, left }) => { const [x, y] = proj(la, lo); return (
+      {/* Auswahlring unter den Ortsnamen, damit er keinen Namen verdeckt */}
+      {sel ? <Circle cx={sel.x} cy={sel.y} r={12 * k} fill="none" stroke={t.ink} strokeWidth={2.2 * k} /> : null}
+      {PLACES.filter((p) => (mini ? MINI_NAMES.has(p.id) : p.major || k < MINOR_K)).map(({ name: n, lat: la, lon: lo, left, dy = 0 }) => { const [x, y] = proj(la, lo);
+        const tx = left ? x - 5 * k : x + 5 * k, ty = y + (4 + dy) * k, fs = (mini ? 10 : 11) * k, anchor = left ? "end" : "start";
+        return (
         <G key={n}>
           <Circle cx={x} cy={y} r={2.2 * k} fill={t.ink} />
-          <SvgText fontFamily={font.semibold} x={left ? x - 5 * k : x + 5 * k} y={y + 4 * k} fontSize={(mini ? 10 : 11) * k} fill={t.ink} textAnchor={left ? "end" : "start"}>{n}</SvgText>
+          {/* Heller Rand um die Schrift, damit Namen auf Grenzen und Punkten lesbar bleiben */}
+          <SvgText fontFamily={font.semibold} x={tx} y={ty} fontSize={fs} fill={t.land} stroke={t.land} strokeWidth={3 * k} strokeLinejoin="round" opacity={0.85} textAnchor={anchor}>{n}</SvgText>
+          <SvgText fontFamily={font.semibold} x={tx} y={ty} fontSize={fs} fill={t.ink} textAnchor={anchor}>{n}</SvgText>
         </G>); })}
       {layers.ship && data.maritime.map((m, i) => { const [x, y] = proj(m.lat, m.lon); const s = 7 * k;
         return <Path key={`m${i}`} d={`M${x} ${y - s}l${s} ${s}l${-s} ${s}l${-s} ${-s}z`} fill={t.ship} stroke={t.card} strokeWidth={1 * k} opacity={old(m.t) ? 0.3 : 1} />; })}
-      {sel ? <Circle cx={sel.x} cy={sel.y} r={12 * k} fill="none" stroke={t.ink} strokeWidth={2.2 * k} /> : null}
     </Svg>
   );
 }
@@ -142,7 +150,7 @@ export function ZoomMap({ data, layers, w, h, box, onBox, sel, onSelect, since }
     const k = b[2] / W;
     const x = b[0] + qx * k, y = b[1] + qy * k;
     let best: Mark | null = null, bd = (22 * k) ** 2;
-    for (const m of M) { if (m.minor && b[2] >= 260) continue; const d = ((m.x - x) ** 2 + (m.y - y) ** 2) * (m.pid ? 1.6 : 1); if (d < bd) { bd = d; best = m; } }
+    for (const m of M) { if (m.minor && k >= MINOR_K) continue; const d = ((m.x - x) ** 2 + (m.y - y) ** 2) * (m.pid ? 1.6 : 1); if (d < bd) { bd = d; best = m; } }
     if (best) tap();
     live.current.onSelect(best);
   };
