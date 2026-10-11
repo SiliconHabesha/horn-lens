@@ -10,7 +10,7 @@ import { Banner, Chip, ChipRow, Empty, T, tap } from "../../components/ui";
 import { ago, REGION_ORDER, REGIONS, TYPE_ORDER, TYPES } from "../../lib/de";
 import { useData } from "../../lib/data";
 import { narrow, storiesOf, type Story } from "../../lib/stories";
-import { font, radius, space, useTheme } from "../../lib/theme";
+import { noOutline, font, radius, space, useTheme } from "../../lib/theme";
 import type { Item } from "../../lib/types";
 
 type Mode = "stories" | "items" | "saved";
@@ -48,6 +48,7 @@ export default function News() {
   const [most, setMost] = useState(false);
   const [type, setType] = useState<string | null>(null);
   const [q, setQ] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
   // Sprung aus anderen Bildschirmen (k ändert sich bei jedem Sprung, damit er auch beim zweiten Mal greift)
   useEffect(() => { if (p.region && REGIONS[p.region]) { setRegion(p.region); setMode((m) => (m === "saved" ? "stories" : m)); } }, [p.region, p.k]);
   useEffect(() => { if (p.new === "1") { setOnlyNew(true); setHours(72); } }, [p.new, p.k]);
@@ -76,21 +77,19 @@ export default function News() {
   }, [data, list, most]);
   const savedList = useMemo(() => saved.filter(match), [saved, q]);
   const typesPresent = useMemo(() => TYPE_ORDER.filter((k) => base.some((i) => i.source_type === k && (region === "all" || i.regions.includes(region)))), [base, region]);
+  const active = (hours !== 24 ? 1 : 0) + (type ? 1 : 0);
   const multi = stories.filter((s) => s.items.length > 1).length;
 
   const header = (
     <View style={{ paddingTop: ins.top + space.m, gap: space.m, paddingBottom: space.s, maxWidth: 760, width: "100%", alignSelf: "center" }}>
-      <View>
-        <T v="display" accessibilityRole="header">{owner ? "Meldungen" : "Rotes Meer"}</T>
-        <T v="small" style={{ marginTop: 4 }}>Wer berichtet was. Meldungen sind keine geprüften Tatsachen.</T>
-      </View>
+      <T v="display" accessibilityRole="header">{owner ? "Meldungen" : "Rotes Meer"}</T>
       {offline && loadedAt ? <Banner icon="cloud-offline-outline" tone="warn" text={`Keine Verbindung. Stand: ${ago(loadedAt)}.`} action="Erneut" onAction={refresh} /> : null}
       <Segmented value={mode} onChange={setMode} saved={saved.length} />
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: t.card, borderRadius: radius.m, paddingHorizontal: 12, height: 44,
         borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule }}>
         <Ionicons name="search" size={17} color={t.faint} />
         <TextInput value={q} onChangeText={setQ} placeholder={mode === "saved" ? "Gemerktes durchsuchen" : "Suchen, z. B. Assab oder Reuters"} placeholderTextColor={t.faint}
-          style={{ flex: 1, fontFamily: font.regular, fontSize: 16, color: t.ink, height: 42 }} returnKeyType="search" clearButtonMode="while-editing"
+          style={{ ...noOutline, flex: 1, fontFamily: font.regular, fontSize: 16, color: t.ink, height: 42 }} returnKeyType="search" clearButtonMode="while-editing"
           accessibilityLabel="Meldungen durchsuchen" autoCorrect={false} />
         {q ? <Pressable onPress={() => setQ("")} accessibilityRole="button" accessibilityLabel="Suche löschen" hitSlop={10}><Ionicons name="close-circle" size={18} color={t.faint} /></Pressable> : null}
       </View>
@@ -99,23 +98,43 @@ export default function News() {
           {owner ? (
             <ChipRow>
               <Chip label="Alle Regionen" active={region === "all"} onPress={() => setRegion("all")} />
-              {REGION_ORDER.map((r) => <Chip key={r} label={REGIONS[r]} count={counts[r]} active={region === r} onPress={() => setRegion(r)} />)}
+              {REGION_ORDER.filter((r) => counts[r] > 0 || region === r).map((r) => <Chip key={r} label={REGIONS[r]} count={counts[r]} active={region === r} onPress={() => setRegion(r)} />)}
             </ChipRow>
           ) : null}
           <ChipRow>
-            <Chip label="24 Stunden" active={hours === 24} onPress={() => setHours(24)} />
-            <Chip label="3 Tage" active={hours === 72} onPress={() => setHours(72)} />
+            <Chip label={active ? `Filter · ${active}` : "Filter"} active={showFilters || active > 0} onPress={() => setShowFilters(!showFilters)} />
             <Chip label="Nur neue" active={onlyNew} onPress={() => setOnlyNew(!onlyNew)} />
             {mode === "stories" ? <Chip label="Meistberichtet" active={most} onPress={() => setMost(!most)} /> : null}
-            {typesPresent.length > 1 ? typesPresent.map((k) => (
-              <Chip key={k} label={TYPES[k]} color={t.type[k]} active={type === k} onPress={() => setType(type === k ? null : k)} />
-            )) : null}
           </ChipRow>
+          {showFilters ? (
+            <View style={{ backgroundColor: t.card, borderRadius: radius.l, padding: space.m, gap: space.s, borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule }}>
+              <T v="label" color={t.muted}>Zeitraum</T>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <Chip label="24 Stunden" active={hours === 24} onPress={() => setHours(24)} />
+                <Chip label="3 Tage" active={hours === 72} onPress={() => setHours(72)} />
+              </View>
+              {typesPresent.length > 1 ? (
+                <>
+                  <T v="label" color={t.muted} style={{ marginTop: 4 }}>Quellenart</T>
+                  <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+                    {typesPresent.map((k) => <Chip key={k} label={TYPES[k]} color={t.type[k]} active={type === k} onPress={() => setType(type === k ? null : k)} />)}
+                  </View>
+                </>
+              ) : null}
+              {active ? (
+                <Pressable onPress={() => { tap(); setHours(24); setType(null); }} accessibilityRole="button" hitSlop={8} style={{ alignSelf: "flex-start", paddingVertical: 6 }}>
+                  <T v="smallStrong" color={t.accent}>Filter zurücksetzen</T>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
           {list.length ? <View style={{ paddingTop: 4 }}><Voices items={list} unit="Meldungen" compact /></View> : null}
           <T v="caption" style={{ marginTop: -4 }}>
             {mode === "stories"
               ? `${stories.length === 1 ? "1 Geschichte" : `${stories.length} Geschichten`} aus ${list.length === 1 ? "1 Meldung" : `${list.length} Meldungen`}${multi ? `, ${multi} davon bei mehreren Medien` : ""}`
               : list.length === 1 ? "1 Meldung" : `${list.length} Meldungen`}
+            {active && !showFilters ? ` · ${[hours === 72 ? "3 Tage" : null, type ? TYPES[type] : null].filter(Boolean).join(", ")}` : ""}
+            {" · keine geprüften Tatsachen"}
           </T>
         </>
       ) : <T v="caption">Gemerkte Meldungen bleiben auf diesem Gerät, auch wenn sie älter als drei Tage sind. Beim Abmelden werden sie gelöscht.</T>}

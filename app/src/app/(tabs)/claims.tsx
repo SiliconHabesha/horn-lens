@@ -6,7 +6,7 @@ import { Pressable, StyleSheet, TextInput, View } from "react-native";
 import { Card, Chip, ChipRow, Empty, IconButton, Screen, StatusPill, T, tap } from "../../components/ui";
 import { fmtDate, fmtWhen, REGIONS, STATUS, STATUS_ORDER } from "../../lib/de";
 import { useData } from "../../lib/data";
-import { font, radius, space, useTheme } from "../../lib/theme";
+import { noOutline, font, radius, space, useTheme } from "../../lib/theme";
 
 export default function Claims() {
   const t = useTheme();
@@ -27,7 +27,7 @@ export default function Claims() {
           borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule, marginBottom: space.m }}>
           <Ionicons name="search" size={17} color={t.faint} />
           <TextInput value={q} onChangeText={setQ} placeholder="Behauptungen durchsuchen" placeholderTextColor={t.faint} autoCorrect={false}
-            style={{ flex: 1, fontFamily: font.regular, fontSize: 16, color: t.ink, height: 42 }} accessibilityLabel="Behauptungen durchsuchen" />
+            style={{ ...noOutline, flex: 1, fontFamily: font.regular, fontSize: 16, color: t.ink, height: 42 }} accessibilityLabel="Behauptungen durchsuchen" />
           {q ? <Pressable onPress={() => setQ("")} hitSlop={10} accessibilityRole="button" accessibilityLabel="Suche löschen"><Ionicons name="close-circle" size={18} color={t.faint} /></Pressable> : null}
         </View>
       ) : null}

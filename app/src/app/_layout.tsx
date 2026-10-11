@@ -19,6 +19,7 @@ import { DataProvider, useData } from "../lib/data";
 import Login from "./login";
 import { WELCOME_KEY } from "./welcome";
 import SetPassword from "../components/SetPassword";
+import { ToastHost } from "../components/Toast";
 import { pushSupported } from "../lib/push";
 import { font, useTheme } from "../lib/theme";
 
@@ -45,6 +46,8 @@ export default function Root() {
           <Stack.Screen name="item/[id]" options={{ title: "Meldung" }} />
           <Stack.Screen name="place/[id]" options={{ title: "Ort" }} />
           <Stack.Screen name="places" options={{ title: "Orte" }} />
+          <Stack.Screen name="signal/[kind]" options={{ title: "Messwerte" }} />
+          <Stack.Screen name="search" options={{ title: "Suchen", animation: "fade" }} />
           <Stack.Screen name="claim/[id]" options={{ title: "Behauptung" }} />
           <Stack.Screen name="claim-form" options={{ title: "Behauptung", presentation: "modal" }} />
           <Stack.Screen name="report/[date]" options={{ title: "Tagesbericht" }} />
@@ -55,6 +58,7 @@ export default function Root() {
           <Stack.Screen name="welcome" options={{ headerShown: false, presentation: "modal", gestureEnabled: true }} />
         </Stack>
         <FirstRun />
+        <ToastHost />
         {pushSupported ? <NotificationRouter /> : null}
         </Gate>
       </DataProvider>

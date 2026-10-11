@@ -37,7 +37,7 @@ export const PLACES: Place[] = [
   { id: "alamata", name: "Alamata", lat: 12.416, lon: 39.554, country: "Äthiopien (Raya, umstritten)", latin: ["alamata"], geez: ["ኣላማጣ", "አላማጣ"], major: true },
   { id: "semera", name: "Semera", lat: 11.792, lon: 41.006, country: "Äthiopien (Afar)", latin: ["semera"], geez: ["ሰመራ"], major: true },
   { id: "babelmandeb", name: "Bab el-Mandeb", lat: 12.583, lon: 43.333, country: "Meerenge", latin: ["bab el-mandeb", "bab al-mandab", "bab-el-mandeb", "bab el mandeb", "bab al-mandeb", "mandeb"], major: true },
-  { id: "mokha", name: "Mokka", lat: 13.32, lon: 43.25, country: "Jemen", latin: ["mokha", "al-mukha", "mukha"], weak: { alias: ["mocha"], ctx: ["yemen", "yemeni", "red sea", "houthi", "houthis", "port", "ship", "vessel"] }, major: true },
+  { id: "mokha", name: "Mokka (Mokha)", lat: 13.32, lon: 43.25, country: "Jemen", latin: ["mokha", "al-mukha", "mukha"], weak: { alias: ["mocha"], ctx: ["yemen", "yemeni", "red sea", "houthi", "houthis", "port", "ship", "vessel"] }, major: true },
   { id: "hodeidah", name: "Hudaida", lat: 14.798, lon: 42.954, country: "Jemen", latin: ["hodeidah", "hudaydah", "hodeida", "hudaida"], major: true },
   { id: "portsudan", name: "Port Sudan", lat: 19.616, lon: 37.216, country: "Sudan", latin: ["port sudan"], major: true },
   { id: "djibouti", name: "Dschibuti", lat: 11.588, lon: 43.145, country: "Dschibuti", latin: ["djibouti", "dschibuti"], geez: ["ጅቡቲ"], major: true },
@@ -82,4 +82,11 @@ export function dossier(p: Place, data: Data, pool: Item[]) {
   const sat = near(data.sat.filter((s) => s.images.length), RADIUS.sat);
   const claims: Claim[] = data.owner ? data.claims.filter((c) => mentions(p, `${c.statement} ${c.raw?.statement || ""}`)) : [];
   return { items, fires, quakes, ships, sat, claims };
+}
+
+/** Nächster bekannter Ort und Entfernung in km (zur Einordnung von Messpunkten) */
+export function nearest(lat: number, lon: number) {
+  let best = PLACES[0], bd = Infinity;
+  for (const p of PLACES) { const d = km(lat, lon, p.lat, p.lon); if (d < bd) { bd = d; best = p; } }
+  return { p: best, d: bd };
 }

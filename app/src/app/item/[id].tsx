@@ -4,6 +4,7 @@ import { router, Stack, useLocalSearchParams } from "expo-router";
 import React, { useMemo } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 import { shareItem, titleStyle, Voices, whenOf } from "../../components/items";
+import { toast } from "../../components/Toast";
 import { Button, Card, Empty, openLink, Screen, T, tap } from "../../components/ui";
 import { fmtWhen, REGIONS, TYPE_NOTE, TYPE_ORDER, TYPES } from "../../lib/de";
 import { useData } from "../../lib/data";
@@ -79,7 +80,8 @@ export default function ItemDetail() {
 
       <View style={{ flexDirection: "row", gap: space.s, marginTop: space.l, flexWrap: "wrap" }}>
         <View style={{ flexGrow: 1 }}><Button label="Original lesen" icon="open-outline" onPress={() => openLink(it.url)} /></View>
-        <Pressable onPress={() => { tap(); toggleSaved(it); }} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={on ? "Nicht mehr merken" : "Merken"}
+        <Pressable onPress={() => { tap(); toggleSaved(it); toast(on ? "Nicht mehr gemerkt" : "Gemerkt. Zu finden unter Meldungen › Gemerkt", on ? "bookmark-outline" : "bookmark",
+            on ? { label: "Rückgängig", run: () => toggleSaved(it) } : undefined); }} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={on ? "Nicht mehr merken" : "Merken"}
           style={({ pressed }) => [sq(t), { opacity: pressed ? 0.6 : 1 }]}>
           <Ionicons name={on ? "bookmark" : "bookmark-outline"} size={20} color={on ? t.accent : t.ink} />
         </Pressable>

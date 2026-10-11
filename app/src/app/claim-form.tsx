@@ -2,6 +2,7 @@
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from "react-native";
+import { toast } from "../components/Toast";
 import { Banner, Button, Chip, T, tap } from "../components/ui";
 import { de, REGION_ORDER, REGIONS, STATUS, STATUS_ORDER, todayBerlin } from "../lib/de";
 import { useData } from "../lib/data";
@@ -90,6 +91,7 @@ export default function ClaimForm() {
         return;
       }
       await refresh();
+      toast(mode === "add" ? "Behauptung angelegt" : mode === "status" ? "Stufe geändert" : "Berichtigung gespeichert");
       close();
     } catch {
       setErr("Die Verbindung ist abgebrochen. Vielleicht wurde gespeichert, vielleicht nicht. Bitte neu laden und nachsehen, bevor du noch einmal speicherst.");

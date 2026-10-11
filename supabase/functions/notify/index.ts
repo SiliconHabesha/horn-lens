@@ -33,7 +33,7 @@ const BODY: Record<string, string> = {
   outage: "Von IODA gemessen. Ein Rückgang beweist keine absichtliche Abschaltung.",
   surge: "Die Zählung sagt nicht, was geschehen ist. Tippen zeigt die Meldungen.",
 };
-const PATH: Record<string, string> = { maritime: "/map", quake: "/map", outage: "/", surge: "/news?region=eritrea" };
+const PATH: Record<string, string> = { maritime: "/signal/sea", quake: "/signal/quakes", outage: "/signal/internet", surge: "/news?region=eritrea" };
 
 type Msg = { to: string; title: string; body: string; sound: "default"; data: { path: string }; priority?: "high" };
 async function send(msgs: Msg[]) {

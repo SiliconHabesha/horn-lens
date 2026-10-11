@@ -45,3 +45,12 @@ Offen: Behauptung verfolgen mit eigener Benachrichtigung (braucht Server-Änderu
 - Karte: Orte antippbar, kleinere Orte erscheinen beim Zoomen; Lage zeigt die heute genannten Orte.
 - Behauptungen: Suche, ähnliche Meldungen der letzten 72 Std. in jeder Behauptung, Datum per Heute/Gestern/Vorgestern und Prüfung auf gültiges Datum.
 - Technik: iOS- und Android-Bündel bauen fehlerfrei; Lint eingerichtet (verbleibende Hinweise betreffen den nicht genutzten React Compiler); spürbare Rückmeldung nach dem Aktualisieren.
+
+## Stand nach Runde 4 (UX, 11. Oktober 2026, spät)
+- Lage: Messwerte als Raster, Auffälliges zuerst, jede Kachel führt zu einer eigenen Messwert-Seite; „Seit deinem letzten Besuch“ zeigt nur, was sich geändert hat; Kopfzeile „Stand hh:mm“; Suche oben rechts.
+- Messwert-Seiten (Internet, Hitzepunkte nach Ort, Erdbeben, See) mit Stand und Quelle; ohne aktuelle Daten nie „alles ruhig“.
+- Suche über Orte, Behauptungen, Meldungen, Quellen; zuletzt Gesuchtes.
+- Kurze Bestätigungen (Gemerkt, Link kopiert, Gespeichert) mit „Rückgängig“.
+- Meldungen: Filter eingeklappt, leere Regionen ausgeblendet.
+- Große Bildschirme: Navigation als Leiste links.
+- Benachrichtigungen öffnen jetzt die passende Messwert-Seite (Funktion notify v2).

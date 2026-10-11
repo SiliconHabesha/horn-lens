@@ -172,6 +172,20 @@ with sync_playwright() as p:
                 shot("place", "/place/assab", 1500)
                 R[f"{pre} place text"] = pg.evaluate("document.body.innerText").replace("\n", " | ")[:500]
                 if tag == "mob": scrolls("place", 2)
+                for k in ("fires", "internet", "sea", "quakes"):
+                    shot(f"signal-{k}", f"/signal/{k}", 1200)
+                R[f"{pre} signal fires"] = pg.evaluate("document.body.innerText").replace("\n", " | ")[:300]
+                shot("search0", "/search", 1200)
+                pg.keyboard.type("Djibouti"); pg.wait_for_timeout(600)
+                shot("search", None, 200)
+                R[f"{pre} search text"] = pg.evaluate("document.body.innerText").replace("\n", " | ")[:300]
+                shot("news-filter", "/news", 1500)
+                pg.get_by_text("Filter", exact=True).click(); pg.wait_for_timeout(400)
+                shot("news-filter-open", None, 200)
+                shot("item-toast", f"/item/{6173 + 100000}", 1500)
+                pg.get_by_label("Nicht mehr merken", exact=True).first.click(); pg.wait_for_timeout(350)
+                shot("item-toast", None, 50)
+                R[f"{pre} toast"] = pg.evaluate("document.body.innerText.includes('Nicht mehr gemerkt')")
                 shot("places", "/places", 1200)
                 R[f"{pre} places text"] = pg.evaluate("document.body.innerText").replace("\n", " | ")[:300]
             if mode == "owner":

@@ -7,6 +7,7 @@ import { fmtIsoDay, fmtWhen, TYPE_ORDER, TYPES } from "../lib/de";
 import { font, useTheme } from "../lib/theme";
 import type { Story } from "../lib/stories";
 import type { Item } from "../lib/types";
+import { toast } from "./Toast";
 import { T, tap } from "./ui";
 
 const ETHIOPIC = /[ሀ-፿]/;
@@ -25,17 +26,17 @@ export async function shareItem(it: Item) {
   tap();
   try {
     if (Platform.OS === "web" && (navigator as any).share) await (navigator as any).share({ title: it.title, url: it.url });
-    else if (Platform.OS === "web") await navigator.clipboard.writeText(`${it.title} ${it.url}`);
+    else if (Platform.OS === "web") { await navigator.clipboard.writeText(`${it.title} ${it.url}`); toast("Link kopiert", "link-outline"); }
     else await Share.share({ message: `${it.title}\n${it.url}`, url: it.url });
   } catch { /* abgebrochen */ }
 }
 
-export function ItemRow({ it, isNew, translation, others }: { it: Item; isNew?: boolean; translation?: string; others?: number }) {
+export function ItemRow({ it, isNew, translation, others, onOpen }: { it: Item; isNew?: boolean; translation?: string; others?: number; onOpen?: () => void }) {
   const t = useTheme();
   const c = t.type[it.source_type] || t.type.aggregator;
   const when = whenOf(it);
   return (
-    <Pressable onPress={() => { tap(); router.push(`/item/${it.id}`); }} accessibilityRole="button"
+    <Pressable onPress={() => { tap(); onOpen?.(); router.push(`/item/${it.id}`); }} accessibilityRole="button"
       accessibilityLabel={`${it.title}. ${it.origin_domain || it.source_name}, ${TYPES[it.source_type] || ""}, ${when}${others ? `. Auch bei ${others} weiteren Medien` : ""}`}
       accessibilityHint="Öffnet Einzelheiten und das Original"
       style={({ pressed }) => ({ flexDirection: "row", gap: 12, paddingVertical: 14, opacity: pressed ? 0.6 : 1 })}>
@@ -57,7 +58,7 @@ export function ItemRow({ it, isNew, translation, others }: { it: Item; isNew?: 
           {others ? <T v="caption" color={t.ink}>+ {others} {others === 1 ? "weiteres Medium" : "weitere Medien"}</T> : null}
         </View>
       </View>
-      <Pressable onPress={() => shareItem(it)} hitSlop={12} accessibilityRole="button" accessibilityLabel="Teilen" style={{ paddingTop: 2 }}>
+      <Pressable onPress={() => shareItem(it)} hitSlop={14} accessibilityRole="button" accessibilityLabel="Teilen" style={{ paddingTop: 2 }}>
         <Ionicons name={Platform.OS === "ios" ? "share-outline" : "share-social-outline"} size={18} color={t.faint} />
       </Pressable>
     </Pressable>

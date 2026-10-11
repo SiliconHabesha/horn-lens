@@ -1,5 +1,5 @@
 // Farben und Schrift von Horn Lens: ruhiger Nachrichten-Stil, Farbe nur mit Bedeutung (Quelle, Status, Warnung).
-import { useColorScheme } from "react-native";
+import { Platform, useColorScheme } from "react-native";
 
 const light = {
   bg: "#EDF0EE",
@@ -76,3 +76,6 @@ export const font = {
 
 export const space = { xs: 4, s: 8, m: 12, l: 16, xl: 24, xxl: 32 };
 export const radius = { s: 8, m: 12, l: 16, pill: 999 };
+
+// Im Browser keinen schwarzen Fokusrahmen um Eingabefelder (das Feld hat schon einen eigenen Rahmen)
+export const noOutline: any = Platform.OS === "web" ? { outlineStyle: "none" } : {};

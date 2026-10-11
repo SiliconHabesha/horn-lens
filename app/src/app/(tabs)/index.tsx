@@ -2,14 +2,14 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { dedupe, itemTime, StoryList, Voices } from "../../components/items";
 import { boxOf, fit, MapSvg } from "../../components/MapCanvas";
 import { LageSkeleton } from "../../components/Skeleton";
 import { Banner, Button, Card, Empty, IconButton, openLink, Screen, SectionHead, StatusPill, T, tap } from "../../components/ui";
-import { ago, fmtCapDay, fmtDay, fmtIsoDay, fmtWhen, num, plural } from "../../lib/de";
+import { ago, fmtCapDay, fmtDay, fmtIsoDay, fmtTime, fmtWhen, num, plural } from "../../lib/de";
 import { useData } from "../../lib/data";
-import { BELES_URL, CLAUDE_PAGE, feedState, lastFailed, noData } from "../../lib/feeds";
+import { BELES_URL, CLAUDE_PAGE, feedState, lastFailed } from "../../lib/feeds";
 import { PLACES, mentions } from "../../lib/places";
 import { poolOf, storiesOf } from "../../lib/stories";
 import { radius, space, useTheme } from "../../lib/theme";
@@ -21,6 +21,8 @@ const KIND: Record<string, [string, string]> = {
 export default function Lage() {
   const t = useTheme();
   const { data, loading, error, seenBefore, firstVisit, loadedAt, refresh } = useData();
+  // Breite Fenster: Messwerte umbrechen statt seitlich zu scrollen
+  const wide = useWindowDimensions().width >= 700;
 
   const derived = useMemo(() => {
     if (!data) return null;
@@ -55,25 +57,30 @@ export default function Lage() {
   const d = derived!;
   const firms = feedState(data, "firms"), ukmto = feedState(data, "ukmto"), usgs = feedState(data, "usgs"), ioda = feedState(data, "ioda");
   const er = data.outages.filter((o) => o.country === "ER"), et = data.outages.filter((o) => o.country === "ET");
-  const tiles: { big: string; label: string; tone?: "alert" | "none"; to: string }[] = [];
+  type Tile = { icon: keyof typeof Ionicons.glyphMap; big: string; label: string; tone?: "alert" | "none"; to: string };
+  const tiles: Tile[] = [];
   if (data.owner) {
-    tiles.push(!ioda.ok ? { big: "–", label: `Internet Eritrea: ${noData(ioda, "IODA")}`, tone: "none", to: "/map" }
-      : { big: er.length ? plural(er.length, "Warnung", "Warnungen") : "Normal", label: `Internet Eritrea, 48 Std.${lastFailed(ioda)}`, tone: er.length ? "alert" : undefined, to: "/map" });
-    tiles.push(!ioda.ok ? { big: "–", label: `Internet Äthiopien: ${noData(ioda, "IODA")}`, tone: "none", to: "/map" }
-      : { big: et.length ? plural(et.length, "Warnung", "Warnungen") : "Normal", label: `Internet Äthiopien, 48 Std.${lastFailed(ioda)}`, tone: et.length ? "alert" : undefined, to: "/map" });
+    for (const [name, list] of [["Eritrea", er], ["Äthiopien", et]] as const) {
+      tiles.push(!ioda.ok ? { icon: "wifi-outline", big: "–", label: `Internet ${name}: keine aktuellen Daten`, tone: "none", to: "/signal/internet" }
+        : { icon: "wifi-outline", big: list.length ? plural(list.length, "Warnung", "Warnungen") : "Normal", label: `Internet ${name}, 48 Std.${lastFailed(ioda) ? " Letzte Abfrage gescheitert." : ""}`,
+          tone: list.length ? "alert" : undefined, to: "/signal/internet" });
+    }
   }
-  tiles.push(data.firesError || !firms.ok ? { big: "–", label: `Hitzepunkte: ${data.firesError ? "nicht geladen" : noData(firms, "NASA FIRMS")}`, tone: "none", to: "/map" }
-    : { big: `${data.firesCapped ? "≥ " : ""}${num(data.firesTotal)}`, label: `${data.firesTotal === 1 ? "Hitzepunkt" : "Hitzepunkte"}, 24 Std.${firms.partial ? " Lücken bei Überflügen." : ""}`, to: "/map" });
-  tiles.push(!ukmto.ok ? { big: "–", label: `Auf See: ${noData(ukmto, "UKMTO")}`, tone: "none", to: "/map" }
-    : { big: num(data.maritime.length), label: `${data.maritime.length === 1 ? "Vorfall" : "Vorfälle"} auf See, 30 Tage`, tone: data.maritime.some((m) => Date.now() - new Date(m.t).getTime() < 2 * 864e5) ? "alert" : undefined, to: "/map" });
-  if (!data.owner) tiles.push(!usgs.ok ? { big: "–", label: `Erdbeben: ${noData(usgs, "USGS")}`, tone: "none", to: "/map" }
-    : { big: num(data.quakes.length), label: "Erdbeben ab Stärke 2,5, 7 Tage", to: "/map" });
+  tiles.push(data.firesError || !firms.ok ? { icon: "flame-outline", big: "–", label: `Hitzepunkte: ${data.firesError ? "nicht geladen" : "keine aktuellen Daten"}`, tone: "none", to: "/signal/fires" }
+    : { icon: "flame-outline", big: `${data.firesCapped ? "≥ " : ""}${num(data.firesTotal)}`, label: `${data.firesTotal === 1 ? "Hitzepunkt" : "Hitzepunkte"}, 24 Std.${firms.partial ? " Mit Lücken." : ""}`, to: "/signal/fires" });
+  tiles.push(!ukmto.ok ? { icon: "boat-outline", big: "–", label: "Auf See: keine aktuellen Daten", tone: "none", to: "/signal/sea" }
+    : { icon: "boat-outline", big: num(data.maritime.length), label: `${data.maritime.length === 1 ? "Vorfall" : "Vorfälle"} auf See, 30 Tage`, tone: data.maritime.some((m) => Date.now() - new Date(m.t).getTime() < 2 * 864e5) ? "alert" : undefined, to: "/signal/sea" });
+  tiles.push(!usgs.ok ? { icon: "pulse-outline", big: "–", label: "Erdbeben: keine aktuellen Daten", tone: "none", to: "/signal/quakes" }
+    : { icon: "pulse-outline", big: num(data.quakes.length), label: "Erdbeben ab 2,5, 7 Tage", to: "/signal/quakes" });
 
   const latestReport = data.reports[0];
 
   return (
-    <Screen title="Lage" sub={loadedAt ? `${fmtDay(data.now)} · aktualisiert ${ago(loadedAt)}` : fmtDay(data.now)}
-      right={<IconButton icon="ellipsis-horizontal" label="Mehr" onPress={() => router.push("/more")} />}>
+    <Screen title="Lage" sub={loadedAt ? `${fmtDay(data.now)} · Stand ${fmtTime(loadedAt)} Uhr` : fmtDay(data.now)}
+      right={<View style={{ flexDirection: "row", gap: 8 }}>
+        <IconButton icon="search" label="Suchen" onPress={() => router.push("/search")} />
+        <IconButton icon="ellipsis-horizontal" label="Mehr" onPress={() => router.push("/more")} />
+      </View>}>
       {!data.owner ? (
         <Banner icon="information-circle-outline" text="Offene Ausgabe: Messwerte, Satellitenbilder und Schifffahrtsmeldungen vom Roten Meer. Behauptungen aus dem Konflikt verfolgt diese Ausgabe nicht." />
       ) : null}
@@ -81,7 +88,7 @@ export default function Lage() {
       {/* Seit dem letzten Besuch */}
       <SinceCard seenBefore={seenBefore} first={firstVisit} counts={[
         ...(data.owner ? [[d.fresh.length, "neue Meldung", "neue Meldungen", "/news?new=1"], [d.changed.length, "Behauptung geändert", "Behauptungen geändert", "/claims"]] as const : []),
-        [d.newShips, "Vorfall auf See", "Vorfälle auf See", "/map"], [d.newQuakes, "Erdbeben", "Erdbeben", "/map"],
+        [d.newShips, "Vorfall auf See", "Vorfälle auf See", "/signal/sea"], [d.newQuakes, "Erdbeben", "Erdbeben", "/signal/quakes"],
       ]} />
 
       {/* Hinweise */}
@@ -104,19 +111,21 @@ export default function Lage() {
         </View>
       ) : null}
 
-      {/* Messwerte */}
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.s }}>
-        {tiles.map((x, i) => (
-          <Card key={i} onPress={() => router.push(x.to as any)} style={{ flexBasis: "47%", flexGrow: 1, padding: space.m, minHeight: 92 }} accessibilityLabel={`${x.big}. ${x.label}`}>
-            <T v="h2" color={x.tone === "alert" ? t.warn : x.tone === "none" ? t.muted : t.ink}>{x.big}</T>
-            <T v="caption" style={{ marginTop: 4 }}>{x.label}</T>
-          </Card>
-        ))}
+      {/* Messwerte als Raster, Auffälliges zuerst: antippen öffnet die Einzelheiten */}
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.s }} accessibilityLabel="Messwerte">
+        {[...tiles].sort((a, b) => (a.tone === "alert" ? 0 : a.tone === "none" ? 2 : 1) - (b.tone === "alert" ? 0 : b.tone === "none" ? 2 : 1)).map((x, i) => {
+          const c = x.tone === "alert" ? t.warn : x.tone === "none" ? t.muted : t.ink;
+          return (
+            <Card key={i} onPress={() => router.push(x.to as any)} style={{ flexGrow: 1, flexBasis: wide ? 130 : "45%", padding: space.m, gap: 4 }} accessibilityLabel={`${x.big}. ${x.label}. Einzelheiten öffnen`}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <Ionicons name={x.icon} size={16} color={c} />
+                <T v="h3" color={c} numberOfLines={1} style={{ flexShrink: 1 }}>{x.big}</T>
+              </View>
+              <T v="caption">{x.label}</T>
+            </Card>
+          );
+        })}
       </View>
-
-      {/* Kleine Karte und Orte, die gerade genannt werden */}
-      <MiniMap />
-      <HotPlaces />
 
       {/* Eritrea */}
       {data.owner ? (
@@ -146,6 +155,11 @@ export default function Lage() {
           <Card style={{ paddingVertical: space.s }}><StoryList stories={d.top} seenBefore={seenBefore} /></Card>
         </>
       ) : null}
+
+      {/* Kleine Karte und Orte, die gerade genannt werden */}
+      <SectionHead title="Karte und Orte" action="Karte" onAction={() => router.navigate("/map")} />
+      <MiniMap />
+      <HotPlaces />
 
       {/* Behauptungen */}
       {data.owner && d.recentClaims.length ? (
@@ -228,7 +242,7 @@ function SinceCard({ seenBefore, first, counts }: { seenBefore: number; first: b
       <T v="label" color={t.muted}>{first ? "In den letzten 24 Stunden" : `Seit deinem letzten Besuch (${ago(seenBefore)})`}</T>
       {any ? (
         <View style={{ flexDirection: "row", gap: space.l, marginTop: 8, flexWrap: "wrap" }}>
-          {counts.filter(([n], i) => n > 0 || i < 2).map(([n, one, many, to]) => (
+          {counts.filter(([n]) => n > 0).map(([n, one, many, to]) => (
             <Pressable key={to + one} onPress={() => { tap(); router.push(to as any); }} accessibilityRole="button" accessibilityLabel={`${n} ${n === 1 ? one : many}`}
               style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, minWidth: 64 })}>
               <T v="h2" color={n ? t.ink : t.muted}>{num(n)}</T><T v="small">{n === 1 ? one : many}</T>
@@ -255,7 +269,7 @@ function MiniMap() {
     data.maritime.length ? plural(data.maritime.length, "Vorfall", "Vorfälle") + " auf See (30 Tage)" : null,
   ].filter(Boolean);
   return (
-    <Card onPress={() => router.push("/map")} style={{ marginTop: space.s, padding: 0, overflow: "hidden" }} accessibilityLabel={`Karte öffnen. ${parts.join(", ")}`}>
+    <Card onPress={() => router.navigate("/map")} style={{ padding: 0, overflow: "hidden" }} accessibilityLabel={`Karte öffnen. ${parts.join(", ")}`}>
       <View onLayout={(e) => setW(Math.round(e.nativeEvent.layout.width))} pointerEvents="none">
         {w ? <MapSvg data={data} layers={{ fire: true, quake: true, ship: true, sat: true }} box={box} w={w} h={h} mini /> : <View style={{ height: 200 }} />}
       </View>

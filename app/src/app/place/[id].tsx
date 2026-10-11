@@ -57,7 +57,7 @@ export default function PlaceScreen() {
 
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.s, marginTop: space.m }}>
         {data.owner ? <Fact icon="newspaper-outline" color={t.ink} big={num(d.items.length)} label={`${d.items.length === 1 ? "Schlagzeile nennt" : "Schlagzeilen nennen"} den Ort, 72 Std.`} /> : null}
-        <Fact icon="flame" color={t.fire} big={`${capped ? "≥ " : ""}${num(d.fires.length)}`} label={`Hitzepunkte im Umkreis von ${RADIUS.fire} km, 24 Std.${capped ? " (nur ein Teil aller Hitzepunkte geladen)" : ""}`} />
+        <Fact icon="flame" color={t.fire} big={capped && !d.fires.length ? "–" : `${capped ? "≥ " : ""}${num(d.fires.length)}`} label={`Hitzepunkte im Umkreis von ${RADIUS.fire} km, 24 Std.${capped ? (d.fires.length ? " (nur ein Teil aller Hitzepunkte geladen)" : " Keiner unter den geladenen; geladen ist nur ein Teil.") : ""}`} />
         <Fact icon="radio-button-off" color={t.quake} big={num(d.quakes.length)} label={`Erdbeben im Umkreis von ${RADIUS.quake} km, 7 Tage`} />
         <Fact icon="boat" color={t.ship} big={num(d.ships.length)} label={`Vorfälle auf See im Umkreis von ${RADIUS.ship} km, 30 Tage`} />
       </View>
