@@ -51,5 +51,10 @@ export async function disablePush() {
 /** Nach An- oder Abmelden neu eintragen, damit der Server weiß, ob das Gerät private Hinweise bekommen darf */
 export async function refreshPushOwner() {
   const p = await getPrefs();
-  if (p.token && (p.alerts || p.report)) await sb.rpc("app_push_register", { p_token: p.token, p_kinds: [p.alerts && "alerts", p.report && "report"].filter(Boolean) });
+  if (!p.token || !(p.alerts || p.report)) return;
+  // Den Tagesbericht gibt es nur für freigeschaltete Konten; nach dem Abmelden nur noch Hinweise
+  const { data: owner } = await sb.rpc("app_is_owner");
+  const report = p.report && !!owner;
+  if (!p.alerts && !report) { await sb.rpc("app_push_unregister", { p_token: p.token }); return; }
+  await sb.rpc("app_push_register", { p_token: p.token, p_kinds: [p.alerts && "alerts", report && "report"].filter(Boolean) });
 }

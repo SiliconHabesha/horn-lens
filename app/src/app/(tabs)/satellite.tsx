@@ -7,6 +7,7 @@ import { ActivityIndicator, LayoutChangeEvent, PanResponder, Pressable, View } f
 import { Card, Chip, ChipRow, Empty, openLink, Screen, T, tap } from "../../components/ui";
 import { fmtCap, fmtCapDay, num } from "../../lib/de";
 import { satImageUri, useData } from "../../lib/data";
+import { toast } from "../../components/Toast";
 import { radius, space, useTheme } from "../../lib/theme";
 import type { SatImage, SatPlace } from "../../lib/types";
 
@@ -17,12 +18,41 @@ const GROUPS = ["Eritrea", "Grenze", "Äthiopien", "Rotes Meer"];
 function useUri(img: SatImage | undefined) {
   const [uri, setUri] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [n, setN] = useState(0);
+  const again = useRef(false);
   useEffect(() => {
     let live = true; setUri(null); setErr(null);
-    if (img) satImageUri(img.id).then((u) => live && setUri(u)).catch((e) => live && setErr(String(e?.message || e)));
+    const retry = again.current; again.current = false;
+    if (img) satImageUri(img.id, retry).then((u) => live && setUri(u)).catch((e) => live && setErr(String(e?.message || e)));
     return () => { live = false; };
-  }, [img?.id]);
-  return { uri, err };
+  }, [img?.id, n]);
+  return { uri, err, retry: () => { again.current = true; setN((x) => x + 1); } };
+}
+const DAY = 864e5;
+
+/** Datum mit Pfeilen: ein Bild früher oder später */
+function Stepper({ label, list, value, onChange }: { label: string; list: SatImage[]; value: SatImage; onChange: (i: SatImage) => void }) {
+  const t = useTheme();
+  const i = list.findIndex((x) => x.id === value.id);
+  const btn = (d: number, icon: keyof typeof Ionicons.glyphMap, a11y: string) => {
+    const target = list[i + d];
+    return (
+      <Pressable disabled={!target} onPress={() => { tap(); onChange(target); }} accessibilityRole="button" accessibilityLabel={a11y} accessibilityState={{ disabled: !target }} hitSlop={4}
+        style={({ pressed }) => ({ width: 44, height: 44, alignItems: "center", justifyContent: "center", opacity: !target ? 0.3 : pressed ? 0.5 : 1 })}>
+        <Ionicons name={icon} size={20} color={t.ink} />
+      </Pressable>
+    );
+  };
+  return (
+    <View style={{ flex: 1, flexDirection: "row", alignItems: "center", backgroundColor: t.card, borderRadius: radius.m, borderWidth: 1, borderColor: t.rule }}>
+      {btn(1, "chevron-back", `${label}: ein Bild früher`)}
+      <View style={{ flex: 1, alignItems: "center" }}>
+        <T v="caption">{label}</T>
+        <T v="smallStrong" tabular numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{fmtCapDay(value.t)}</T>
+      </View>
+      {btn(-1, "chevron-forward", `${label}: ein Bild später`)}
+    </View>
+  );
 }
 
 export default function Satellite() {
@@ -32,10 +62,15 @@ export default function Satellite() {
   const places = useMemo(() => (data?.sat || []).filter((x) => x.images.length), [data]);
   const [placeId, setPlaceId] = useState<string | null>(p.place || null);
   useEffect(() => { if (p.place) { setPlaceId(p.place); router.setParams({ place: undefined }); } }, [p.place]);
-  const place = places.find((x) => x.id === placeId) || places[0];
+  const asked = placeId ? places.find((x) => x.id === placeId) : undefined;
+  const place = asked || places[0];
+  const missingAsked = !!placeId && !asked && places.length > 0;
+  const toldMissing = useRef(false);
+  useEffect(() => { if (missingAsked && !toldMissing.current) { toldMissing.current = true; toast("Für diesen Ort gibt es noch kein klares Bild. Gezeigt wird ein anderer.", "information-circle-outline"); } }, [missingAsked]);
   const nearest = (target: number) => place.images.reduce((best, i) => (Math.abs(new Date(i.t).getTime() - target) < Math.abs(new Date(best.t).getTime() - target) ? i : best), place.images[0]);
   const [afterId, setAfterId] = useState<number | null>(null);
   const [split, setSplit] = useState(0.5);
+  const [allDates, setAllDates] = useState(false);
   const [beforeId, setBeforeId] = useState<number | null>(null);
   useEffect(() => {
     if (!place) return;
@@ -43,10 +78,20 @@ export default function Satellite() {
     setBeforeId(nearest(new Date(place.images[0].t).getTime() - 365 * 864e5).id);
     setSplit(0.5);
   }, [place?.id]);
-  const after = place?.images.find((i) => i.id === afterId) || place?.images[0];
-  const before = place?.images.find((i) => i.id === beforeId) || place?.images[place.images.length - 1];
+  const pickA = place?.images.find((i) => i.id === afterId) || place?.images[0];
+  const pickB = place?.images.find((i) => i.id === beforeId) || place?.images[place.images.length - 1];
+  // Links immer das ältere Bild, damit „Vorher“ und „Nachher“ stimmen
+  const [before, after] = pickA && pickB && pickA.t < pickB.t ? [pickA, pickB] : [pickB, pickA];
   const single = !before || !after || before.id === after.id;
   const A = useUri(after), B = useUri(single ? undefined : before);
+  // Nachbarbilder vorab laden, damit das Blättern schnell geht
+  useEffect(() => {
+    if (!place) return;
+    for (const cur of [before, after]) {
+      const k = place.images.findIndex((x) => x.id === cur?.id);
+      for (const d of [-1, 1]) { const n = place.images[k + d]; if (n) satImageUri(n.id).catch(() => {}); }
+    }
+  }, [before?.id, after?.id]);
 
   const [w, setW] = useState(0);
   const wRef = useRef(0); wRef.current = w;
@@ -65,9 +110,18 @@ export default function Satellite() {
   if (!places.length) return <Screen title="Satellit"><Empty icon="planet-outline" text={data.satError ? "Die Satellitenbilder konnten nicht geladen werden." : "Noch kein klares Bild gesammelt."} /></Screen>;
 
   const years = [...new Set(places.flatMap((x) => x.images.map((i) => new Date(i.t).getUTCFullYear())))].sort();
-  const preset = (label: string, pick: () => SatImage) => (
-    <Chip key={label} label={label} onPress={() => { setAfterId(place.images[0].id); setBeforeId(pick().id); setSplit(0.5); }} />
-  );
+  // Vorlagen: zeigen das echte Datum und sind gesperrt, wenn kein Bild nah genug am Wunschdatum liegt
+  const preset = (label: string, target: number | null, pick?: SatImage) => {
+    const img = pick || (target != null ? nearest(target) : place.images[0]);
+    const off = target != null ? Math.abs(new Date(img.t).getTime() - target) / DAY : 0;
+    const usable = img.id !== place.images[0].id && off <= 45;
+    const active = after?.id === place.images[0].id && before?.id === img.id;
+    return (
+      <Chip key={label} label={usable ? `${label} (${fmtCapDay(img.t)})` : `${label}: kein passendes Bild`} active={active}
+        onPress={() => { if (!usable) return; setAfterId(place.images[0].id); setBeforeId(img.id); setSplit(0.5); }} />
+    );
+  };
+
   const scalePct = place.half_km > 0 ? 100 / (2 * place.half_km) : 0;
 
   return (
@@ -117,22 +171,45 @@ export default function Satellite() {
             <ActivityIndicator color={t.muted} /><T v="caption" style={{ marginTop: 6 }}>Bild wird geladen …</T>
           </View>
         ) : null}
-        {A.err || B.err ? <View style={{ position: "absolute", inset: 0, alignItems: "center", justifyContent: "center", padding: 20 } as any}>
-          <T v="small" style={{ textAlign: "center" }}>Das Bild konnte nicht geladen werden.</T></View> : null}
+        {A.err || B.err ? <View style={{ position: "absolute", inset: 0, alignItems: "center", justifyContent: "center", padding: 20, gap: 10 } as any}>
+          <T v="small" style={{ textAlign: "center" }}>Das Bild konnte nicht geladen werden.</T>
+          <Pressable onPress={() => { tap(); if (A.err) A.retry(); if (B.err) B.retry(); }} accessibilityRole="button" hitSlop={6}
+            style={({ pressed }) => ({ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999, backgroundColor: t.card, opacity: pressed ? 0.6 : 1 })}>
+            <T v="smallStrong">Erneut versuchen</T>
+          </Pressable>
+        </View> : null}
       </View>
 
       <T v="smallStrong" style={{ marginTop: space.m, marginBottom: 6 }}>Neuestes Bild vergleichen mit</T>
       <ChipRow>
-        {preset("einem Jahr früher", () => nearest(new Date(place.images[0].t).getTime() - 365 * 864e5))}
-        {preset("Okt. 2020, vor dem Tigray-Krieg", () => nearest(Date.UTC(2020, 9, 20)))}
-        {preset("dem ältesten Bild", () => place.images[place.images.length - 1])}
-        {preset("dem vorigen Bild", () => place.images[1] || place.images[0])}
+        {preset("vor einem Jahr", new Date(place.images[0].t).getTime() - 365 * DAY)}
+        {preset("Okt. 2020, vor dem Tigray-Krieg", Date.UTC(2020, 9, 20))}
+        {preset("ältestes Bild", null, place.images[place.images.length - 1])}
+        {preset("voriges Bild", null, place.images[1] || place.images[0])}
       </ChipRow>
 
-      <T v="smallStrong" style={{ marginTop: space.m, marginBottom: 6 }}>Vorher</T>
-      <ChipRow>{place.images.map((i) => <Chip key={i.id} label={fmtCapDay(i.t)} active={i.id === before?.id} onPress={() => setBeforeId(i.id)} />)}</ChipRow>
-      <T v="smallStrong" style={{ marginTop: space.m, marginBottom: 6 }}>Nachher</T>
-      <ChipRow>{place.images.map((i) => <Chip key={i.id} label={fmtCapDay(i.t)} active={i.id === after?.id} onPress={() => setAfterId(i.id)} />)}</ChipRow>
+      {single ? (
+        <T v="small" style={{ marginTop: space.m }}>{place.images.length === 1 ? "Von diesem Ort gibt es bisher nur ein klares Bild; ein Vergleich ist noch nicht möglich." : "Beide Seiten zeigen dasselbe Bild. Ein anderes Datum wählen."}</T>
+      ) : null}
+      {place.images.length > 1 ? (
+        <View style={{ flexDirection: "row", gap: space.s, marginTop: space.m }}>
+          <Stepper label="Vorher" list={place.images} value={before!} onChange={(i) => { if (before!.id === pickA?.id) setAfterId(i.id); else setBeforeId(i.id); }} />
+          <Stepper label="Nachher" list={place.images} value={after!} onChange={(i) => { if (after!.id === pickA?.id) setAfterId(i.id); else setBeforeId(i.id); }} />
+        </View>
+      ) : null}
+      {place.images.length > 2 ? (
+        <Pressable onPress={() => { tap(); setAllDates(!allDates); }} accessibilityRole="button" accessibilityState={{ expanded: allDates }} hitSlop={6} style={{ marginTop: space.s, paddingVertical: 6 }}>
+          <T v="smallStrong" color={t.accent}>{allDates ? "Datumsliste ausblenden" : `Alle ${place.images.length} Aufnahmedaten`}</T>
+        </Pressable>
+      ) : null}
+      {allDates ? (
+        <>
+          <T v="smallStrong" style={{ marginTop: space.s, marginBottom: 6 }}>Vorher</T>
+          <ChipRow>{place.images.map((i) => <Chip key={i.id} label={fmtCapDay(i.t)} active={i.id === before?.id} onPress={() => { if (before!.id === pickA?.id) setAfterId(i.id); else setBeforeId(i.id); }} />)}</ChipRow>
+          <T v="smallStrong" style={{ marginTop: space.m, marginBottom: 6 }}>Nachher</T>
+          <ChipRow>{place.images.map((i) => <Chip key={i.id} label={fmtCapDay(i.t)} active={i.id === after?.id} onPress={() => { if (after!.id === pickA?.id) setAfterId(i.id); else setBeforeId(i.id); }} />)}</ChipRow>
+        </>
+      ) : null}
 
       <Card style={{ marginTop: space.l, gap: 8 }}>
         <T v="h3">{place.name}</T>

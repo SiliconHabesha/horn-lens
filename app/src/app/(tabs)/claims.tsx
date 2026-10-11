@@ -17,8 +17,10 @@ export default function Claims() {
   const counts = useMemo(() => Object.fromEntries(STATUS_ORDER.map((k) => [k, claims.filter((c) => c.status === k).length])), [claims]);
   const [q, setQ] = useState("");
   const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const [sort, setSort] = useState<"changed" | "stale">("changed");
+  const lastAt = (c: typeof claims[0]) => c.events[0]?.at || c.updated_at;
   const list = claims.filter((c) => (!st || c.status === st)
-    && words.every((w) => `${c.statement} ${c.raw?.statement || ""} ${c.claimant} ${c.disputed_by || ""} ${REGIONS[c.region] || ""}`.toLowerCase().includes(w)));
+    && words.every((w) => `${c.statement} ${c.raw?.statement || ""} ${c.claimant} ${c.disputed_by || ""} ${REGIONS[c.region] || ""}`.toLowerCase().includes(w))).sort((x, y) => (sort === "changed" ? (lastAt(x) < lastAt(y) ? 1 : -1) : (lastAt(x) < lastAt(y) ? -1 : 1)));
   return (
     <Screen title="Behauptungen" sub="Einzelne Aussagen und wie gut jede belegt ist. Jede Änderung bleibt mit Datum und Quellen im Verlauf."
       right={data?.owner ? <IconButton icon="add" label="Behauptung hinzufügen" onPress={() => router.push("/claim-form?mode=add")} /> : undefined}>
@@ -42,6 +44,12 @@ export default function Claims() {
         <Ionicons name={legend ? "chevron-down" : "chevron-forward"} size={15} color={t.accent} />
         <T v="smallStrong" color={t.accent}>Was die Stufen bedeuten</T>
       </Pressable>
+      {data?.owner && claims.length > 1 ? (
+        <View style={{ flexDirection: "row", gap: 8, marginTop: space.m }}>
+          <Chip label="Zuletzt geändert" active={sort === "changed"} onPress={() => setSort("changed")} />
+          <Chip label="Länger nicht geprüft" active={sort === "stale"} onPress={() => setSort("stale")} />
+        </View>
+      ) : null}
       {legend ? (
         <Card style={{ marginTop: space.s, gap: 10 }}>
           {STATUS_ORDER.map((k) => (
@@ -65,7 +73,8 @@ export default function Claims() {
                   <StatusPill status={c.status} />
                   {c.party_claim ? <T v="caption" style={{ borderWidth: 1, borderColor: t.rule, borderRadius: 4, paddingHorizontal: 5 }}>Konfliktpartei</T> : null}
                 </View>
-                {changed ? <T v="label" color={t.accent}>Geändert</T> : null}
+                {changed ? <T v="label" color={t.accent}>Geändert</T>
+                  : data?.owner && Date.now() - new Date(lastAt(c)).getTime() > 7 * 864e5 ? <T v="caption">seit {Math.floor((Date.now() - new Date(lastAt(c)).getTime()) / 864e5)} Tagen unverändert</T> : null}
               </View>
               <T v="h3" style={{ marginTop: 8 }}>{c.statement}</T>
               <T v="small" style={{ marginTop: 6 }} numberOfLines={2}>Wer sagt es: {c.claimant}</T>

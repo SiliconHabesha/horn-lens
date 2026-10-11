@@ -66,9 +66,14 @@ export default function ClaimDetail() {
 
       {data?.owner ? (
         <View style={{ flexDirection: "row", gap: space.s, marginTop: space.m }}>
-          <View style={{ flex: 1 }}><Button label="Status ändern" icon="swap-vertical" onPress={() => router.push(`/claim-form?mode=status&id=${c.id}`)} /></View>
-          <View style={{ flex: 1 }}><Button label="Berichtigen" icon="create-outline" kind="secondary" onPress={() => router.push(`/claim-form?mode=edit&id=${c.id}`)} /></View>
+          <View style={{ flex: 1 }}><Button label="Stufe ändern" icon="swap-vertical" onPress={() => router.push(`/claim-form?mode=status&id=${c.id}`)} /></View>
+          <View style={{ flex: 1 }}><Button label="Neuer Beleg" icon="link-outline" kind="secondary" onPress={() => router.push(`/claim-form?mode=status&intent=evidence&id=${c.id}`)} /></View>
         </View>
+      ) : null}
+      {data?.owner ? (
+        <Pressable onPress={() => { tap(); router.push(`/claim-form?mode=edit&id=${c.id}`); }} accessibilityRole="button" hitSlop={6} style={{ alignSelf: "center", paddingVertical: 10 }}>
+          <T v="smallStrong" color={t.accent}>Angaben berichtigen</T>
+        </Pressable>
       ) : null}
 
       {data?.owner ? <Related c={c} /> : null}
@@ -111,7 +116,15 @@ function Related({ c }: { c: Claim }) {
         {list.map(({ it, shared }, i) => (
           <View key={it.id} style={i ? { borderTopWidth: StyleSheet.hairlineWidth, borderColor: t.rule } : undefined}>
             <ItemRow it={it} isNew={new Date(it.fetched_at).getTime() > seenBefore} />
-            <T v="caption" style={{ marginTop: -8, marginBottom: 10, marginLeft: 15 }}>Gemeinsam: {shared.slice(0, 4).join(", ")}</T>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: -6, marginBottom: 10, marginLeft: 15 }}>
+              <T v="caption" style={{ flex: 1 }}>Gemeinsam: {shared.slice(0, 4).join(", ")}</T>
+              <Pressable onPress={() => { tap(); router.push({ pathname: "/claim-form", params: { mode: "status", id: String(c.id),
+                src_title: `${it.origin_domain || it.source_name}, ${fmtDate(it.published_at || it.fetched_at)}`, src_url: it.url } }); }}
+                accessibilityRole="button" accessibilityLabel={`${it.title} als Beleg übernehmen`} hitSlop={8}
+                style={({ pressed }) => ({ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule, backgroundColor: t.card, opacity: pressed ? 0.6 : 1 })}>
+                <T v="caption" color={t.ink}>Als Beleg übernehmen</T>
+              </Pressable>
+            </View>
           </View>
         ))}
       </Card>

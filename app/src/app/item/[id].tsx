@@ -3,11 +3,11 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import React, { useMemo } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
-import { shareItem, titleStyle, Voices, whenOf } from "../../components/items";
+import { shareItem, shareStory, titleStyle, Voices, whenOf } from "../../components/items";
 import { toast } from "../../components/Toast";
 import { Button, Card, Empty, openLink, Screen, T, tap } from "../../components/ui";
 import { fmtWhen, REGIONS, TYPE_NOTE, TYPE_ORDER, TYPES } from "../../lib/de";
-import { useData } from "../../lib/data";
+import { knownItem, useData } from "../../lib/data";
 import { placesIn } from "../../lib/places";
 import { storiesOf, VOICE_TYPES } from "../../lib/stories";
 import { radius, space, useTheme } from "../../lib/theme";
@@ -19,7 +19,7 @@ export default function ItemDetail() {
   const { data, saved, isSaved, toggleSaved } = useData();
   // Offene Ausgabe: nur Meldungen, die sie auch in der Liste zeigt (Rotes Meer)
   const pool = data ? (data.owner ? data.items : data.items.filter((i) => i.regions.length === 1 && i.regions[0] === "red_sea")) : [];
-  const it: Item | undefined = pool.find((x) => String(x.id) === String(id)) || saved.find((x) => String(x.id) === String(id));
+  const it: Item | undefined = pool.find((x) => String(x.id) === String(id)) || saved.find((x) => String(x.id) === String(id)) || knownItem(Number(id));
   const story = useMemo(() => (data && it ? storiesOf(data).find((s) => s.items.some((x) => x.id === it.id)) : undefined), [data, it]);
 
   if (!it) {
@@ -85,7 +85,7 @@ export default function ItemDetail() {
           style={({ pressed }) => [sq(t), { opacity: pressed ? 0.6 : 1 }]}>
           <Ionicons name={on ? "bookmark" : "bookmark-outline"} size={20} color={on ? t.accent : t.ink} />
         </Pressable>
-        <Pressable onPress={() => shareItem(it)} accessibilityRole="button" accessibilityLabel="Teilen" style={({ pressed }) => [sq(t), { opacity: pressed ? 0.6 : 1 }]}>
+        <Pressable onPress={() => (story && story.items.length > 1 ? shareStory(story) : shareItem(it))} accessibilityRole="button" accessibilityLabel={story && story.items.length > 1 ? "Geschichte mit allen Medien teilen" : "Teilen"} style={({ pressed }) => [sq(t), { opacity: pressed ? 0.6 : 1 }]}>
           <Ionicons name={Platform.OS === "ios" ? "share-outline" : "share-social-outline"} size={20} color={t.ink} />
         </Pressable>
       </View>

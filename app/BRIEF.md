@@ -60,3 +60,12 @@ Offen: Behauptung verfolgen mit eigener Benachrichtigung (braucht Server-Änderu
 - Etiketten in normaler Schreibung statt Versalien; Listen stehen direkt auf der Seite, Karten nur für abgeschlossene Einheiten (Hinweise, Messwerte, Karte).
 - Erkennungszeichen: der Farbbalken „wer berichtet“. Die Lage beginnt mit „N Geschichten heute“ und diesem Balken über die volle Breite.
 - Farben unverändert sparsam: Farbe nur für Quellenart, Stufe und Warnung.
+
+## Stand nach Runde 6 (Funktionen)
+- Daten: lädt still neu, wenn die App nach über 10 Minuten wieder geöffnet wird; Hinweis, wenn eine Ansicht älter als eine Stunde ist; „Neu“ geht bei einem Ladefehler nicht verloren.
+- Tagesbericht: Vor/Zurück, „–“ statt erfundener Nullen, damals gestörte Quellen, Stand aller Behauptungen, verlinkte Behauptungen, Hinweise mit Art, lange Listen aufklappbar, als Text teilen, die letzten sieben auch ohne Netz; alte Meldungen öffnen ihre Detailseite.
+- Satellit: älteres Bild immer links, Pfeile zum Blättern, Vorlagen mit echtem Datum (gesperrt, wenn kein Bild innerhalb von 45 Tagen), Erneut versuchen, Nachbarbilder vorgeladen, Hinweise bei nur einem Bild.
+- Behauptungen: „Als Beleg übernehmen“ aus ähnlichen Meldungen, „Neuer Beleg“ ohne Stufenwechsel, Sortierung „Länger nicht geprüft“ mit Tage-Hinweis, mehrzeilige Felder.
+- Benachrichtigungen: robuste Schalter, Hinweis wenn im Handy ausgeschaltet (mit Weg zu den Einstellungen), Probe-Benachrichtigung, Tagesbericht nur für freigeschaltete Konten.
+- Quellen: Übersicht „x von y erreichbar“, gestörte zuerst; Lage zeigt gestörte Quellen.
+- Teilen einer Geschichte mit allen Medien; arabische Schlagzeilen werden gruppiert; Filter in Meldungen bleiben gemerkt; Karte-Liste folgt Ebenen und Zeitraum.

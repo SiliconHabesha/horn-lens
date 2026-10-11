@@ -22,7 +22,7 @@ const STOP = new Set(("a an the and or but of to in on at by for from with witho
   "says said say tells told amid about against across among between more most less least very not no new also just may might can could will would " +
   "up down off out again still yet even only per via vs one two three four five six seven eight nine ten first last other each both such " +
   "news report reports reported update live video watch photos analysis opinion explainer interview debate debates africanews week weeks day days year years " +
-  "der die das und oder ein eine zu im in am mit von für auf nach bei aus le la les des du de et en un une pour sur dans au aux").split(/\s+/));
+  "der die das und oder ein eine zu im in am mit von für auf nach bei aus le la les des du de et en une pour sur dans aux").split(/\s+/));
 
 const SHORT = new Set(["un", "eu", "au", "uk"]);
 // Wortstamm: die ersten 5 Buchstaben ("accuse"/"accusations" → "accus", "capsizes"/"capsize" → "capsi")
@@ -31,8 +31,8 @@ const stem = (w: string) => (w.length > 5 ? w.slice(0, 5) : w);
 export function words(title: string): { stem: string; word: string }[] {
   const seen = new Set<string>();
   const out: { stem: string; word: string }[] = [];
-  const clean = title.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[’']s\b/g, "").replace(/\{[^}]*\}|\[[^\]]*\]/g, " ");
-  for (const raw of clean.split(/[^a-zሀ-፿]+/)) {
+  const clean = title.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[\u064B-\u065F\u0670]/g, "").replace(/[’']s\b/g, "").replace(/\{[^}]*\}|\[[^\]]*\]/g, " ");
+  for (const raw of clean.split(/[^a-zሀ-፿ء-يٮ-ۓ]+/)) {
     if ((raw.length < 3 && !SHORT.has(raw)) || STOP.has(raw)) continue;
     const s = stem(raw);
     if (seen.has(s)) continue;

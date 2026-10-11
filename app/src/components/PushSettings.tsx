@@ -1,6 +1,7 @@
 // Einstellungen für Benachrichtigungen (im Bildschirm "Mehr")
+import * as Notifications from "expo-notifications";
 import React, { useEffect, useState } from "react";
-import { Switch, View } from "react-native";
+import { AppState, Linking, Pressable, Switch, View } from "react-native";
 import { useData } from "../lib/data";
 import { disablePush, enablePush, getPrefs, pushSupported } from "../lib/push";
 import { space, useTheme } from "../lib/theme";
@@ -13,15 +14,33 @@ export function PushSettings() {
   const [report, setReport] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  useEffect(() => { getPrefs().then((p) => { setAlerts(p.alerts); setReport(p.report); }); }, []);
+  const [denied, setDenied] = useState(false);
+  useEffect(() => {
+    getPrefs().then((p) => { setAlerts(p.alerts); setReport(p.report && !!data?.owner); });
+    // Im Handy ausgeschaltet? Dann nicht „an“ anzeigen, sondern zu den Einstellungen führen
+    const check = () => { if (pushSupported) Notifications.getPermissionsAsync().then((s) => setDenied(s.status === "denied")).catch(() => {}); };
+    check();
+    // Zurück aus den Handy-Einstellungen: neu prüfen
+    const sub = AppState.addEventListener("change", (s) => { if (s === "active") check(); });
+    return () => sub.remove();
+  }, [data?.owner]);
   const apply = async (a: boolean, r: boolean) => {
     tap(); setBusy(true); setMsg(null);
-    if (!a && !r) { await disablePush(); setAlerts(false); setReport(false); }
-    else {
-      const err = await enablePush(a, r);
-      if (err) setMsg(err); else { setAlerts(a); setReport(r); }
-    }
-    setBusy(false);
+    try {
+      if (!a && !r) { await disablePush(); setAlerts(false); setReport(false); }
+      else {
+        const err = await enablePush(a, r && !!data?.owner);
+        if (err) setMsg(err); else { setAlerts(a); setReport(r && !!data?.owner); setDenied(false); }
+      }
+    } catch (e: any) {
+      setMsg(`Das hat nicht geklappt (${String(e?.message || e)}). Bitte Verbindung prüfen und noch einmal versuchen.`);
+    } finally { setBusy(false); }
+  };
+  const test = async () => {
+    tap();
+    try {
+      await Notifications.scheduleNotificationAsync({ content: { title: "Horn Lens", body: "So sieht eine Benachrichtigung aus.", data: { path: "/" } }, trigger: null });
+    } catch { setMsg("Die Probe-Benachrichtigung konnte nicht angezeigt werden."); }
   };
   return (
     <>
@@ -31,7 +50,7 @@ export function PushSettings() {
             <T v="bodyStrong">Hinweise</T>
             <T v="caption">{data?.owner ? "Vorfälle auf See, starke Erdbeben, Internet-Einbrüche, viele Meldungen zu Eritrea" : "Vorfälle auf See und starke Erdbeben"}</T>
           </View>
-          <Switch value={alerts} disabled={busy || !pushSupported} onValueChange={(v) => apply(v, report)} accessibilityLabel="Hinweise als Benachrichtigung" />
+          <Switch value={alerts && !denied} disabled={busy || !pushSupported} onValueChange={(v) => apply(v, report)} accessibilityLabel="Hinweise als Benachrichtigung" />
         </View>
         {data?.owner ? (
           <>
@@ -41,13 +60,19 @@ export function PushSettings() {
                 <T v="bodyStrong">Tagesbericht</T>
                 <T v="caption">Jeden Morgen gegen 7:15 Uhr</T>
               </View>
-              <Switch value={report} disabled={busy || !pushSupported} onValueChange={(v) => apply(alerts, v)} accessibilityLabel="Tagesbericht als Benachrichtigung" />
+              <Switch value={report && !denied} disabled={busy || !pushSupported} onValueChange={(v) => apply(alerts, v)} accessibilityLabel="Tagesbericht als Benachrichtigung" />
             </View>
           </>
         ) : null}
       </Card>
       {!pushSupported ? <T v="caption" style={{ marginTop: space.s }}>Benachrichtigungen gibt es in der App fürs Handy.</T> : null}
+      {denied ? <View style={{ marginTop: space.s }}><Banner icon="notifications-off-outline" tone="warn" text="Benachrichtigungen sind in den Einstellungen des Handys für Horn Lens ausgeschaltet." action="Einstellungen" onAction={() => Linking.openSettings().catch(() => {})} /></View> : null}
       {msg ? <View style={{ marginTop: space.s }}><Banner icon="notifications-off-outline" tone="warn" text={msg} /></View> : null}
+      {pushSupported && (alerts || report) && !denied ? (
+        <Pressable onPress={test} accessibilityRole="button" hitSlop={6} style={{ alignSelf: "flex-start", paddingVertical: 10 }}>
+          <T v="smallStrong" color={t.accent}>Probe-Benachrichtigung senden</T>
+        </Pressable>
+      ) : null}
     </>
   );
 }

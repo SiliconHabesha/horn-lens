@@ -120,16 +120,18 @@ export default function MapScreen() {
         </View>
         <T v="caption" style={{ marginTop: space.m }}>Gestrichelt: amtliche Regionsgrenzen (Natural Earth); West-Tigray ist seit 2020 umstritten. Ein Feuer wird oft von mehreren Satelliten erfasst. Ein Hitzepunkt zeigt Wärme, nicht ihre Ursache.</T>
 
-        {data.maritime.length ? (
+        {layers.ship && data.maritime.length ? (
           <>
-            <T v="h3" style={{ marginTop: space.xl, marginBottom: space.s }}>Vorfälle auf See</T>
-            {data.maritime.map((m, i) => (
+            <T v="h3" style={{ marginTop: space.xl, marginBottom: space.s }}>Vorfälle auf See im Zeitraum</T>
+            {data.maritime.filter((m) => +new Date(m.t) >= since).length === 0 ? <T v="small">Keine Vorfälle in diesem Zeitraum.</T> : null}
+            {data.maritime.filter((m) => +new Date(m.t) >= since).map((m, i) => (
               <Pressable key={i} onPress={() => openLink(m.url || "https://www.ukmto.org/recent-incidents")} accessibilityRole="link"
-                style={({ pressed }) => ({ paddingVertical: 10, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: t.rule, opacity: pressed ? 0.6 : +new Date(m.t) < since ? 0.55 : 1 })}>
+                style={({ pressed }) => ({ paddingVertical: 10, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: t.rule, opacity: pressed ? 0.6 : 1 })}>
                 <T v="caption">{fmtFull(m.t)} · UKMTO</T>
                 <T v="bodyStrong" style={{ fontFamily: font.semibold }}>{m.title}</T>
               </Pressable>
             ))}
+            {data.maritime.length - shipsIn > 0 ? <T v="caption" style={{ marginTop: 6 }}>{data.maritime.length - shipsIn} ältere ausgeblendet; auf der Karte blass.</T> : null}
           </>
         ) : null}
       </ScrollView>

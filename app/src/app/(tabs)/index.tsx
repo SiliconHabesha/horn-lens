@@ -7,7 +7,7 @@ import { dedupe, itemTime, StoryList, Voices } from "../../components/items";
 import { boxOf, fit, MapSvg } from "../../components/MapCanvas";
 import { LageSkeleton } from "../../components/Skeleton";
 import { Banner, Button, Card, Empty, IconButton, openLink, Screen, SectionHead, StatusPill, T, tap } from "../../components/ui";
-import { ago, fmtCapDay, fmtDay, fmtIsoDay, fmtTime, fmtWhen, num, plural } from "../../lib/de";
+import { ago, fmtCapDay, fmtDay, fmtIsoDay, fmtTime, fmtWhen, num, plural, todayBerlin } from "../../lib/de";
 import { useData } from "../../lib/data";
 import { BELES_URL, CLAUDE_PAGE, feedState, lastFailed } from "../../lib/feeds";
 import { PLACES, mentions } from "../../lib/places";
@@ -74,6 +74,7 @@ export default function Lage() {
     : { icon: "pulse-outline", big: num(data.quakes.length), label: "Erdbeben ab 2,5, 7 Tage", to: "/signal/quakes" });
 
   const latestReport = data.reports[0];
+  const broken = data.sources.filter((x) => !["firms", "ukmto", "usgs", "ioda"].includes(x.kind) && !!x.last_error && (!x.last_ok_at || new Date(x.last_fetch_at || 0) > new Date(x.last_ok_at))).map((x) => x.name);
 
   return (
     <Screen title="Lage" sub={loadedAt ? `${fmtDay(data.now)} · Stand ${fmtTime(loadedAt)} Uhr` : fmtDay(data.now)}
@@ -109,6 +110,16 @@ export default function Lage() {
             );
           })}
         </View>
+      ) : null}
+
+      {/* Gestörte Quellen: fehlende Meldungen sind dann kein Zeichen für Ruhe */}
+      {data.owner && broken.length ? (
+        <Pressable onPress={() => { tap(); router.push("/sources"); }} accessibilityRole="button" hitSlop={6}
+          style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: space.m, opacity: pressed ? 0.6 : 1 })}>
+          <Ionicons name="alert-circle-outline" size={16} color={t.warn} />
+          <T v="small" color={t.warn} style={{ flex: 1 }}>{broken.length === 1 ? `1 Quelle gestört: ${broken[0]}` : `${broken.length} Quellen gestört, z. B. ${broken.slice(0, 2).join(", ")}`}</T>
+          <Ionicons name="chevron-forward" size={15} color={t.warn} />
+        </Pressable>
       ) : null}
 
       {/* Messwerte als Raster, Auffälliges zuerst: antippen öffnet die Einzelheiten */}
@@ -189,7 +200,7 @@ export default function Lage() {
               </View>
               <View style={{ flex: 1 }}>
                 <T v="h3">Tagesbericht</T>
-                <T v="small">{latestReport ? fmtIsoDay(latestReport.report_date) : "Der erste Bericht entsteht um 7:15 Uhr."}</T>
+                <T v="small">{latestReport ? `${fmtIsoDay(latestReport.report_date)}${latestReport.report_date !== todayBerlin() && Number(new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", hour: "numeric", hour12: false }).format(new Date())) >= 8 ? " · der heutige fehlt noch" : ""}` : "Der erste Bericht entsteht um 7:15 Uhr."}</T>
               </View>
               {latestReport ? <Ionicons name="chevron-forward" size={18} color={t.faint} /> : null}
             </View>

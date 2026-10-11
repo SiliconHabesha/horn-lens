@@ -31,6 +31,25 @@ export async function shareItem(it: Item) {
   } catch { /* abgebrochen */ }
 }
 
+/** Eine Geschichte mit allen Medien als Text teilen */
+export async function shareStory(s: Story) {
+  tap();
+  const seen = new Set<string>();
+  const lines = [`Bei ${s.sources} Medien: ${s.lead.title}`, ""];
+  for (const it of s.items) {
+    const who = it.origin_domain || it.source_name;
+    if (seen.has(who) || seen.size >= 6) continue;
+    seen.add(who);
+    lines.push(`– ${who} (${TYPES[it.source_type] || it.source_type}): ${it.url}`);
+  }
+  lines.push("", "Zusammengestellt mit Horn Lens. Meldungen sind keine geprüften Tatsachen.");
+  const text = lines.join("\n");
+  try {
+    if (Platform.OS === "web") { await navigator.clipboard.writeText(text); toast("Geschichte als Text kopiert", "copy-outline"); }
+    else await Share.share({ message: text });
+  } catch { /* abgebrochen */ }
+}
+
 export function ItemRow({ it, isNew, translation, others, onOpen }: { it: Item; isNew?: boolean; translation?: string; others?: number; onOpen?: () => void }) {
   const t = useTheme();
   const c = t.type[it.source_type] || t.type.aggregator;
@@ -123,6 +142,9 @@ export function StoryCard({ s, seenBefore }: { s: Story; seenBefore?: number }) 
         {s.total ? <T v="caption">{s.items.length} von {s.total} Meldungen passen</T> : null}
         {isNew ? <T v="label" color={t.accent}>Neu</T> : null}
         <T v="caption" style={{ marginLeft: "auto" }}>{fmtWhen(s.last)}</T>
+        <Pressable onPress={() => shareStory(s)} hitSlop={14} accessibilityRole="button" accessibilityLabel="Geschichte mit allen Medien teilen">
+          <Ionicons name={Platform.OS === "ios" ? "share-outline" : "share-social-outline"} size={18} color={t.faint} />
+        </Pressable>
       </View>
       <T v="bodyStrong" style={titleStyle(s.lead.title)}>{s.lead.title}</T>
       <Voices counts={s.types} compact unit="Medien" />

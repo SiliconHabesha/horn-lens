@@ -147,6 +147,8 @@ export function Screen({ title, sub, right, children, scroll = true, refresh = t
   ) : null;
   const offlineBanner = offline && loadedAt ? (
     <Banner icon="cloud-offline-outline" tone="warn" text={`Keine Verbindung. Stand: ${ago(loadedAt)}.`} action="Erneut" onAction={doRefresh} />
+  ) : loadedAt && Date.now() - loadedAt > 3600e3 && !refreshing ? (
+    <Banner icon="time-outline" text={`Diese Ansicht ist von ${ago(loadedAt)}.`} action="Aktualisieren" onAction={doRefresh} />
   ) : null;
   const inner = <View style={{ maxWidth: 760, width: "100%", alignSelf: "center" }}>{head}{offlineBanner}{children}</View>;
   if (!scroll) return <View style={{ flex: 1, backgroundColor: t.bg, paddingTop: (topInset ? ins.top : 0) + space.m, paddingHorizontal: space.l }}>{inner}</View>;

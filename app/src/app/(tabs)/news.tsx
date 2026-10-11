@@ -1,6 +1,7 @@
 // Meldungen: als Geschichten (gleiche Nachricht, mehrere Medien) oder einzeln; nach Region, Zeitraum, Quellenart und Suchwort filtern; Gemerktes.
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useLocalSearchParams } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useMemo, useState } from "react";
 import { FlatList, Pressable, RefreshControl, StyleSheet, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -39,7 +40,8 @@ export default function News() {
   const t = useTheme();
   const ins = useSafeAreaInsets();
   const p = useLocalSearchParams<{ region?: string; new?: string; mode?: string; k?: string }>();
-  const { data, refreshing, refresh, seenBefore, offline, loadedAt, loading, saved } = useData();
+  const { data, refreshing, refresh, seenBefore, offline, loadedAt, loading, saved, session } = useData();
+  const uid = session?.user?.id ?? null;
   const owner = !!data?.owner;
   const [mode, setMode] = useState<Mode>(p.mode === "saved" ? "saved" : "stories");
   const [region, setRegion] = useState<string>(p.region && REGIONS[p.region] ? p.region : "all");
@@ -55,6 +57,20 @@ export default function News() {
   useEffect(() => { if (p.mode === "saved") setMode("saved"); }, [p.mode, p.k]);
   // Die offene Ausgabe hat keine Regionen-Auswahl: dann immer alle
   useEffect(() => { if (data && !data.owner && region !== "all") setRegion("all"); }, [data, region]);
+  // Filter bleiben gemerkt (je Konto, beim Abmelden gelöscht); Sprünge aus anderen Bildschirmen haben Vorrang
+  const FKEY = `hl:cache:newsfilter:${uid || "public"}`;
+  const [restored, setRestored] = useState(false);
+  useEffect(() => {
+    AsyncStorage.getItem(FKEY).then((v) => {
+      if (v && !p.region && !p.mode && !p.new) {
+        try { const f = JSON.parse(v); if (REGIONS[f.region] || f.region === "all") setRegion(f.region); if (f.hours === 72) setHours(72); if (f.type) setType(f.type); if (f.most) setMost(true); if (["stories", "items"].includes(f.mode)) setMode(f.mode); } catch { /* egal */ }
+      }
+      setRestored(true);
+    }).catch(() => setRestored(true));
+  }, [FKEY]);
+  // Nach einem Sprung (z. B. „Alle zu Eritrea“) die gemerkten Filter nicht überschreiben
+  const jumped = !!(p.region || p.mode || p.new);
+  useEffect(() => { if (restored && !jumped) AsyncStorage.setItem(FKEY, JSON.stringify({ region, hours, type, most, mode })).catch(() => {}); }, [restored, region, hours, type, most, mode]);
 
   const base = useMemo(() => {
     if (!data) return [];

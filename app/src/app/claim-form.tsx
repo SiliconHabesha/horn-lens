@@ -20,7 +20,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 export default function ClaimForm() {
   const t = useTheme();
-  const p = useLocalSearchParams<{ mode?: string; id?: string; src_title?: string; src_url?: string }>();
+  const p = useLocalSearchParams<{ mode?: string; id?: string; src_title?: string; src_url?: string; intent?: string }>();
   const mode = (p.mode === "edit" || p.mode === "status" ? p.mode : "add") as "add" | "edit" | "status";
   const { data, refresh } = useData();
   const claim = data?.claims.find((c) => String(c.id) === String(p.id));
@@ -91,7 +91,7 @@ export default function ClaimForm() {
         return;
       }
       await refresh();
-      toast(mode === "add" ? "Behauptung angelegt" : mode === "status" ? "Stufe geändert" : "Berichtigung gespeichert");
+      toast(mode === "add" ? "Behauptung angelegt" : mode === "status" ? (same ? "Beleg gespeichert" : "Stufe geändert") : "Berichtigung gespeichert");
       close();
     } catch {
       setErr("Die Verbindung ist abgebrochen. Vielleicht wurde gespeichert, vielleicht nicht. Bitte neu laden und nachsehen, bevor du noch einmal speicherst.");
@@ -100,7 +100,8 @@ export default function ClaimForm() {
   };
 
   const close = () => { try { if (router.canGoBack()) { router.back(); return; } } catch { /* ohne Verlauf */ } router.replace("/claims"); };
-  const title = mode === "add" ? "Neue Behauptung" : mode === "edit" ? "Angaben berichtigen" : "Status ändern";
+  const same = mode === "status" && claim && status === claim.status;
+  const title = mode === "add" ? "Neue Behauptung" : mode === "edit" ? "Angaben berichtigen" : p.intent === "evidence" || p.src_url ? "Beleg ergänzen" : "Stufe ändern";
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: t.bg }} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}>
       <Stack.Screen options={{ title, headerLeft: () => <Pressable onPress={close} hitSlop={10} accessibilityRole="button"><T v="bodyStrong" color={t.accent}>Abbrechen</T></Pressable> }} />
@@ -109,8 +110,8 @@ export default function ClaimForm() {
         {mode !== "status" ? (
           <>
             <Field label="Aussage"><TextInput style={[input, { minHeight: 80 }]} multiline value={statement} onChangeText={setStatement} placeholder="Eine überprüfbare Aussage" placeholderTextColor={t.faint} /></Field>
-            <Field label="Wer sagt es"><TextInput style={input} value={claimant} onChangeText={setClaimant} placeholder="z. B. Regierung Äthiopiens" placeholderTextColor={t.faint} /></Field>
-            <Field label="Wer bestreitet es (optional)"><TextInput style={input} value={disputed} onChangeText={setDisputed} placeholder="z. B. Eritreas Informationsminister" placeholderTextColor={t.faint} /></Field>
+            <Field label="Wer sagt es"><TextInput style={[input, { minHeight: 50, paddingTop: 13 }]} multiline value={claimant} onChangeText={setClaimant} placeholder="z. B. Regierung Äthiopiens" placeholderTextColor={t.faint} /></Field>
+            <Field label="Wer bestreitet es (optional)"><TextInput style={[input, { minHeight: 50, paddingTop: 13 }]} multiline value={disputed} onChangeText={setDisputed} placeholder="z. B. Eritreas Informationsminister" placeholderTextColor={t.faint} /></Field>
             {mode === "add" ? (
               <Field label="Region">
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -133,7 +134,7 @@ export default function ClaimForm() {
           </>
         ) : null}
         {mode !== "edit" ? (
-          <Field label={mode === "add" ? "Status" : "Neuer Status"}>
+          <Field label={mode === "add" ? "Stufe" : same ? "Stufe (bleibt gleich; nur ein neuer Beleg wird eingetragen)" : "Neue Stufe"}>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {STATUS_ORDER.map((k) => <Chip key={k} label={STATUS[k][0]} color={t.status[k]} active={status === k} onPress={() => setStatus(k)} />)}
             </View>
@@ -142,7 +143,7 @@ export default function ClaimForm() {
         ) : null}
         <Field label="Notiz">
           <TextInput style={[input, { minHeight: 80 }]} multiline value={note} onChangeText={setNote}
-            placeholder={mode === "edit" ? "Was war falsch, und woher stammt die richtige Fassung?" : "Was hat sich geändert, und warum dieser Status?"} placeholderTextColor={t.faint} />
+            placeholder={mode === "edit" ? "Was war falsch, und woher stammt die richtige Fassung?" : same ? "Was belegt dieser neue Beleg?" : "Was hat sich geändert, und warum diese Stufe?"} placeholderTextColor={t.faint} />
         </Field>
         {mode !== "edit" ? (
           <>
@@ -166,7 +167,7 @@ export default function ClaimForm() {
           </>
         ) : null}
         {err ? <Banner icon="alert-circle-outline" tone="warn" text={err} action={unsure ? "Neu laden" : undefined} onAction={unsure ? () => { refresh(); close(); } : undefined} /> : null}
-        <Button label={busy ? "Speichert …" : mode === "add" ? "Behauptung anlegen" : mode === "edit" ? "Berichtigung speichern" : "Status speichern"} onPress={submit} disabled={busy} />
+        <Button label={busy ? "Speichert …" : mode === "add" ? "Behauptung anlegen" : mode === "edit" ? "Berichtigung speichern" : same ? "Beleg speichern" : "Stufe speichern"} onPress={submit} disabled={busy} />
       </ScrollView>
     </KeyboardAvoidingView>
   );

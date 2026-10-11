@@ -4,16 +4,24 @@ import { View } from "react-native";
 import { Card, Divider, openLink, Screen, T } from "../components/ui";
 import { ago, fmtDate, TYPE_NOTE, TYPE_ORDER, TYPES } from "../lib/de";
 import { useData } from "../lib/data";
-import { isStale } from "../lib/feeds";
+import { feedState, isStale } from "../lib/feeds";
 import { space, useTheme } from "../lib/theme";
 
 export default function Sources() {
   const t = useTheme();
   const { data } = useData();
   const sources = data?.sources || [];
-  const groups = TYPE_ORDER.map((k) => [k, sources.filter((s) => s.source_type === k)] as const).filter(([, l]) => l.length);
+  const isErr = (s: typeof sources[0]) => ["firms", "ukmto", "usgs", "ioda"].includes(s.kind) ? !feedState(data, s.id).ok
+    : !!s.last_error && (!s.last_ok_at || new Date(s.last_fetch_at || 0) > new Date(s.last_ok_at));
+  const rank = (s: typeof sources[0]) => (isErr(s) ? 0 : isStale(s) ? 1 : 2);
+  const groups = TYPE_ORDER.map((k) => [k, sources.filter((s) => s.source_type === k).sort((a, b) => rank(a) - rank(b))] as const).filter(([, l]) => l.length);
+  const bad = sources.filter(isErr).length, stale = sources.filter((s) => !isErr(s) && isStale(s)).length;
   return (
     <Screen topInset={false}>
+      <Card style={{ marginBottom: space.l, gap: 4 }}>
+        <T v="h3" tabular>{sources.length - bad} von {sources.length} Quellen erreichbar</T>
+        <T v="small">{bad ? `${bad} gestört` : "Keine gestört"}{stale ? ` · ${stale} seit über 14 Tagen ohne neue Meldung zu unseren Regionen` : ""}. Gestörte Quellen stehen in jeder Gruppe oben.</T>
+      </Card>
       <T v="small" style={{ marginBottom: space.m }}>Jede Quelle ist nach Art eingeordnet, damit du Meldungen gewichten kannst. Die Farbe steht in allen Listen für diese Art.</T>
       {groups.map(([k, list]) => (
         <View key={k} style={{ marginBottom: space.l }}>
@@ -24,7 +32,7 @@ export default function Sources() {
           <T v="caption" style={{ marginBottom: space.s }}>{TYPE_NOTE[k]}</T>
           <Card style={{ paddingVertical: 4 }}>
             {list.map((s, i) => {
-              const err = !!s.last_error && (!s.last_ok_at || new Date(s.last_fetch_at || 0) > new Date(s.last_ok_at));
+              const err = isErr(s);
               const stale = !err && isStale(s);
               return (
                 <View key={s.id}>
@@ -33,8 +41,8 @@ export default function Sources() {
                     <T v="bodyStrong" color={s.homepage ? t.ink : undefined} onPress={s.homepage ? () => openLink(s.homepage) : undefined}>{s.name}</T>
                     {s.stance_note ? <T v="small">{s.stance_note}</T> : null}
                     <T v="caption" color={err ? t.warn : undefined}>
-                      {err ? `Bei der letzten Abfrage nicht erreichbar (${ago(s.last_fetch_at || "")})` : stale ? `Abgefragt ${ago(s.last_ok_at!)}; neueste Meldung zu unseren Regionen: ${fmtDate(s.newest_item_at!)}`
-                        : s.last_ok_at ? `Abgefragt ${ago(s.last_ok_at)}` : "Noch nicht abgefragt"}
+                      {err ? (s.last_ok_at ? `Gestört; zuletzt erreichbar ${ago(s.last_ok_at)}` : "Gestört; bisher nie erreichbar") : stale ? `Abgefragt ${ago(s.last_ok_at!)}; neueste Meldung zu unseren Regionen: ${fmtDate(s.newest_item_at!)}`
+                        : s.last_ok_at ? `Abgefragt ${ago(s.last_ok_at)}${s.last_item_count != null && !["firms", "ukmto", "usgs", "ioda"].includes(s.kind) ? `, ${s.last_item_count} Einträge im Feed` : ""}` : "Noch nicht abgefragt"}
                     </T>
                   </View>
                 </View>

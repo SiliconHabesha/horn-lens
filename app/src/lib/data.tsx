@@ -3,7 +3,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import type { Session } from "@supabase/supabase-js";
-import { Platform } from "react-native";
+import { AppState, Platform } from "react-native";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { addTexts, de, deDates, resetTexts } from "./de";
 import { refreshPushOwner } from "./push";
@@ -100,13 +100,40 @@ function toData(raw: Raw): Data {
   };
 }
 
+// Meldungen, die außerhalb der 72 Stunden angezeigt wurden (z. B. in alten Tagesberichten), damit ihre Detailseite sie findet
+const extraItems = new Map<number, Item>();
+export const rememberItems = (list: Item[]) => { for (const i of list) extraItems.set(i.id, i); };
+export const knownItem = (id: number) => extraItems.get(id);
+
+// Tagesberichte: die letzten sieben bleiben auf dem Gerät (unter hl:cache:, beim Abmelden gelöscht), damit sie auch ohne Netz öffnen
+const REPORT = (uid: string, date: string) => `hl:cache:report:${uid}:${date}`;
 export async function loadReport(date: string): Promise<Report | null> {
-  const { data, error } = await sb.rpc("app_report", { p_date: date });
-  if (error) throw error;
+  const uid = (await sb.auth.getSession()).data.session?.user?.id || "public";
+  let data: any;
+  try {
+    const res = await sb.rpc("app_report", { p_date: date });
+    if (res.error) throw res.error;
+    data = res.data;
+    const still = (await sb.auth.getSession()).data.session?.user?.id || "public";
+    if (data && still === uid) {
+      AsyncStorage.setItem(REPORT(uid, date), JSON.stringify(data)).catch(() => {});
+      AsyncStorage.getAllKeys().then((keys) => {
+        const mine = keys.filter((k) => k.startsWith(`hl:cache:report:${uid}:`)).sort();
+        if (mine.length > 7) AsyncStorage.multiRemove(mine.slice(0, mine.length - 7)).catch(() => {});
+      }).catch(() => {});
+    }
+  } catch (e: any) {
+    // Gespeicherte Fassung nur bei Verbindungsproblemen; ohne Berechtigung nichts Gespeichertes zeigen
+    if (!/fetch|network|timeout|abort|offline/i.test(String(e?.message || e))) throw e;
+    const c = await AsyncStorage.getItem(REPORT(uid, date)).catch(() => null);
+    if (!c) throw e;
+    data = JSON.parse(c);
+    (data as any)._offline = true;
+  }
   if (!data) return null;
   const r = data as Report;
   const p = r.payload || {};
-  for (const reg of p.regions || []) for (const it of reg.items || []) it.source_name = de(it.source_name);
+  for (const reg of p.regions || []) { for (const it of reg.items || []) it.source_name = de(it.source_name); rememberItems(reg.items || []); }
   for (const c of p.changes || []) { c.statement = de(c.statement); c.note = de(c.note); c.source_title = deDates(c.source_title); }
   if (p.alerts) p.alerts = localizeAlerts(p.alerts);
   return r;
@@ -135,6 +162,7 @@ const DataCtx = createContext<Ctx | null>(null);
 // Zwischenspeicher je Konto: niemand sieht den Stand eines anderen Kontos. Beim Abmelden wird alles gelöscht.
 const CACHE = (uid: string | null) => `hl:cache:v2:${uid || "public"}`;
 async function clearCaches() {
+  extraItems.clear();
   try { const keys = (await AsyncStorage.getAllKeys()).filter((k) => k.startsWith("hl:cache:")); if (keys.length) await AsyncStorage.multiRemove(keys); } catch { /* egal */ }
 }
 const SEEN = "hl:seen:v1";
@@ -154,6 +182,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [firstVisit, setFirstVisit] = useState(false);
   const [recovery, setRecovery] = useState(false);
   const token = useRef(0);
+  const seenWritten = useRef(false);
+  const loadedRef = useRef<number | null>(null);
   const [saved, setSaved] = useState<Item[]>([]);
 
   const uid = session?.user?.id ?? null;
@@ -171,17 +201,18 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const prev = v ? Number(v) : Date.now() - 24 * 3600e3;
       setFirstVisit(!v);
       setSeenBefore(prev);
-      AsyncStorage.setItem(SEEN, String(Date.now())).catch(() => {});
     }).catch(() => {});
     return () => sub.subscription.unsubscribe();
   }, []);
 
   // Die Web-Fassung ist ohne Anmeldung gesperrt: dann gar nichts laden
   const gated = Platform.OS === "web" && !uid;
-  const load = useCallback(async (isRefresh: boolean) => {
+  const loadingRef = useRef(false);
+  const load = useCallback(async (isRefresh: boolean, silent = false) => {
     const my = ++token.current;
     if (gated) { setData(null); setLoading(false); setRefreshing(false); return; }
-    if (isRefresh) setRefreshing(true); else { setLoading(true); setData(null); }
+    loadingRef.current = true;
+    if (isRefresh) { if (!silent) setRefreshing(true); } else { setLoading(true); setData(null); }
     // Sofort den letzten Stand dieses Kontos zeigen, dann frisch laden
     if (!isRefresh) {
       try {
@@ -201,18 +232,28 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       if (my !== token.current) return;
       setData(toData(raw)); setError(null); setOffline(false); setLoadedAt(Date.now());
       // Kurzes Antippen spürbar machen, wenn Ziehen-zum-Aktualisieren fertig ist
-      if (isRefresh && Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      if (isRefresh && !silent && Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       AsyncStorage.setItem(CACHE(uid), JSON.stringify({ at: Date.now(), uid, raw })).catch(() => {});
+      // Erst wenn wirklich geladen wurde, gilt dieser Besuch als gesehen (sonst gingen „Neu“-Markierungen verloren)
+      if (!seenWritten.current) { seenWritten.current = true; AsyncStorage.setItem(SEEN, String(Date.now())).catch(() => {}); }
     } catch (e: any) {
       if (my !== token.current) return;
       setError(String(e?.message || e || "Fehler"));
       setOffline(true);
     } finally {
-      if (my === token.current) { setLoading(false); setRefreshing(false); }
+      if (my === token.current) { setLoading(false); setRefreshing(false); loadingRef.current = false; }
     }
   }, [uid, gated]);
 
   useEffect(() => { if (authReady) load(false); }, [authReady, uid, load]);
+  loadedRef.current = loadedAt;
+  // Zurück in der App (oder im Browser-Tab): älter als 10 Minuten, dann still neu laden
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (s) => {
+      if (s === "active" && authReady && !loadingRef.current && loadedRef.current && Date.now() - loadedRef.current > 10 * 60e3) load(true, true);
+    });
+    return () => sub.remove();
+  }, [authReady, load]);
   const savedFor = useRef<string | null | undefined>(undefined); // Konto, dessen Merkliste geladen ist
   useEffect(() => {
     if (!authReady) return;
@@ -272,7 +313,8 @@ function hexToBase64(hex: string) {
   return out;
 }
 /** Bild als data:-Adresse (WebP), einmal geladen bleibt es im Speicher */
-export function satImageUri(id: number): Promise<string> {
+export function satImageUri(id: number, retry = false): Promise<string> {
+  if (retry) imgCache.delete(id);
   if (!imgCache.has(id)) {
     const p = (async () => {
       const { data, error } = await sb.from("sat_images").select("image").eq("id", id).single();
