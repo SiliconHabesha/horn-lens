@@ -1,0 +1,40 @@
+// Erzeugt die Länderumrisse für die Horn-Lens-Karte als fertige SVG-Pfade.
+// Daten: Natural Earth 1:10m (gemeinfrei) über das npm-Paket world-atlas.
+import fs from "node:fs";
+import { geoMercator, geoPath, geoBounds } from "d3-geo";
+import { feature } from "topojson-client";
+
+const BOX = { west: 34.5, east: 46.0, south: 10.0, north: 20.5 };
+const W = 720;
+
+const topo = JSON.parse(fs.readFileSync("node_modules/world-atlas/countries-10m.json", "utf8"));
+const countries = feature(topo, topo.objects.countries).features;
+
+const frame = {
+  type: "Polygon",
+  // Im Uhrzeigersinn: d3 deutet gegen den Uhrzeigersinn als "alles außer diesem Kasten"
+  coordinates: [[[BOX.west, BOX.south], [BOX.west, BOX.north], [BOX.east, BOX.north], [BOX.east, BOX.south], [BOX.west, BOX.south]]],
+};
+// Höhe aus dem Seitenverhältnis der Mercator-Projektion
+const probe = geoMercator().fitWidth(W, frame);
+const [[, y0], [, y1]] = geoPath(probe).bounds(frame);
+const H = Math.round(y1 - y0);
+const proj = geoMercator().fitSize([W, H], frame);
+proj.clipExtent([[0, 0], [W, H]]);
+const path = geoPath(proj);
+
+const round = (d) => d.replace(/-?\d+\.\d+/g, (n) => (Math.round(Number(n) * 10) / 10).toString());
+
+const out = [];
+for (const f of countries) {
+  const [[w, s], [e, n]] = geoBounds(f);
+  if (["France", "Maldives"].includes(f.properties.name)) continue; // Überseegebiete, liegen nicht im Ausschnitt
+  if (e < BOX.west || w > BOX.east || n < BOX.south || s > BOX.north) continue;
+  const d = path(f);
+  if (!d) continue;
+  out.push({ id: f.id ?? null, name: f.properties.name, d: round(d) });
+}
+
+const result = { width: W, height: H, scale: proj.scale(), translate: proj.translate(), box: BOX, countries: out };
+fs.writeFileSync("map.json", JSON.stringify(result));
+console.log(W, H, out.map((c) => `${c.name}(${c.d.length})`).join(" "));

@@ -1,0 +1,76 @@
+{
+  "expo": {
+    "name": "Horn Lens",
+    "slug": "horn-lens",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "hornlens",
+    "userInterfaceStyle": "automatic",
+    "description": "Lagebild zum Horn von Afrika mit Eritrea zuerst: Meldungen mit Quellenangabe, Messwerte, Satellitenbilder. Powered by BELES.",
+    "primaryColor": "#13262E",
+    "ios": {
+      "bundleIdentifier": "app.beles.hornlens",
+      "supportsTablet": false,
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "CFBundleDevelopmentRegion": "de"
+      }
+    },
+    "android": {
+      "package": "app.beles.hornlens",
+      "adaptiveIcon": {
+        "backgroundColor": "#13262E",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "POST_NOTIFICATIONS"
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/favicon.png",
+      "name": "Horn Lens",
+      "shortName": "Horn Lens",
+      "lang": "de",
+      "themeColor": "#13262E",
+      "backgroundColor": "#EDF0EE"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-image",
+      "expo-font",
+      "expo-web-browser",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "resizeMode": "contain",
+          "backgroundColor": "#EDF0EE",
+          "dark": {
+            "image": "./assets/splash-icon-dark.png",
+            "backgroundColor": "#0E1A1F"
+          }
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#0F6E74",
+          "defaultChannel": "default"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}

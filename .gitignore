@@ -1,0 +1,13 @@
+build/node_modules/
+build/ne/
+tests/out/
+tests/ingest/node_modules/
+tests/ingest/out/
+tests/ingest/t.ts
+tests/ingest/t.mjs
+tests/ingest/package-lock.json
+app/node_modules/
+app/dist/
+app/.expo/
+web/artifact.html
+**/__pycache__/

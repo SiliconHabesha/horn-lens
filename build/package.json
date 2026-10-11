@@ -1,0 +1,14 @@
+{
+  "name": "horn-lens-build",
+  "private": true,
+  "description": "Baut die Horn-Lens-Seiten: Karte (make-map.mjs, make-regions.mjs) und Schriften für die öffentliche Fassung",
+  "scripts": { "build": "python3 build.py" },
+  "dependencies": {
+    "@fontsource/noto-sans-ethiopic": "^5.3.0",
+    "@fontsource/public-sans": "^5.3.0",
+    "d3-geo": "^3.1.1",
+    "topojson-client": "^3.1.0",
+    "topojson-server": "^3.0.1",
+    "world-atlas": "^2.0.2"
+  }
+}
