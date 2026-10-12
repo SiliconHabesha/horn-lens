@@ -1,6 +1,7 @@
 // Lade-Platzhalter in der Form des späteren Inhalts statt eines Kreisels. Bei „Bewegung reduzieren“ ohne Pulsieren.
 import React, { useEffect, useRef, useState } from "react";
 import { AccessibilityInfo, Animated, StyleSheet, View, ViewStyle } from "react-native";
+import { t as tr } from "../lib/i18n";
 import { radius, space, useTheme } from "../lib/theme";
 
 export function useReduceMotion() {
@@ -38,7 +39,7 @@ export function Skeleton({ rows = 5 }: { rows?: number }) {
   const t = useTheme();
   const o = usePulse();
   return (
-    <Animated.View style={{ opacity: o }} accessible accessibilityLabel="Wird geladen" accessibilityRole="progressbar">
+    <Animated.View style={{ opacity: o }} accessible accessibilityLabel={tr("Wird geladen")} accessibilityRole="progressbar">
       {Array.from({ length: rows }).map((_, i) => (
         <View key={i} style={{ flexDirection: "row", gap: 12, paddingVertical: 14, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: t.rule }}>
           <Bone w={3} h={56} />
@@ -59,7 +60,7 @@ export function LageSkeleton() {
   const o = usePulse();
   const card = { backgroundColor: t.card, borderRadius: radius.l, padding: space.l, borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule } as const;
   return (
-    <Animated.View style={{ opacity: o, gap: space.s }} accessible accessibilityLabel="Wird geladen" accessibilityRole="progressbar">
+    <Animated.View style={{ opacity: o, gap: space.s }} accessible accessibilityLabel={tr("Wird geladen")} accessibilityRole="progressbar">
       <View style={[card, { gap: 10 }]}><Bone w="45%" h={11} /><Bone w="30%" h={22} /></View>
       <View style={{ flexDirection: "row", gap: space.s }}>
         {[0, 1].map((i) => <View key={i} style={[card, { flex: 1, gap: 8, minHeight: 92 }]}><Bone w="40%" h={22} /><Bone w="80%" h={11} /></View>)}

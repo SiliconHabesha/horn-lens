@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ago, num, STATUS } from "../lib/de";
 import { useData } from "../lib/data";
 import { font, radius, space, useTheme } from "../lib/theme";
+import { lang, t as tr } from "../lib/i18n";
 
 export const tap = () => { if (Platform.OS !== "web") Haptics.selectionAsync().catch(() => {}); };
 
@@ -39,8 +40,11 @@ export function T({ v = "body", color, style, tabular, children, ...rest }: Text
   const t = useTheme();
   const s = VAR[v];
   const muted = v === "small" || v === "caption";
+  // Tigrinya: Ge'ez-Schrift als Ausweichschrift (im Browser per Liste, auf dem Handy springt das System ein), etwas mehr Zeilenabstand, keine engere Laufweite
+  const ti = lang() === "ti";
+  const family = Platform.OS === "web" ? `${s.family}, ${/SG_[678]/.test(s.family) ? font.ethiopicBold : font.ethiopic}` : s.family;
   return (
-    <Text {...rest} style={[{ fontSize: s.size, lineHeight: s.line, fontFamily: s.family, letterSpacing: s.spacing, color: color || (muted ? t.muted : t.ink),
+    <Text {...rest} style={[{ fontSize: s.size, lineHeight: ti ? Math.round(s.line * 1.12) : s.line, fontFamily: family, letterSpacing: ti ? 0 : s.spacing, color: color || (muted ? t.muted : t.ink),
       fontVariant: tabular ? ["tabular-nums"] : undefined }, style]}>
       {children}
     </Text>
@@ -74,7 +78,9 @@ export function Chip({ label, count, active, onPress, color, disabled }: { label
   );
 }
 
-export function ChipRow({ children }: { children: React.ReactNode }) {
+export function ChipRow({ children, wrap }: { children: React.ReactNode; wrap?: boolean }) {
+  // wrap: umbrechen statt seitlich wischen (für schmale Spalten am Computer)
+  if (wrap) return <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{children}</View>;
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: space.l, paddingVertical: 2 }}
       style={{ flexGrow: 0, marginHorizontal: -space.l }}>
@@ -93,7 +99,7 @@ export function StatusPill({ status, small }: { status: string; small?: boolean 
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start" }}>
       <Ionicons name={STATUS_ICON[status] || "ellipse"} size={small ? 13 : 15} color={c} accessibilityElementsHidden importantForAccessibility="no" />
-      <T v="label" color={c}>{STATUS[status]?.[0] || "Stufe unbekannt"}</T>
+      <T v="label" color={c}>{STATUS[status]?.[0] || tr("Stufe unbekannt")}</T>
     </View>
   );
 }
@@ -160,9 +166,9 @@ export function Screen({ title, sub, right, children, scroll = true, refresh = t
     </View>
   ) : null;
   const offlineBanner = offline && loadedAt ? (
-    <Banner icon="cloud-offline-outline" tone="warn" text={`Keine Verbindung. Stand: ${ago(loadedAt)}.`} action="Erneut versuchen" onAction={doRefresh} />
+    <Banner icon="cloud-offline-outline" tone="warn" text={tr("Keine Verbindung. Stand: {ago}.", { ago: ago(loadedAt) })} action={tr("Erneut versuchen")} onAction={doRefresh} />
   ) : loadedAt && Date.now() - loadedAt > 3600e3 && !refreshing ? (
-    <Banner icon="time-outline" text={`Diese Ansicht ist von ${ago(loadedAt)}.`} action="Aktualisieren" onAction={doRefresh} />
+    <Banner icon="time-outline" text={tr("Diese Ansicht ist von {ago}.", { ago: ago(loadedAt) })} action={tr("Aktualisieren")} onAction={doRefresh} />
   ) : null;
   const inner = <View style={{ maxWidth: 760, width: "100%", alignSelf: "center" }}>{head}{offlineBanner}{children}</View>;
   if (!scroll) return <View style={{ flex: 1, backgroundColor: t.bg, paddingTop: (topInset ? ins.top : 0) + space.m + (wide && topInset ? space.xl : 0), paddingHorizontal: space.l }}>{inner}</View>;
@@ -198,8 +204,8 @@ export function TabTools({ children, noSearch }: { children?: React.ReactNode; n
   return (
     <View style={{ flexDirection: "row", gap: 8 }}>
       {children}
-      {wide || noSearch ? null : <IconButton icon="search" label="Suchen" onPress={() => router.push("/search")} />}
-      {wide ? null : <IconButton icon="ellipsis-horizontal" label="Mehr" onPress={() => router.push("/more")} />}
+      {wide || noSearch ? null : <IconButton icon="search" label={tr("Suchen")} onPress={() => router.push("/search")} />}
+      {wide ? null : <IconButton icon="ellipsis-horizontal" label={tr("Mehr")} onPress={() => router.push("/more")} />}
     </View>
   );
 }

@@ -1,10 +1,15 @@
 // Orte rund um Eritrea: Lage, Schreibweisen (lateinisch und in Ge'ez-Schrift) und was Semay zu jedem Ort weiß.
 // Erwähnungen werden nur über den Ortsnamen in der Schlagzeile gefunden: erwähnt heißt nicht, dass dort etwas geschah.
 import { fmtFull, num } from "./de";
+import { lang, t } from "./i18n";
 import type { Claim, Data, Item } from "./types";
 
 export type Place = {
-  id: string; name: string; lat: number; lon: number; country: string;
+  id: string;
+  name: string;           // Anzeigename in der gewählten Sprache (Getter, siehe unten); deutsch in nameDe
+  lat: number; lon: number;
+  country: string;        // Land/Gebiet in der gewählten Sprache (Getter); deutsch in countryDe
+  nameDe: string; countryDe: string;
   latin: string[];        // Schreibweisen in Schlagzeilen (ganze Wörter)
   geez?: string[];        // Schreibweisen in Tigrinya/Amharisch (Teil eines Wortes genügt)
   weak?: { alias: string[]; ctx: string[] }; // mehrdeutige Namen: zählen nur, wenn die Schlagzeile auch eines der ctx-Wörter enthält
@@ -13,7 +18,7 @@ export type Place = {
   dy?: number;            // Beschriftung senkrecht verschieben (Bildschirmpunkte), wenn Namen sich überlappen
 };
 
-export const PLACES: Place[] = [
+const LIST: Omit<Place, "nameDe" | "countryDe">[] = [
   { id: "asmara", name: "Asmara", lat: 15.333, lon: 38.933, country: "Eritrea", latin: ["asmara", "asmera"], geez: ["ኣስመራ", "አስመራ"], major: true },
   { id: "massawa", name: "Massawa", lat: 15.609, lon: 39.45, country: "Eritrea", latin: ["massawa", "massaua", "mitsiwa", "mits'iwa"], geez: ["ምጽዋዕ", "ምፅዋ"], major: true, dy: -3 },
   { id: "assab", name: "Assab", lat: 13.009, lon: 42.739, country: "Eritrea", latin: ["aseb"], weak: { alias: ["assab"], ctx: ["eritrea", "eritrean", "port", "ethiopia", "ethiopian", "red sea", "sea access", "airbase", "base", "uae", "emirati", "abiy"] }, geez: ["ዓሰብ", "አሰብ", "ዐሰብ"], major: true, left: true },
@@ -44,6 +49,20 @@ export const PLACES: Place[] = [
   { id: "portsudan", name: "Port Sudan", lat: 19.616, lon: 37.216, country: "Sudan", latin: ["port sudan"], major: true },
   { id: "djibouti", name: "Dschibuti", lat: 11.588, lon: 43.145, country: "Dschibuti", latin: ["djibouti", "dschibuti"], geez: ["ጅቡቲ"], major: true },
 ];
+
+// Ortsnamen auf Englisch und Tigrinya, wo sie vom deutschen Namen bzw. vom ersten Ge'ez-Eintrag abweichen
+const NAME_EN: Record<string, string> = { axum: "Axum", mokha: "Mocha", hodeidah: "Hodeidah", djibouti: "Djibouti" };
+const NAME_TI: Record<string, string> = { sawa: "ሳዋ", bure: "ቡረ", shire: "ሽረ", babelmandeb: "ባብ ኤል ማንደብ", mokha: "ሞካ", hodeidah: "ሑደይዳ", portsudan: "ፖርት ሱዳን" };
+// name und country werden beim Lesen in die gewählte Sprache übersetzt; die Suche (mentions) nutzt nur latin/geez
+export const PLACES: Place[] = LIST.map((src) => {
+  const p = { ...src, nameDe: src.name, countryDe: src.country } as Place;
+  Object.defineProperty(p, "name", { enumerable: true, get: () => {
+    const l = lang();
+    return l === "de" ? p.nameDe : l === "en" ? NAME_EN[p.id] ?? p.nameDe : NAME_TI[p.id] ?? p.geez?.[0] ?? NAME_EN[p.id] ?? p.nameDe;
+  } });
+  Object.defineProperty(p, "country", { enumerable: true, get: () => t(p.countryDe) });
+  return p;
+});
 export const placeById = (id: string) => PLACES.find((p) => p.id === id);
 
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -93,10 +112,14 @@ export function nearest(lat: number, lon: number) {
   return { p: best, d: bd };
 }
 
+/** „bei Asmara“ oder „etwa 30 km von Asmara“ */
+export const nearText = (n: { p: Place; d: number }) =>
+  n.d < 8 ? t("bei {place}", { place: n.p.name }) : t("etwa {km} km von {place}", { km: num(Math.round(n.d)), place: n.p.name });
+
 // Eine Zeile für Vorfälle auf See, überall gleich: Zeit · UKMTO · nächster Ort
 export const seaMeta = (m: { t: string; lat: number; lon: number; title?: string }, extra?: string) => {
   const n = nearest(m.lat, m.lon);
   // Nennt die Meldung selbst schon einen Ort („25 sm westlich von Mokka“), keinen zweiten danebenstellen
   if (m.title && / von |, /.test(m.title)) return `${fmtFull(m.t)} · UKMTO${extra ? ` · ${extra}` : ""}`;
-  return `${fmtFull(m.t)} · UKMTO · ${n.d < 8 ? `bei ${n.p.name}` : `etwa ${num(Math.round(n.d))} km von ${n.p.name}`}${extra ? ` · ${extra}` : ""}`;
+  return `${fmtFull(m.t)} · UKMTO · ${nearText(n)}${extra ? ` · ${extra}` : ""}`;
 };

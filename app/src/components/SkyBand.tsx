@@ -7,6 +7,7 @@ import React, { useCallback, useState } from "react";
 import { Pressable, StyleSheet, useColorScheme, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { BriefLine } from "../lib/brief";
+import { lang, t as tr } from "../lib/i18n";
 import { BRAND, ForceDark, radius, space, useTheme } from "../lib/theme";
 import type { Data } from "../lib/types";
 import { Logo } from "./Logo";
@@ -44,21 +45,21 @@ function Inner({ data, day, stand, brief }: { data: Data; day: string; stand: st
             <TabTools />
           </View>
         )}
-        <T v="display" accessibilityRole="header">Lage</T>
-        <T v="small" style={{ marginTop: 2 }}>{day}, Stand {stand} Uhr</T>
+        <T v="display" accessibilityRole="header">{tr("Lage")}</T>
+        <T v="small" style={{ marginTop: 2 }}>{tr("{day}, Stand {stand} Uhr", { day, stand })}</T>
 
         <View style={{ flexDirection: wide ? "row" : "column", gap: wide ? space.xl : 0, marginTop: space.l, alignItems: wide ? "flex-start" : "stretch" }}>
           {/* Auf einen Blick: ein Satz je Thema, Wichtigstes zuerst */}
           <View style={{ flex: wide ? 5 : undefined }} accessibilityRole="list">
             {brief.map((b, i) => (
-              <Pressable key={`${b.head}${i}`} onPress={() => go(b.to)} accessibilityRole="button" accessibilityLabel={`${b.head}: ${b.text} Quelle: ${b.src}`}
+              <Pressable key={`${b.head}${i}`} onPress={() => go(b.to)} accessibilityRole="button" accessibilityLabel={tr("{head}: {text} Quelle: {src}", { head: b.head, text: b.text, src: b.src })}
                 style={({ pressed }) => ({ flexDirection: "row", gap: 12, paddingVertical: 11, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: t.rule, opacity: pressed ? 0.6 : 1 })}>
                 <View style={{ width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center", marginTop: 1,
                   backgroundColor: b.alert ? t.warn : "rgba(237,240,238,0.08)" }}>
                   <Ionicons name={b.icon} size={16} color={b.alert ? BRAND.ink : t.ink} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <T v="body" color={t.ink}><T v="bodyStrong" color={b.alert ? t.warn : t.ink}>{b.head}. </T>{b.text}</T>
+                  <T v="body" color={t.ink}><T v="bodyStrong" color={b.alert ? t.warn : t.ink}>{b.head}{lang() === "ti" ? "፦" : "."} </T>{b.text}</T>
                   <T v="caption" style={{ marginTop: 2 }}>{b.src}</T>
                 </View>
                 <Ionicons name="chevron-forward" size={15} color={t.faint} style={{ marginTop: 8 }} />
@@ -67,7 +68,7 @@ function Inner({ data, day, stand, brief }: { data: Data; day: string; stand: st
           </View>
 
           {/* Die Region als Bild. Antippen öffnet die große Karte. */}
-          <Pressable onPress={() => go("/map")} accessibilityRole="button" accessibilityLabel="Karte der Region mit Hitzepunkten, Erdbeben und Vorfällen auf See. Öffnet die große Karte."
+          <Pressable onPress={() => go("/map")} accessibilityRole="button" accessibilityLabel={tr("Karte der Region mit Hitzepunkten, Erdbeben und Vorfällen auf See. Öffnet die große Karte.")}
             onLayout={(e) => setW(Math.round(e.nativeEvent.layout.width))}
             style={({ pressed }) => ({ flex: wide ? 4 : undefined, marginTop: wide ? 0 : space.m, borderRadius: radius.l, overflow: "hidden", borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule, opacity: pressed ? 0.85 : 1 })}>
             <View pointerEvents="none">
@@ -76,14 +77,14 @@ function Inner({ data, day, stand, brief }: { data: Data; day: string; stand: st
             <View pointerEvents="none" style={{ position: "absolute", right: 10, top: 10, flexDirection: "row", alignItems: "center", gap: 4,
               backgroundColor: "rgba(14,26,31,0.82)", borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 5 }}>
               <Ionicons name="expand-outline" size={13} color={t.ink} />
-              <T v="caption" color={t.ink}>Karte</T>
+              <T v="caption" color={t.ink}>{tr("Karte")}</T>
             </View>
             {/* Legende in einer Zeile */}
             <View pointerEvents="none" style={{ position: "absolute", left: 10, bottom: 10, flexDirection: "row", alignItems: "center", gap: 10,
               backgroundColor: "rgba(14,26,31,0.82)", borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 5 }}>
-              <Legend color={t.fire} label="Hitze" shape="dot" />
-              <Legend color={t.ship} label="See" shape="diamond" />
-              <Legend color={t.quake} label="Beben" shape="ring" />
+              <Legend color={t.fire} label={tr("Hitze")} shape="dot" />
+              <Legend color={t.ship} label={tr("See")} shape="diamond" />
+              <Legend color={t.quake} label={tr("Beben")} shape="ring" />
             </View>
           </Pressable>
         </View>

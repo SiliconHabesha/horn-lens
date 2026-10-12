@@ -7,6 +7,7 @@ import { Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native
 import { ItemRow, itemTime } from "../components/items";
 import { StatusPill, T, tap } from "../components/ui";
 import { num, TYPES } from "../lib/de";
+import { t as tr } from "../lib/i18n";
 import { Skeleton } from "../components/Skeleton";
 import { useData } from "../lib/data";
 import { mentions, PLACES } from "../lib/places";
@@ -65,19 +66,19 @@ export default function Search() {
     };
   }, [index, dq]);
   const total = res ? res.places.length + res.claims.length + res.items.length + res.sources.length : 0;
-  const suggestions = recent.length ? recent : ["Assab", "Adigrat", "Badme", "UN", "Rotes Meer"];
+  const suggestions = recent.length ? recent : ["Assab", "Adigrat", "Badme", "UN", tr("Rotes Meer")];
 
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
-      <Stack.Screen options={{ title: "Suchen" }} />
+      <Stack.Screen options={{ title: tr("Suchen") }} />
       <View style={{ paddingHorizontal: space.l, paddingTop: space.s, paddingBottom: space.s, maxWidth: 760, width: "100%", alignSelf: "center" }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: t.card, borderRadius: radius.m, paddingHorizontal: 12, height: 48,
           borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule }}>
           <Ionicons name="search" size={18} color={t.faint} />
-          <TextInput value={q} onChangeText={setQ} autoFocus placeholder="Orte, Meldungen, Quellen …" placeholderTextColor={t.faint}
+          <TextInput value={q} onChangeText={setQ} autoFocus placeholder={tr("Orte, Meldungen, Quellen …")} placeholderTextColor={t.faint}
             style={{ ...noOutline, flex: 1, fontFamily: font.regular, fontSize: 17, color: t.ink, height: 46 }} returnKeyType="search" autoCorrect={false}
-            onSubmitEditing={() => remember(q)} accessibilityLabel="Suchbegriff" />
-          {q ? <Pressable onPress={() => setQ("")} hitSlop={10} accessibilityRole="button" accessibilityLabel="Suche löschen"><Ionicons name="close-circle" size={20} color={t.faint} /></Pressable> : null}
+            onSubmitEditing={() => remember(q)} accessibilityLabel={tr("Suchbegriff")} />
+          {q ? <Pressable onPress={() => setQ("")} hitSlop={10} accessibilityRole="button" accessibilityLabel={tr("Suche löschen")}><Ionicons name="close-circle" size={20} color={t.faint} /></Pressable> : null}
         </View>
       </View>
       <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
@@ -85,13 +86,13 @@ export default function Search() {
         {!data ? <View style={{ marginTop: space.l }}><Skeleton rows={4} /></View> : !res ? (
           <View style={{ marginTop: space.l }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", minHeight: 32 }}>
-              <T v="label" color={t.muted}>{recent.length ? "Zuletzt gesucht" : "Zum Beispiel"}</T>
+              <T v="label" color={t.muted}>{recent.length ? tr("Zuletzt gesucht") : tr("Zum Beispiel")}</T>
               {recent.length ? <Pressable onPress={forget} accessibilityRole="button" hitSlop={8} style={{ minHeight: 32, justifyContent: "center" }}>
-                <T v="smallStrong" color={t.accent}>Verlauf löschen</T></Pressable> : null}
+                <T v="smallStrong" color={t.accent}>{tr("Verlauf löschen")}</T></Pressable> : null}
             </View>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: space.s }}>
               {suggestions.map((s) => (
-                <Pressable key={s} onPress={() => { tap(); setQ(s); }} accessibilityRole="button" accessibilityLabel={`Nach ${s} suchen`}
+                <Pressable key={s} onPress={() => { tap(); setQ(s); }} accessibilityRole="button" accessibilityLabel={tr("Nach {query} suchen", { query: s })}
                   style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, minHeight: 40, borderRadius: 999, backgroundColor: t.card,
                     borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule, opacity: pressed ? 0.6 : 1 })}>
                   <Ionicons name={recent.length ? "time-outline" : "search"} size={14} color={t.muted} />
@@ -104,12 +105,12 @@ export default function Search() {
         ) : total === 0 ? (
           <View style={{ alignItems: "center", paddingVertical: space.xxl, gap: 8 }}>
             <Ionicons name="search-outline" size={28} color={t.faint} />
-            <T v="small" style={{ textAlign: "center" }}>Nichts gefunden zu „{q.trim()}“. Andere Schreibweise versuchen, z. B. Aseb statt Assab, oder auf Englisch. Gesucht wird in den Schlagzeilen der letzten 72 Stunden.</T>
+            <T v="small" style={{ textAlign: "center" }}>{tr("Nichts gefunden zu „{query}“. Andere Schreibweise versuchen, z. B. Aseb statt Assab, oder auf Englisch. Gesucht wird in den Schlagzeilen der letzten 72 Stunden.", { query: q.trim() })}</T>
           </View>
         ) : (
           <>
             {res.places.length ? (
-              <Section title="Orte" count={res.places.length}>
+              <Section title={tr("Orte")} count={res.places.length}>
                 {res.places.map((p, i) => (
                   <Pressable key={p.id} onPress={() => { tap(); remember(q); router.push(`/place/${p.id}`); }} accessibilityRole="button"
                     style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, minHeight: 50, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: t.rule, opacity: pressed ? 0.6 : 1 })}>
@@ -121,7 +122,7 @@ export default function Search() {
               </Section>
             ) : null}
             {res.claims.length ? (
-              <Section title="Behauptungen" count={res.claims.length}>
+              <Section title={tr("Behauptungen")} count={res.claims.length}>
                 {res.claims.slice(0, 20).map((c, i) => (
                   <Pressable key={c.id} onPress={() => { tap(); remember(q); router.push(`/claim/${c.id}`); }} accessibilityRole="button" accessibilityLabel={c.statement}
                     style={({ pressed }) => ({ paddingVertical: 12, gap: 4, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: t.rule, opacity: pressed ? 0.6 : 1 })}>
@@ -129,21 +130,21 @@ export default function Search() {
                     <T v="bodyStrong">{c.statement}</T>
                   </Pressable>
                 ))}
-                {res.claims.length > 20 ? <T v="caption" style={{ paddingVertical: 10 }}>Die ersten 20 von {res.claims.length}.</T> : null}
+                {res.claims.length > 20 ? <T v="caption" style={{ paddingVertical: 10 }}>{tr("Die ersten 20 von {total}.", { total: res.claims.length })}</T> : null}
               </Section>
             ) : null}
             {res.items.length ? (
-              <Section title="Meldungen, 72 Std." count={res.items.length}>
+              <Section title={tr("Meldungen, 72 Std.")} count={res.items.length}>
                 {res.items.slice(0, 30).map((it, i) => (
                   <View key={it.id} style={i ? { borderTopWidth: StyleSheet.hairlineWidth, borderColor: t.rule } : undefined}>
                     <ItemRow it={it} isNew={new Date(it.fetched_at).getTime() > seenBefore} onOpen={() => remember(q)} />
                   </View>
                 ))}
-                {res.items.length > 30 ? <T v="caption" style={{ paddingVertical: 10 }}>Die ersten 30 von {res.items.length}. Genauer suchen, um weniger zu sehen.</T> : null}
+                {res.items.length > 30 ? <T v="caption" style={{ paddingVertical: 10 }}>{tr("Die ersten 30 von {total}. Genauer suchen, um weniger zu sehen.", { total: res.items.length })}</T> : null}
               </Section>
             ) : null}
             {res.sources.length ? (
-              <Section title="Quellen" count={res.sources.length}>
+              <Section title={tr("Quellen")} count={res.sources.length}>
                 {res.sources.map((s, i) => (
                   <Pressable key={s.id} onPress={() => { tap(); router.push("/sources"); }} accessibilityRole="button"
                     style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, minHeight: 50, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: t.rule, opacity: pressed ? 0.6 : 1 })}>

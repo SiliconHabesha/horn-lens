@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { Skeleton } from "../components/Skeleton";
 import { Empty, Screen, StatusPill, T, tap } from "../components/ui";
 import { fmtFull, STATUS } from "../lib/de";
+import { t as tr } from "../lib/i18n";
 import { useData } from "../lib/data";
 import { space, useTheme } from "../lib/theme";
 
@@ -31,12 +32,12 @@ export default function Corrections() {
 
   return (
     <Screen topInset={false}>
-      <Stack.Screen options={{ title: "Korrekturen" }} />
-      <T v="body">Jede neue Stufe und jeder berichtigte Wortlaut, neueste zuerst. Die Begründung steht dabei; die Belege stehen im Verlauf der Behauptung.</T>
+      <Stack.Screen options={{ title: tr("Korrekturen") }} />
+      <T v="body">{tr("Jede neue Stufe und jeder berichtigte Wortlaut, neueste zuerst. Die Begründung steht dabei; die Belege stehen im Verlauf der Behauptung.")}</T>
       <View style={{ marginTop: space.l }}>
-        {!data ? <Skeleton rows={4} /> : !rows.length ? <Empty icon="git-compare-outline" text="Noch keine Änderung an einer Behauptung." /> : rows.map((r, i) => (
+        {!data ? <Skeleton rows={4} /> : !rows.length ? <Empty icon="git-compare-outline" text={tr("Noch keine Änderung an einer Behauptung.")} /> : rows.map((r, i) => (
           <Pressable key={`${r.claim}-${r.at}-${i}`} onPress={() => { tap(); router.push(`/claim/${r.claim}`); }} accessibilityRole="button"
-            accessibilityLabel={`${fmtFull(r.at)}: ${r.kind === "status" ? `Stufe von ${STATUS[r.from!]?.[0]} zu ${STATUS[r.to!]?.[0]}` : "Wortlaut berichtigt"}. ${r.statement}`}
+            accessibilityLabel={`${fmtFull(r.at)}: ${r.kind === "status" ? tr("Stufe von {from} zu {to}", { from: STATUS[r.from!]?.[0], to: STATUS[r.to!]?.[0] }) : tr("Wortlaut berichtigt")}. ${r.statement}`}
             style={({ pressed }) => ({ paddingVertical: 14, gap: 6, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: t.rule, opacity: pressed ? 0.6 : 1 })}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               <T v="caption">{fmtFull(r.at)}</T>
@@ -46,7 +47,7 @@ export default function Corrections() {
                   <T v="caption">→</T>
                   <StatusPill status={r.to!} small />
                 </>
-              ) : <T v="smallStrong">Wortlaut berichtigt</T>}
+              ) : <T v="smallStrong">{tr("Wortlaut berichtigt")}</T>}
             </View>
             <T v="bodyStrong" numberOfLines={3}>{r.statement}</T>
             {r.note ? <T v="small" numberOfLines={4}>{r.note}</T> : null}

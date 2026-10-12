@@ -7,6 +7,7 @@ import { plural } from "../lib/de";
 import { useData } from "../lib/data";
 import { dossier, PLACES } from "../lib/places";
 import { dedupe, poolOf } from "../lib/stories";
+import { lang, t } from "../lib/i18n";
 
 const GROUPS: [string, (c: string) => boolean][] = [
   ["Eritrea", (c) => c === "Eritrea"],
@@ -22,16 +23,16 @@ export default function Places() {
   const sample = !!data && (data.firesCapped || data.firesTotal > data.fires.length);
   return (
     <Screen topInset={false}>
-      <Stack.Screen options={{ title: "Orte" }} />
+      <Stack.Screen options={{ title: t("Orte") }} />
       {GROUPS.map(([g, ok]) => {
-        const list = rows.filter((r) => ok(r.p.country)).sort((a, b) => b.d.items.length - a.d.items.length || a.p.name.localeCompare(b.p.name, "de"));
+        const list = rows.filter((r) => ok(r.p.countryDe)).sort((a, b) => b.d.items.length - a.d.items.length || a.p.name.localeCompare(b.p.name, lang() === "de" ? "de" : "en"));
         return (
           <View key={g}>
-            <Head title={g} first={g === GROUPS[0][0]} />
+            <Head title={t(g)} first={g === GROUPS[0][0]} />
             <Group>
               {list.map(({ p, d }, i) => {
-                const sig = [d.items.length ? plural(d.items.length, "Meldung", "Meldungen") : null, d.fires.length ? `${sample ? "mind. " : ""}${plural(d.fires.length, "Hitzepunkt", "Hitzepunkte")}` : null, d.quakes.length ? plural(d.quakes.length, "Erdbeben", "Erdbeben") : null,
-                  d.ships.length ? plural(d.ships.length, "Vorfall auf See", "Vorfälle auf See") : null, d.sat.length ? "Satellitenbilder" : null].filter(Boolean).join(" · ");
+                const sig = [d.items.length ? plural(d.items.length, "Meldung", "Meldungen") : null, d.fires.length ? (sample ? t("mind. {count}", { count: plural(d.fires.length, "Hitzepunkt", "Hitzepunkte") }) : plural(d.fires.length, "Hitzepunkt", "Hitzepunkte")) : null, d.quakes.length === 1 ? t("1 Erdbeben") : d.quakes.length ? plural(d.quakes.length, "Erdbeben", "Erdbeben") : null,
+                  d.ships.length ? plural(d.ships.length, "Vorfall auf See", "Vorfälle auf See") : null, d.sat.length ? t("Satellitenbilder") : null].filter(Boolean).join(" · ");
                 return <ListRow key={p.id} first={i === 0} label={p.name} sub={sig || undefined}
                   onPress={() => router.push(`/place/${p.id}`)} />;
               })}

@@ -8,6 +8,7 @@ import { toast } from "../../components/Toast";
 import { Banner, Card, Empty, Group, Head, ListRow, openLink, Screen, StatusPill, T, tap } from "../../components/ui";
 import { de, fmtFull, fmtIsoDay, num, REGION_ORDER, REGIONS, STATUS, STATUS_ORDER } from "../../lib/de";
 import { loadReport, useData } from "../../lib/data";
+import { t as tr } from "../../lib/i18n";
 import { Skeleton } from "../../components/Skeleton";
 import { CLAUDE_PAGE } from "../../lib/feeds";
 import { radius, space, useTheme } from "../../lib/theme";
@@ -19,12 +20,12 @@ const KIND: Record<string, string> = { outage: "Internetverbindung", maritime: "
 // Klartext zum Teilen: Zusammenfassung mit Quellen, Messwerte, wichtigste Schlagzeilen
 function digest(rep: Report, regions: Record<string, Item[]>) {
   const p = rep.payload || {}, sg: any = p.signals || {};
-  const lines = [`Semay – Tagesbericht ${fmtIsoDay(rep.report_date)}`, ""];
+  const lines = [tr("Semay – Tagesbericht {day}", { day: fmtIsoDay(rep.report_date) }), ""];
   for (const s of rep.summary?.sentences || []) lines.push(`${s.text}${(s.cites || []).length ? ` (${(s.cites || []).map((c: any) => c.outlet).join(", ")})` : ""}`);
   if ((rep.summary?.sentences || []).length) lines.push("");
   const m = [["Hitzepunkte (24 Std.)", sg.fires_24h], ["Auffälligkeiten Internet (48 Std.)", sg.outages_48h], ["Vorfälle auf See (30 Tage)", sg.maritime_30d], ["Erdbeben (7 Tage)", sg.quakes_7d]]
-    .filter(([, n]) => n != null).map(([l, n]) => `${l}: ${num(Number(n))}`);
-  if (m.length) lines.push(`Gemessen: ${m.join(" · ")}`, "");
+    .filter(([, n]) => n != null).map(([l, n]) => `${tr(l as string)}: ${num(Number(n))}`);
+  if (m.length) lines.push(tr("Gemessen: {list}", { list: m.join(" · ") }), "");
   for (const r of REGION_ORDER) {
     const list = regions[r] || [];
     if (!list.length) continue;
@@ -32,7 +33,7 @@ function digest(rep: Report, regions: Record<string, Item[]>) {
     for (const it of list.slice(0, 3)) lines.push(`– ${it.title} (${it.origin_domain || it.source_name}) ${it.url}`);
     lines.push("");
   }
-  lines.push("Meldungen sind keine geprüften Tatsachen.");
+  lines.push(tr("Meldungen sind keine geprüften Tatsachen."));
   return lines.join("\n");
 }
 
@@ -68,7 +69,7 @@ export default function ReportScreen() {
     tap();
     const text = digest(rep, regions);
     try {
-      if (Platform.OS === "web") { await navigator.clipboard.writeText(text); toast("Bericht als Text kopiert", "copy-outline"); }
+      if (Platform.OS === "web") { await navigator.clipboard.writeText(text); toast(tr("Bericht als Text kopiert"), "copy-outline"); }
       else await Share.share({ message: text });
     } catch { /* abgebrochen */ }
   };
@@ -81,35 +82,35 @@ export default function ReportScreen() {
     </Pressable>
   );
 
-  if (!valid) return <Screen refresh={false} topInset={false}><Stack.Screen options={{ title: "Tagesbericht" }} /><Empty text="Diesen Tagesbericht gibt es nicht. Alle Berichte stehen in der Lage unter „Tagesbericht“." /></Screen>;
+  if (!valid) return <Screen refresh={false} topInset={false}><Stack.Screen options={{ title: tr("Tagesbericht") }} /><Empty text={tr("Diesen Tagesbericht gibt es nicht. Alle Berichte stehen in der Lage unter „Tagesbericht“.")} /></Screen>;
   return (
     <Screen refresh={false} topInset={false}>
-      <Stack.Screen options={{ title: "Tagesbericht", headerRight: () => rep ? (
-        <Pressable onPress={share} accessibilityRole="button" accessibilityLabel="Bericht teilen" hitSlop={10} style={{ paddingHorizontal: 6 }}>
+      <Stack.Screen options={{ title: tr("Tagesbericht"), headerRight: () => rep ? (
+        <Pressable onPress={share} accessibilityRole="button" accessibilityLabel={tr("Bericht teilen")} hitSlop={10} style={{ paddingHorizontal: 6 }}>
           <Ionicons name={Platform.OS === "ios" ? "share-outline" : "share-social-outline"} size={22} color={t.ink} />
         </Pressable>) : null }} />
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.s }}>
-        {step(older, "chevron-back", "Früherer Bericht")}
+        {step(older, "chevron-back", tr("Früherer Bericht"))}
         <View style={{ flex: 1, alignItems: "center" }}>
           <T v="h3">{fmtIsoDay(String(date))}</T>
-          {idx === 0 ? <T v="caption">neuester Bericht</T> : null}
+          {idx === 0 ? <T v="caption">{tr("neuester Bericht")}</T> : null}
         </View>
-        {step(newer, "chevron-forward", "Späterer Bericht")}
+        {step(newer, "chevron-forward", tr("Späterer Bericht"))}
       </View>
 
       {busy ? <View style={{ marginTop: space.l }}><Skeleton rows={6} /></View>
         : err ? (
           <View style={{ marginTop: space.l }}>
-            <Banner icon="alert-circle-outline" tone="warn" text="Der Tagesbericht konnte nicht geladen werden. Bitte Verbindung prüfen." action="Erneut versuchen" onAction={() => setTries(tries + 1)} />
+            <Banner icon="alert-circle-outline" tone="warn" text={tr("Der Tagesbericht konnte nicht geladen werden. Bitte Verbindung prüfen.")} action={tr("Erneut versuchen")} onAction={() => setTries(tries + 1)} />
           </View>
         )
-        : !rep ? <Empty text="Für dieses Datum gibt es keinen Tagesbericht." /> : (
+        : !rep ? <Empty text={tr("Für dieses Datum gibt es keinen Tagesbericht.")} /> : (
         <>
-          {rep._offline ? <View style={{ marginTop: space.m }}><Banner icon="cloud-offline-outline" tone="warn" text="Ohne Verbindung: gespeicherte Fassung dieses Berichts." /></View> : null}
+          {rep._offline ? <View style={{ marginTop: space.m }}><Banner icon="cloud-offline-outline" tone="warn" text={tr("Ohne Verbindung: gespeicherte Fassung dieses Berichts.")} /></View> : null}
 
           {rep.summary?.sentences?.length ? (
             <Card style={{ marginTop: space.l, gap: 8 }}>
-              <T v="h3">Zusammenfassung</T>
+              <T v="h3">{tr("Zusammenfassung")}</T>
               {rep.summary.sentences.map((s: any, i: number) => (
                 <T key={i} v="body">{s.text}{" "}
                   {(s.cites || []).map((c: any, j: number) => (
@@ -117,22 +118,22 @@ export default function ReportScreen() {
                   ))}
                 </T>
               ))}
-              <T v="caption">Automatisch erstellt, kann Fehler enthalten.</T>
+              <T v="caption">{tr("Automatisch erstellt, kann Fehler enthalten.")}</T>
             </Card>
           ) : (
-            <Group style={{ marginTop: space.l }}><ListRow first icon="sparkles-outline" label="Zusammenfassung in Claude erstellen" external onPress={() => openLink(CLAUDE_PAGE)} /></Group>
+            <Group style={{ marginTop: space.l }}><ListRow first icon="sparkles-outline" label={tr("Zusammenfassung in Claude erstellen")} external onPress={() => openLink(CLAUDE_PAGE)} /></Group>
           )}
 
-          <Head title="Messwerte" />
+          <Head title={tr("Messwerte")} />
           <Group>
             {[["flame-outline", "Hitzepunkte", "24 Std.", sg.fires_24h], ["wifi-outline", "Auffälligkeiten Internet", "48 Std.", sg.outages_48h],
               ["boat-outline", "Vorfälle auf See", "30 Tage", sg.maritime_30d], ["pulse-outline", "Erdbeben", "7 Tage", sg.quakes_7d]].map(([icon, label, hint, n], i) => (
-              <ListRow key={label as string} first={i === 0} icon={icon as any} label={label as string} hint={hint as string} value={n == null ? "–" : num(Number(n))} tone={n == null ? "none" : undefined} />
+              <ListRow key={label as string} first={i === 0} icon={icon as any} label={tr(label as string)} hint={tr(hint as string)} value={n == null ? "–" : num(Number(n))} tone={n == null ? "none" : undefined} />
             ))}
           </Group>
-          {down.length ? <T v="caption" style={{ marginTop: space.s }}>Damals nicht erreichbar: {down.slice(0, 8).join(", ")}{down.length > 8 ? ` und ${down.length - 8} weitere` : ""}. Fehlende Meldungen aus diesen Quellen sind kein Zeichen für Ruhe.</T> : null}
+          {down.length ? <T v="caption" style={{ marginTop: space.s }}>{tr("Damals nicht erreichbar: {list}. Fehlende Meldungen aus diesen Quellen sind kein Zeichen für Ruhe.", { list: down.length > 8 ? tr("{list} und {n} weitere", { list: down.slice(0, 8).join(", "), n: down.length - 8 }) : down.slice(0, 8).join(", ") })}</T> : null}
 
-          <Head title="Geänderte Behauptungen" />
+          <Head title={tr("Geänderte Behauptungen")} />
           {(p.changes || []).length ? (p.changes || []).map((c: any, i: number) => {
             const known = c.claim_id && data?.claims.some((x) => x.id === c.claim_id);
             return (
@@ -143,11 +144,11 @@ export default function ReportScreen() {
                 <T v="caption">{fmtFull(c.at)}{c.source_title ? ` · ${c.source_title}` : ""}</T>
               </Pressable>
             );
-          }) : <T v="small">Keine Behauptung hat ihre Stufe geändert.</T>}
+          }) : <T v="small">{tr("Keine Behauptung hat ihre Stufe geändert.")}</T>}
 
           {claimSnap.length ? (
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: space.m, alignItems: "center" }}>
-              <T v="caption">Stand aller Behauptungen damals:</T>
+              <T v="caption">{tr("Stand aller Behauptungen damals:")}</T>
               {STATUS_ORDER.filter((k) => claimSnap.some((c) => c.status === k)).map((k) => (
                 <View key={k} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                   <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: t.status[k] }} />
@@ -159,9 +160,9 @@ export default function ReportScreen() {
 
           {(p.alerts || []).length ? (
             <>
-              <Head title="Damalige Hinweise" />
+              <Head title={tr("Damalige Hinweise")} />
               <Group>
-                {(p.alerts || []).map((a, i) => <ListRow key={i} first={i === 0} icon={(KIND_ICON[a.kind] || "alert-circle-outline") as any} label={a.title} sub={`${KIND[a.kind] || "Hinweis"} · ${fmtFull(a.t)}`}
+                {(p.alerts || []).map((a, i) => <ListRow key={i} first={i === 0} icon={(KIND_ICON[a.kind] || "alert-circle-outline") as any} label={a.title} sub={`${tr(KIND[a.kind] || "Hinweis")} · ${fmtFull(a.t)}`}
                   external={!!a.url} onPress={a.url ? () => openLink(a.url) : undefined} />)}
               </Group>
             </>
@@ -180,7 +181,7 @@ export default function ReportScreen() {
                   <Pressable onPress={() => { tap(); setOpen({ ...open, [r]: true }); }} accessibilityRole="button" hitSlop={6}
                     style={({ pressed }) => ({ marginTop: 4, paddingVertical: 10, paddingHorizontal: 14, alignSelf: "flex-start", borderRadius: radius.pill, backgroundColor: t.card,
                       borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule, opacity: pressed ? 0.6 : 1 })}>
-                    <T v="smallStrong">Alle {list.length} anzeigen</T>
+                    <T v="smallStrong">{tr("Alle {n} anzeigen", { n: list.length })}</T>
                   </Pressable>
                 ) : null}
               </View>

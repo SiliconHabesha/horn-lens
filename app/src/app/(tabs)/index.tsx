@@ -11,6 +11,7 @@ import { briefOf } from "../../lib/brief";
 import { Button, Empty, Group, Head, ListRow, Screen, T, TabTools, tap } from "../../components/ui";
 import { fmtDay, fmtIsoDay, fmtShort, fmtTime, fmtWhen, num, plural, todayBerlin } from "../../lib/de";
 import { useData } from "../../lib/data";
+import { t as tr } from "../../lib/i18n";
 import { feedState } from "../../lib/feeds";
 import { dedupe, poolOf, storiesOf } from "../../lib/stories";
 import { useTheme } from "../../lib/theme";
@@ -53,10 +54,10 @@ export default function Lage() {
 
   if (!data || !d) {
     return (
-      <Screen title="Lage" refresh={false} right={<TabTools />}>
+      <Screen title={tr("Lage")} refresh={false} right={<TabTools />}>
         {loading ? <LageSkeleton />
-          : <><Empty icon="cloud-offline-outline" text="Keine Verbindung zum Server. Bitte Internet prüfen und erneut versuchen." />
-            <Button label="Erneut versuchen" icon="refresh" onPress={refresh} /></>}
+          : <><Empty icon="cloud-offline-outline" text={tr("Keine Verbindung zum Server. Bitte Internet prüfen und erneut versuchen.")} />
+            <Button label={tr("Erneut versuchen")} icon="refresh" onPress={refresh} /></>}
       </Screen>
     );
   }
@@ -68,27 +69,27 @@ export default function Lage() {
   const warned = new Set(data.alerts.map((a) => a.kind));
   const signals: { icon: Icon; label: string; hint: string; value: string; tone?: "alert" | "none"; to: string }[] = [];
   // Internet: kurze Rückgänge sind häufig und meist harmlos. Gewarnt wird nur über „Auffällig“ (dort mit Schwelle).
-  signals.push({ icon: "wifi-outline", label: "Internet Eritrea", hint: "48 Std.", value: !ioda.ok ? "–" : num(er), tone: !ioda.ok ? "none" : undefined, to: "/signal/internet" });
-  signals.push({ icon: "wifi-outline", label: "Internet Äthiopien", hint: "48 Std.", value: !ioda.ok ? "–" : num(et), tone: !ioda.ok ? "none" : undefined, to: "/signal/internet" });
-  signals.push({ icon: "flame-outline", label: "Hitzepunkte", hint: "24 Std.", value: data.firesError || !firms.ok ? "–" : `${data.firesCapped ? "≥ " : ""}${num(data.firesTotal)}`, tone: data.firesError || !firms.ok ? "none" : undefined, to: "/signal/fires" });
-  signals.push({ icon: "boat-outline", label: "Vorfälle auf See", hint: "30 Tage", value: !ukmto.ok ? "–" : num(data.maritime.length),
+  signals.push({ icon: "wifi-outline", label: tr("Internet Eritrea"), hint: tr("48 Std."), value: !ioda.ok ? "–" : num(er), tone: !ioda.ok ? "none" : undefined, to: "/signal/internet" });
+  signals.push({ icon: "wifi-outline", label: tr("Internet Äthiopien"), hint: tr("48 Std."), value: !ioda.ok ? "–" : num(et), tone: !ioda.ok ? "none" : undefined, to: "/signal/internet" });
+  signals.push({ icon: "flame-outline", label: tr("Hitzepunkte"), hint: tr("24 Std."), value: data.firesError || !firms.ok ? "–" : `${data.firesCapped ? "≥ " : ""}${num(data.firesTotal)}`, tone: data.firesError || !firms.ok ? "none" : undefined, to: "/signal/fires" });
+  signals.push({ icon: "boat-outline", label: tr("Vorfälle auf See"), hint: tr("30 Tage"), value: !ukmto.ok ? "–" : num(data.maritime.length),
     tone: !ukmto.ok ? "none" : data.maritime.some((m) => Date.now() - new Date(m.t).getTime() < 2 * DAY) && !warned.has("maritime") ? "alert" : undefined, to: "/signal/sea" });
-  signals.push({ icon: "pulse-outline", label: "Erdbeben", hint: "7 Tage", value: !usgs.ok ? "–" : num(data.quakes.length), tone: !usgs.ok ? "none" : undefined, to: "/signal/quakes" });
+  signals.push({ icon: "pulse-outline", label: tr("Erdbeben"), hint: tr("7 Tage"), value: !usgs.ok ? "–" : num(data.quakes.length), tone: !usgs.ok ? "none" : undefined, to: "/signal/quakes" });
   const broken = data.sources.filter((x) => !["firms", "ukmto", "usgs", "ioda"].includes(x.kind) && !!x.last_error && (!x.last_ok_at || new Date(x.last_fetch_at || 0) > new Date(x.last_ok_at))).length;
 
   const report = data.reports[0];
   const berlinHour = Number(new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", hour: "numeric", hour12: false }).format(new Date()));
-  const since = firstVisit ? "in 24 Stunden" : `seit ${fmtWhen(seenBefore)}`;
+  const since = firstVisit ? tr("in 24 Stunden") : tr("seit {when}", { when: fmtWhen(seenBefore) });
   const news: { text: string; to: string }[] = [];
-  if (d.fresh) news.push({ text: `${plural(d.fresh, "neue Meldung", "neue Meldungen")} ${since}`, to: "/news?new=1" });
-  if (d.changed) news.push({ text: `${plural(d.changed, "Behauptung", "Behauptungen")} geändert ${since}`, to: "/claims" });
-  if (d.sea) news.push({ text: `${plural(d.sea, "neuer Vorfall", "neue Vorfälle")} auf See ${since}`, to: "/signal/sea" });
-  if (d.quakes) news.push({ text: `${plural(d.quakes, "spürbares Erdbeben", "spürbare Erdbeben")} ${since}`, to: "/signal/quakes" });
+  if (d.fresh) news.push({ text: tr("{count} {since}", { count: plural(d.fresh, "neue Meldung", "neue Meldungen"), since }), to: "/news?new=1" });
+  if (d.changed) news.push({ text: tr("{count} geändert {since}", { count: d.changed === 1 ? tr("1 Behauptung") : tr("{n} Behauptungen", { n: num(d.changed) }), since }), to: "/claims" });
+  if (d.sea) news.push({ text: tr("{count} auf See {since}", { count: plural(d.sea, "neuer Vorfall", "neue Vorfälle"), since }), to: "/signal/sea" });
+  if (d.quakes) news.push({ text: tr("{count} {since}", { count: plural(d.quakes, "spürbares Erdbeben", "spürbare Erdbeben"), since }), to: "/signal/quakes" });
 
   // Auf einen Blick: wenige Sätze, Wichtigstes zuerst
   const brief = briefOf(data, storiesOf(data), d.fresh, since);
-  if (d.changed) brief.splice(Math.min(brief.length, data.alerts.length + 2), 0, { icon: "checkmark-done-circle-outline", head: "Behauptungen",
-    text: `${plural(d.changed, "Behauptung hat", "Behauptungen haben")} sich ${since} geändert.`, src: "Redaktion Semay, mit Belegen", to: "/claims" });
+  if (d.changed) brief.splice(Math.min(brief.length, data.alerts.length + 2), 0, { icon: "checkmark-done-circle-outline", head: tr("Behauptungen"),
+    text: tr("{count} sich {since} geändert.", { count: plural(d.changed, "Behauptung hat", "Behauptungen haben"), since }), src: tr("Redaktion Semay, mit Belegen"), to: "/claims" });
 
   return (
     <Screen hero={<SkyBand data={data} day={fmtDay(data.now)} stand={fmtTime(loadedAt || data.now)} brief={brief} />}>
@@ -96,27 +97,27 @@ export default function Lage() {
         <Pressable onPress={() => { tap(); router.push("/sources"); }} accessibilityRole="button"
           style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 8, minHeight: 36, opacity: pressed ? 0.6 : 1 })}>
           <Ionicons name="alert-circle-outline" size={15} color={t.muted} />
-          <T v="caption" style={{ flex: 1 }}>{broken === 1 ? "1 Nachrichtenquelle gestört" : `${broken} Nachrichtenquellen gestört`}</T>
+          <T v="caption" style={{ flex: 1 }}>{broken === 1 ? tr("1 Nachrichtenquelle gestört") : tr("{n} Nachrichtenquellen gestört", { n: broken })}</T>
           <Ionicons name="chevron-forward" size={14} color={t.faint} />
         </Pressable>
       ) : null}
 
       {/* Geschichten des Tages: zu Eritrea zuerst, dann nach Zahl der Medien. Keine redaktionelle Gewichtung. */}
-      <Head title="Die Themen heute" first action="Alle Meldungen" onAction={() => router.navigate("/news")} />
+      <Head title={tr("Die Themen heute")} first action={tr("Alle Meldungen")} onAction={() => router.navigate("/news")} />
       {d.top.length ? d.top.map((s, i) => (
         <View key={s.key} style={i ? { borderTopWidth: StyleSheet.hairlineWidth, borderColor: t.rule } : undefined}>
           <StoryCard s={s} seenBefore={seenBefore} />
         </View>
-      )) : <T v="small">In den letzten 24 Stunden keine Meldungen aus unseren Quellen.</T>}
+      )) : <T v="small">{tr("In den letzten 24 Stunden keine Meldungen aus unseren Quellen.")}</T>}
 
       {/* Weiter zu */}
-      <Head title="Weiter zu" />
+      <Head title={tr("Weiter zu")} />
       <Group>
-        {data.owner ? <ListRow first icon="document-text-outline" label="Tagesbericht"
-          sub={report ? `${fmtIsoDay(report.report_date)}${report.report_date !== todayBerlin() && berlinHour >= 8 ? " · der heutige fehlt noch" : ""}` : "Der erste entsteht um 7:15 Uhr (deutsche Zeit)"}
+        {data.owner ? <ListRow first icon="document-text-outline" label={tr("Tagesbericht")}
+          sub={report ? `${fmtIsoDay(report.report_date)}${report.report_date !== todayBerlin() && berlinHour >= 8 ? ` · ${tr("der heutige fehlt noch")}` : ""}` : tr("Der erste entsteht um 7:15 Uhr (deutsche Zeit)")}
           onPress={report ? () => router.push(`/report/${report.report_date}`) : undefined} /> : null}
-        <ListRow first={!data.owner} icon="location-outline" label="Orte" sub="Asmara, Assab, Adigrat und mehr" onPress={() => router.push("/places")} />
-        <ListRow icon="planet-outline" label="Satellitenbilder" sub={d.newest ? `${data.sat.length} Orte · neuestes Bild vom ${fmtShort(d.newest.i.t)}` : "Vorher und nachher vergleichen"} onPress={() => router.push("/satellite")} />
+        <ListRow first={!data.owner} icon="location-outline" label={tr("Orte")} sub={tr("Asmara, Assab, Adigrat und mehr")} onPress={() => router.push("/places")} />
+        <ListRow icon="planet-outline" label={tr("Satellitenbilder")} sub={d.newest ? tr("{n} Orte · neuestes Bild vom {date}", { n: data.sat.length, date: fmtShort(d.newest.i.t) }) : tr("Vorher und nachher vergleichen")} onPress={() => router.push("/satellite")} />
       </Group>
     </Screen>
   );

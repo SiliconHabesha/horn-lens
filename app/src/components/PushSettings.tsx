@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { AppState, Linking, Pressable, View } from "react-native";
 import { useData } from "../lib/data";
 import { disablePush, enablePush, getPrefs, pushSupported } from "../lib/push";
+import { t as tr } from "../lib/i18n";
 import { space, useTheme } from "../lib/theme";
 import { Banner, Card, Divider, T, tap, Toggle } from "./ui";
 
@@ -33,44 +34,44 @@ export function PushSettings() {
         if (err) setMsg(err); else { setAlerts(a); setReport(r && !!data?.owner); setDenied(false); }
       }
     } catch {
-      setMsg("Das hat nicht geklappt. Bitte Verbindung prüfen und erneut versuchen.");
+      setMsg(tr("Das hat nicht geklappt. Bitte Verbindung prüfen und erneut versuchen."));
     } finally { setBusy(false); }
   };
   const test = async () => {
     tap();
     try {
-      await Notifications.scheduleNotificationAsync({ content: { title: "Semay", body: "So sieht eine Benachrichtigung aus.", data: { path: "/" } }, trigger: null });
-    } catch { setMsg("Die Probe-Benachrichtigung konnte nicht angezeigt werden."); }
+      await Notifications.scheduleNotificationAsync({ content: { title: "Semay", body: tr("So sieht eine Benachrichtigung aus."), data: { path: "/" } }, trigger: null });
+    } catch { setMsg(tr("Die Probe-Benachrichtigung konnte nicht angezeigt werden.")); }
   };
   return (
     <>
       <Card style={{ paddingVertical: 4 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12 }}>
           <View style={{ flex: 1 }}>
-            <T v="bodyStrong">Hinweise</T>
-            <T v="caption">Vorfälle auf See, starke Erdbeben, starke Rückgänge der Internetverbindung, ungewöhnlich viele Meldungen zu Eritrea</T>
+            <T v="bodyStrong">{tr("Hinweise")}</T>
+            <T v="caption">{tr("Vorfälle auf See, starke Erdbeben, starke Rückgänge der Internetverbindung, ungewöhnlich viele Meldungen zu Eritrea")}</T>
           </View>
-          <Toggle value={alerts && !denied} disabled={busy || !pushSupported} onValueChange={(v) => apply(v, report)} accessibilityLabel="Hinweise als Benachrichtigung" />
+          <Toggle value={alerts && !denied} disabled={busy || !pushSupported} onValueChange={(v) => apply(v, report)} accessibilityLabel={tr("Hinweise als Benachrichtigung")} />
         </View>
         {data?.owner ? (
           <>
             <Divider />
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12 }}>
               <View style={{ flex: 1 }}>
-                <T v="bodyStrong">Tagesbericht</T>
-                <T v="caption">Jeden Morgen gegen 7:15 Uhr (deutsche Zeit)</T>
+                <T v="bodyStrong">{tr("Tagesbericht")}</T>
+                <T v="caption">{tr("Jeden Morgen gegen 7:15 Uhr (deutsche Zeit)")}</T>
               </View>
-              <Toggle value={report && !denied} disabled={busy || !pushSupported} onValueChange={(v) => apply(alerts, v)} accessibilityLabel="Tagesbericht als Benachrichtigung" />
+              <Toggle value={report && !denied} disabled={busy || !pushSupported} onValueChange={(v) => apply(alerts, v)} accessibilityLabel={tr("Tagesbericht als Benachrichtigung")} />
             </View>
           </>
         ) : null}
       </Card>
 
-      {denied ? <View style={{ marginTop: space.s }}><Banner icon="notifications-off-outline" tone="warn" text="Benachrichtigungen sind in den Einstellungen des Handys für Semay ausgeschaltet." action="Einstellungen" onAction={() => Linking.openSettings().catch(() => {})} /></View> : null}
+      {denied ? <View style={{ marginTop: space.s }}><Banner icon="notifications-off-outline" tone="warn" text={tr("Benachrichtigungen sind in den Einstellungen des Handys für Semay ausgeschaltet.")} action={tr("Einstellungen")} onAction={() => Linking.openSettings().catch(() => {})} /></View> : null}
       {msg ? <View style={{ marginTop: space.s }}><Banner icon="notifications-off-outline" tone="warn" text={msg} /></View> : null}
       {pushSupported && (alerts || report) && !denied ? (
         <Pressable onPress={test} accessibilityRole="button" hitSlop={6} style={{ alignSelf: "flex-start", paddingVertical: 10 }}>
-          <T v="smallStrong" color={t.accent}>Probe-Benachrichtigung senden</T>
+          <T v="smallStrong" color={t.accent}>{tr("Probe-Benachrichtigung senden")}</T>
         </Pressable>
       ) : null}
     </>

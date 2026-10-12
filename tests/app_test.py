@@ -257,6 +257,20 @@ with sync_playwright() as p:
         R[f"tour-{who} errors"] = errs[:5]
         ctx.close()
     STATE["member"] = False
+    # Sprachen: Englisch und Tigrinya, Handy, ohne Anmeldung
+    for lg in ("en", "ti"):
+        ctx = b.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, locale="de-DE", timezone_id="Europe/Berlin")
+        ctx.add_init_script(f"localStorage.setItem('hl:lang', '{lg}'); localStorage.setItem('hl:seen:v1', String(Date.now() - 4*3600e3)); localStorage.setItem('hl:welcome:v1', '1');")
+        ctx.route("**/*.supabase.co/**", route)
+        pg = ctx.new_page(); errs = []
+        pg.on("pageerror", lambda e: errs.append(str(e)))
+        for path in ["/", "/news", "/claims", "/map", "/satellite", "/more", f"/item/{6173 + 100000}", "/claim/4", "/method", "/sources", "/places", "/signal/fires"]:
+            pg.goto(f"http://127.0.0.1:{PORT}{path}"); pg.wait_for_timeout(1500)
+            name = path.strip("/").replace("/", "-") or "lage"
+            pg.screenshot(path=str(SHOTS / f"lang-{lg}-{name}.png"))
+            R[f"lang-{lg} {name}"] = pg.evaluate("document.body.innerText").replace("\n", " | ")[:220]
+        R[f"lang-{lg} errors"] = errs[:5]
+        ctx.close()
     b.close()
 srv.shutdown()
 R["calls"] = sorted(set(c[1] for c in calls))

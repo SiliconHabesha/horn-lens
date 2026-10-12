@@ -3,6 +3,7 @@ import React from "react";
 import { View } from "react-native";
 import { Card, Divider, openLink, Screen, T } from "../components/ui";
 import { ago, fmtDate, plural, TYPE_NOTE, TYPE_ORDER, TYPES } from "../lib/de";
+import { t as tr } from "../lib/i18n";
 import { useData } from "../lib/data";
 import { Skeleton } from "../components/Skeleton";
 import { feedState, isStale } from "../lib/feeds";
@@ -22,11 +23,11 @@ export default function Sources() {
   return (
     <Screen topInset={false}>
       <Card style={{ marginBottom: space.l, gap: 4 }}>
-        <T v="h3">{sources.length - bad} von {sources.length} Quellen erreichbar</T>
-        <T v="small">{bad ? `${bad} gestört` : "Keine gestört"}{stale ? ` · ${stale} seit über 14 Tagen ohne neue Meldung zu unseren Regionen` : ""}. Gestörte Quellen stehen in jeder Gruppe oben.</T>
+        <T v="h3">{tr("{ok} von {total} Quellen erreichbar", { ok: sources.length - bad, total: sources.length })}</T>
+        <T v="small">{tr("{broken}{stale}. Gestörte Quellen stehen in jeder Gruppe oben.", { broken: bad ? tr("{n} gestört", { n: bad }) : tr("Keine gestört"), stale: stale ? ` · ${tr("{n} seit über 14 Tagen ohne neue Meldung zu unseren Regionen", { n: stale })}` : "" })}</T>
       </Card>
       {/* Abdeckung: welche Seite ist mit wie vielen erreichbaren Quellen vertreten, wo fehlt eine */}
-      <T v="h3" style={{ marginBottom: space.s }}>Welche Seiten wir hören</T>
+      <T v="h3" style={{ marginBottom: space.s }}>{tr("Welche Seiten wir hören")}</T>
       <Card style={{ marginBottom: space.l, paddingVertical: 4 }}>
         {VOICE_TYPES.map((k, i) => {
           const all = sources.filter((x) => x.source_type === k), ok = all.filter((x) => !isErr(x)).length;
@@ -36,16 +37,16 @@ export default function Sources() {
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8, minHeight: 40 }}>
                 <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: t.type[k] }} />
                 <T v="small" color={t.ink} style={{ flex: 1 }}>{TYPES[k]}</T>
-                <T v="caption" color={!ok ? t.warn : undefined}>{!all.length ? "keine Quelle" : !ok ? "keine erreichbar" : ok === all.length ? plural(ok, "Quelle", "Quellen") : `${ok} von ${all.length} erreichbar`}</T>
+                <T v="caption" color={!ok ? t.warn : undefined}>{!all.length ? tr("keine Quelle") : !ok ? tr("keine erreichbar") : ok === all.length ? plural(ok, "Quelle", "Quellen") : tr("{ok} von {total} erreichbar", { ok, total: all.length })}</T>
               </View>
             </View>
           );
         })}
       </Card>
       {VOICE_TYPES.some((k) => !sources.some((x) => x.source_type === k && !isErr(x))) ? (
-        <T v="small" style={{ marginTop: -space.s, marginBottom: space.l }}>Wo eine Seite fehlt, kann Semay sie nicht zeigen. Fehlt sie in einer Geschichte, heißt das nicht, dass sie schweigt. Wir suchen nach frei abrufbaren Quellen und umgehen keine Sperren.</T>
+        <T v="small" style={{ marginTop: -space.s, marginBottom: space.l }}>{tr("Wo eine Seite fehlt, kann Semay sie nicht zeigen. Fehlt sie in einer Geschichte, heißt das nicht, dass sie schweigt. Wir suchen nach frei abrufbaren Quellen und umgehen keine Sperren.")}</T>
       ) : null}
-      <T v="small" style={{ marginBottom: space.m }}>Jede Quelle ist nach Art eingeordnet, damit du Meldungen gewichten kannst. Die Farbe steht in allen Listen für diese Art.</T>
+      <T v="small" style={{ marginBottom: space.m }}>{tr("Jede Quelle ist nach Art eingeordnet, damit du Meldungen gewichten kannst. Die Farbe steht in allen Listen für diese Art.")}</T>
       {groups.map(([k, list]) => (
         <View key={k} style={{ marginBottom: space.l }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 }}>
@@ -62,11 +63,11 @@ export default function Sources() {
                   {i ? <Divider /> : null}
                   <View style={{ paddingVertical: 10, gap: 3 }}>
                     <T v="bodyStrong" color={s.homepage ? t.ink : undefined} onPress={s.homepage ? () => openLink(s.homepage) : undefined}
-                      accessibilityRole={s.homepage ? "link" : undefined} accessibilityHint={s.homepage ? "Öffnet die Website der Quelle" : undefined}>{s.name}{s.homepage ? " ↗" : ""}</T>
+                      accessibilityRole={s.homepage ? "link" : undefined} accessibilityHint={s.homepage ? tr("Öffnet die Website der Quelle") : undefined}>{s.name}{s.homepage ? " ↗" : ""}</T>
                     {s.stance_note ? <T v="small">{s.stance_note}</T> : null}
                     <T v="caption" color={err ? t.warn : undefined}>
-                      {err ? (s.last_ok_at ? `Gestört; zuletzt erreichbar ${ago(s.last_ok_at)}` : "Gestört; bisher nie erreichbar") : stale ? `Abgefragt ${ago(s.last_ok_at!)}; neueste Meldung zu unseren Regionen: ${fmtDate(s.newest_item_at!)}`
-                        : s.last_ok_at ? `Abgefragt ${ago(s.last_ok_at)}${s.last_item_count != null && !["firms", "ukmto", "usgs", "ioda"].includes(s.kind) ? `, zuletzt ${plural(s.last_item_count, "Eintrag", "Einträge")}` : ""}` : "Noch nicht abgefragt"}
+                      {err ? (s.last_ok_at ? tr("Gestört; zuletzt erreichbar {ago}", { ago: ago(s.last_ok_at) }) : tr("Gestört; bisher nie erreichbar")) : stale ? tr("Abgefragt {ago}; neueste Meldung zu unseren Regionen: {date}", { ago: ago(s.last_ok_at!), date: fmtDate(s.newest_item_at!) })
+                        : s.last_ok_at ? (s.last_item_count != null && !["firms", "ukmto", "usgs", "ioda"].includes(s.kind) ? tr("Abgefragt {ago}, zuletzt {count}", { ago: ago(s.last_ok_at), count: plural(s.last_item_count, "Eintrag", "Einträge") }) : tr("Abgefragt {ago}", { ago: ago(s.last_ok_at) })) : tr("Noch nicht abgefragt")}
                     </T>
                   </View>
                 </View>

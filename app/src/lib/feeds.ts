@@ -1,4 +1,5 @@
 import { fmtFull, fmtTime } from "./de";
+import { t } from "./i18n";
 import type { Data } from "./types";
 
 /** Hat eine Messquelle in den letzten 3 Stunden geantwortet? Sonst "keine Daten" statt einer Null */
@@ -9,9 +10,9 @@ export function feedState(data: Data | null, id: string) {
   const fresh = !!s.last_ok_at && Date.now() - new Date(s.last_ok_at).getTime() < 3 * 3600e3;
   return { ok: fresh, last: s.last_ok_at, partial: !!s.last_error && !failing, failing };
 }
-export const lastFailed = (st: ReturnType<typeof feedState>) => (st.failing && st.last ? ` Letzte Abfrage gescheitert; Stand ${fmtTime(st.last)} Uhr.` : "");
+export const lastFailed = (st: ReturnType<typeof feedState>) => (st.failing && st.last ? ` ${t("Letzte Abfrage gescheitert; Stand {time} Uhr.", { time: fmtTime(st.last) })}` : "");
 export const noData = (st: ReturnType<typeof feedState>, who: string) =>
-  `${who} hat ${st.last ? `seit dem ${fmtFull(st.last)} Uhr` : "noch"} nicht geantwortet.`;
+  st.last ? t("{who} hat seit dem {time} Uhr nicht geantwortet.", { who, time: fmtFull(st.last) }) : t("{who} hat noch nicht geantwortet.", { who });
 export const isStale = (s: { kind: string; newest_item_at?: string | null }) =>
   ["rss", "gdelt"].includes(s.kind) && !!s.newest_item_at && Date.now() - new Date(s.newest_item_at).getTime() > 14 * 864e5;
 

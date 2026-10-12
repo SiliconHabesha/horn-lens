@@ -1,8 +1,9 @@
 // Deutsche Anzeige: Bezeichnungen, Formate und Übersetzung der englischen Datenbank-Texte.
 // Öffentliche Texte stecken in der App (src/data/de_public.json), private kommen nach der Anmeldung aus der Datenbank.
 import DE_PUBLIC from "../data/de_public.json";
+import { lang, t as tr } from "./i18n";
 
-export const TYPES: Record<string, string> = {
+const TYPES_DE: Record<string, string> = {
   government_er: "Regierung Eritreas",
   progov_er: "Regierungsnahe Medien Eritreas",
   exile: "Eritreische Exilmedien",
@@ -17,12 +18,12 @@ export const TYPES: Record<string, string> = {
   maritime_authority: "Seefahrtsbehörde",
 };
 /** Kurzform für Listenzeilen (neben dem Farbpunkt) */
-export const TYPE_SHORT: Record<string, string> = {
+const TYPE_SHORT_DE: Record<string, string> = {
   government_er: "Regierung Eritrea", progov_er: "Eritrea, regierungsnah", exile: "Exil Eritrea",
   government_et: "Regierung Äthiopien", progov_et: "Äthiopien, regierungsnah", ethiopian_independent: "Äthiopien, privat",
   tigray: "Tigray", international: "International", un_ngo: "UN und NGO", aggregator: "nicht eingeordnet",
 };
-export const TYPE_NOTE: Record<string, string> = {
+const TYPE_NOTE_DE: Record<string, string> = {
   government_er: "Amtliche Erklärungen aus Eritrea, einer Konfliktpartei. Sie zeigen die Haltung der Regierung, keine unabhängige Bestätigung.",
   progov_er: "Nah an Eritreas Regierung. Ihre Berichte zum Konflikt wie die Aussage einer Konfliktpartei lesen.",
   exile: "Diaspora-Medien, meist regierungskritisch, mit Quellen im Land. Wie jede einzelne Quelle allein keine Bestätigung.",
@@ -38,60 +39,96 @@ export const TYPE_NOTE: Record<string, string> = {
 };
 export const TYPE_ORDER = ["government_er", "progov_er", "exile", "international", "un_ngo", "ethiopian_independent",
   "government_et", "progov_et", "tigray", "aggregator", "measurement", "maritime_authority"];
-export const REGIONS: Record<string, string> = {
+const REGIONS_DE: Record<string, string> = {
   eritrea: "Eritrea", tigray: "Tigray", afar: "Afar", red_sea: "Rotes Meer", ethiopia: "Äthiopien", horn: "Horn von Afrika",
 };
 export const REGION_ORDER = ["eritrea", "tigray", "afar", "red_sea", "ethiopia", "horn"];
-export const STATUS: Record<string, [string, string]> = {
+const STATUS_DE: Record<string, [string, string]> = {
   confirmed: ["Bestätigt", "Mindestens zwei unabhängige Quellen berichten es als Tatsache, oder die betroffene Seite räumt es ein."],
   likely: ["Wahrscheinlich", "Mehrere Hinweise sprechen dafür, aber noch keine zwei unabhängigen Quellen berichten es als Tatsache."],
   unconfirmed: ["Unbestätigt", "Berichtet, aber noch nicht unabhängig überprüft."],
   disputed: ["Umstritten", "Eine Seite behauptet es, eine andere bestreitet es."],
   false: ["Falsch", "Durch Belege widerlegt."],
 };
+/** Bezeichnungen in der gewählten Sprache (Schlüssel bleiben gleich) */
+const localized = <V,>(o: Record<string, V>, f: (v: V) => V) => new Proxy(o, { get: (x, k: string) => (k in x ? f((x as any)[k]) : undefined) }) as Record<string, V>;
+export const TYPES = localized(TYPES_DE, (v) => tr(v));
+export const TYPE_SHORT = localized(TYPE_SHORT_DE, (v) => tr(v));
+export const TYPE_NOTE = localized(TYPE_NOTE_DE, (v) => tr(v));
+export const REGIONS = localized(REGIONS_DE, (v) => tr(v));
+export const STATUS = localized(STATUS_DE, (v) => [tr(v[0]), tr(v[1])] as [string, string]);
 export const STATUS_ORDER = ["confirmed", "likely", "unconfirmed", "disputed", "false"];
 
 // ---------------------------------------------------------------- Formate
-export const LOC = "de-DE";
 const TZ = "Europe/Berlin";
-const fmt = (o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat(LOC, { timeZone: TZ, ...o });
-export const fmtTime = (d: string | number | Date) => fmt({ hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(d));
+/** Gebietsschema der gewählten Sprache */
+export const loc = () => (lang() === "en" ? "en-GB" : lang() === "ti" ? "ti-ER" : "de-DE");
+export const LOC = "de-DE";
+// Tigrinya-Namen, falls das Gerät kein Tigrinya-Datumsformat kennt
+const TI_MON = ["ጥሪ", "ለካቲት", "መጋቢት", "ሚያዝያ", "ግንቦት", "ሰነ", "ሓምለ", "ነሓሰ", "መስከረም", "ጥቅምቲ", "ሕዳር", "ታሕሳስ"];
+const TI_DAY = ["ሰንበት", "ሰኑይ", "ሰሉስ", "ረቡዕ", "ሓሙስ", "ዓርቢ", "ቀዳም"];
+let tiOk: boolean | null = null;
+const tiSupported = () => {
+  // Manche Browser melden Tigrinya, haben aber keine Namen dafür („M10“): darum prüfen, ob ein Ge'ez-Monatsname herauskommt
+  if (tiOk == null) { try { tiOk = /[\u1200-\u137f]/.test(new Intl.DateTimeFormat("ti-ER", { month: "long" }).format(new Date())); } catch { tiOk = false; } }
+  return tiOk;
+};
+function dtf(o: Intl.DateTimeFormatOptions, tz = TZ) {
+  const l = loc();
+  if (l !== "ti-ER" || tiSupported()) return new Intl.DateTimeFormat(l, { timeZone: tz, ...o });
+  // Ersatz: Teile auf Englisch berechnen, Namen auf Tigrinya einsetzen
+  const en = new Intl.DateTimeFormat("en-GB", { timeZone: tz, ...o, weekday: o.weekday ? "long" : undefined, month: o.month ? "numeric" : undefined });
+  return { format: (d: Date) => {
+    const p = Object.fromEntries(en.formatToParts(d).map((x) => [x.type, x.value]));
+    const out: string[] = [];
+    if (o.weekday) out.push(`${TI_DAY[new Date(d.toLocaleString("en-US", { timeZone: tz })).getDay()]}፣`);
+    if (o.day) out.push(p.day);
+    if (o.month) out.push(TI_MON[Number(p.month) - 1]);
+    if (o.year) out.push(p.year);
+    const date = out.join(" ");
+    const time = o.hour ? `${p.hour}:${p.minute}` : "";
+    return [date, time].filter(Boolean).join(" ");
+  }, formatToParts: (d: Date) => en.formatToParts(d) } as unknown as Intl.DateTimeFormat;
+}
+const fmt = (o: Intl.DateTimeFormatOptions) => dtf(o);
+export const fmtTime = (d: string | number | Date) => dtf({ hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(d));
 export const fmtDay = (d: string | number | Date) => fmt({ weekday: "long", day: "numeric", month: "long" }).format(new Date(d));
 export const fmtDate = (d: string | number | Date) => fmt({ day: "numeric", month: "short", year: "numeric" }).format(new Date(d));
 export const fmtShort = (d: string | number | Date) => fmt({ day: "numeric", month: "short" }).format(new Date(d));
 export const fmtFull = (d: string | number | Date) => `${fmtShort(d)}, ${fmtTime(d)}`;
-const sameDay = (a: Date, b: Date) => fmt({ year: "numeric", month: "2-digit", day: "2-digit" }).format(a) === fmt({ year: "numeric", month: "2-digit", day: "2-digit" }).format(b);
-/** "14:05", "gestern, 14:05" oder "9. Okt., 14:05" */
+const dayKey = (d: Date) => new Intl.DateTimeFormat("en-GB", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+const sameDay = (a: Date, b: Date) => dayKey(a) === dayKey(b);
+/** "14:05 Uhr", "gestern, 14:05" oder "9. Okt., 14:05" */
 export const fmtWhen = (d: string | number | Date) => {
   const x = new Date(d), now = new Date();
-  if (sameDay(x, now)) return `${fmtTime(x)} Uhr`;
-  if (sameDay(x, new Date(now.getTime() - 864e5))) return `gestern, ${fmtTime(x)}`;
+  if (sameDay(x, now)) return tr("{time} Uhr", { time: fmtTime(x) });
+  if (sameDay(x, new Date(now.getTime() - 864e5))) return tr("gestern, {time}", { time: fmtTime(x) });
   return fmtFull(x);
 };
 export const fmtCap = (d: string | number | Date) =>
-  `${new Intl.DateTimeFormat(LOC, { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" }).format(new Date(d))}, ` +
-  `${new Intl.DateTimeFormat(LOC, { timeZone: "UTC", hour: "2-digit", minute: "2-digit" }).format(new Date(d))} UTC`;
-export const fmtCapDay = (d: string | number | Date) =>
-  new Intl.DateTimeFormat(LOC, { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" }).format(new Date(d));
+  `${dtf({ day: "numeric", month: "short", year: "numeric" }, "UTC").format(new Date(d))}, ` +
+  `${dtf({ hour: "2-digit", minute: "2-digit", hourCycle: "h23" }, "UTC").format(new Date(d))} UTC`;
+export const fmtCapDay = (d: string | number | Date) => dtf({ day: "numeric", month: "short", year: "numeric" }, "UTC").format(new Date(d));
 export const fmtIsoDay = (s: string, o: Intl.DateTimeFormatOptions = { weekday: "long", day: "numeric", month: "long" }) =>
-  new Intl.DateTimeFormat(LOC, { timeZone: "UTC", ...o }).format(new Date(s + "T12:00:00Z"));
+  dtf(o, "UTC").format(new Date(s + "T12:00:00Z"));
 export const todayBerlin = () => {
   const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date()).map((x) => [x.type, x.value]));
   return `${p.year}-${p.month}-${p.day}`;
 };
 export const tzName = (d: string | number | Date = Date.now()) => {
-  try { return new Intl.DateTimeFormat(LOC, { timeZone: TZ, timeZoneName: "short" }).formatToParts(new Date(d)).find((x) => x.type === "timeZoneName")?.value || "MEZ"; }
-  catch { return "MEZ"; }
+  try { return new Intl.DateTimeFormat(lang() === "de" ? "de-DE" : "en-GB", { timeZone: TZ, timeZoneName: "short" }).formatToParts(new Date(d)).find((x) => x.type === "timeZoneName")?.value || "CET"; }
+  catch { return "CET"; }
 };
 export const ago = (d: string | number | Date) => {
   const m = Math.round((Date.now() - new Date(d).getTime()) / 60000);
-  if (m < 1) return "gerade eben";
-  if (m < 60) return `vor ${m} Min.`;
+  if (m < 1) return tr("gerade eben");
+  if (m < 60) return tr("vor {n} Min.", { n: m });
   const h = Math.round(m / 60);
-  return h < 48 ? `vor ${h} Std.` : `vor ${Math.round(h / 24)} Tagen`;
+  return h < 48 ? tr("vor {n} Std.", { n: h }) : tr("vor {n} Tagen", { n: Math.round(h / 24) });
 };
-export const num = (n: number | string) => (typeof n === "number" ? n.toLocaleString(LOC) : String(n));
-export const plural = (n: number, one: string, many: string) => `${num(n)} ${n === 1 ? one : many}`;
+export const num = (n: number | string) => (typeof n === "number" ? n.toLocaleString(lang() === "de" ? "de-DE" : "en-GB") : String(n));
+/** Zahl mit Wort: plural(3, "Meldung", "Meldungen"). Beide Wörter werden übersetzt. */
+export const plural = (n: number, one: string, many: string) => `${num(n)} ${n === 1 ? tr(one) : tr(many)}`;
 
 // ---------------------------------------------------------------- Datenbank-Texte auf Deutsch
 let TEXTS: Record<string, string> = { ...(DE_PUBLIC as Record<string, string>) };
@@ -148,23 +185,52 @@ const RULES: Rule[] = [
   [/^unknown status (.*)$/, (_, x) => `unbekannter Status ${x}`],
   [/^not allowed$/, () => "nur für den Betreiber von Semay freigegeben"],
 ];
+/** Text aus der Datenbank in der gewählten Sprache: Deutsch über Wörterbuch und Regeln, Englisch im Original, Tigrinya über einige Regeln */
 export function de<T extends string | null | undefined>(t: T): T {
+  if (t == null || t === "") return t;
+  if (lang() === "en") return t;
+  if (lang() === "ti") return tiRule(String(t)) as T;
+  return toDe(t);
+}
+function toDe<T extends string | null | undefined>(t: T): T {
   if (t == null || t === "") return t;
   const s = String(t);
   if (Object.prototype.hasOwnProperty.call(TEXTS, s)) return TEXTS[s] as T;
   for (const [re, f] of RULES) if (re.test(s)) return s.replace(re, f as any) as T;
   return s as T;
 }
-/** Text wurde nicht übersetzt und ist offensichtlich Englisch */
+/** Text wurde nicht übersetzt und ist offensichtlich Englisch (in der englischen Fassung nie ein Hinweis wert) */
 export const isEnglish = (orig: string | null | undefined, shown: string | null | undefined) =>
-  !!orig && orig === shown && /\b(the|and|of|to|is|was|has|have|were|by|from|with)\b/i.test(orig);
+  lang() !== "en" && !!orig && orig === shown && /\b(the|and|of|to|is|was|has|have|were|by|from|with)\b/i.test(orig);
 /** Quellenname für Zeilen: ohne Zusatz in Klammern, Gedankenstrich statt Bindestrich („DW – Africa“) */
 export const srcName = (n: string | null | undefined) => String(n || "").replace(/\s*\([^)]*\)\s*$/, "").replace(/\s+-\s+/g, " – ").trim() || String(n || "");
 export const endDot = (t: string | null | undefined) => { const s = String(t || "").trim(); return /[.!?…“"]$/.test(s) ? s : `${s}.`; };
 
 /** Schlagzeile ganz in Großbuchstaben (manche Quellen schreiben so): Wörter mit großem Anfang, sonst klein */
 const unshout = (s: string) => (/[a-zäöü]/.test(s) || !/[A-ZÄÖÜ]{4}/.test(s) ? s : s.toLowerCase().replace(/(^|[\s\-–„"(/])(\p{L})/gu, (_, a, b) => a + b.toUpperCase()));
-/** Die Schlagzeile, wie die App sie zeigt: deutsch, wenn übersetzt, sonst im Original */
-export const headline = (it: { title: string; title_de?: string | null }) => unshout(it.title_de || it.title);
-/** Wurde die Schlagzeile übersetzt? */
-export const translated = (it: { title_de?: string | null; language?: string | null }) => !!it.title_de && it.language !== "de";
+type HL = { title: string; title_de?: string | null; title_en?: string | null; title_ti?: string | null; language?: string | null };
+const shownTitle = (it: HL) => {
+  const l = lang();
+  if (it.language === l) return it.title;
+  if (l === "de") return it.title_de || it.title;
+  if (l === "en") return it.title_en || it.title;
+  return it.title_ti || it.title;
+};
+/** Die Schlagzeile, wie die App sie zeigt: in der gewählten Sprache, wenn übersetzt, sonst im Original */
+export const headline = (it: HL) => unshout(shownTitle(it));
+/** Wurde die Schlagzeile übersetzt (weicht die Anzeige vom Original ab)? */
+export const translated = (it: HL) => shownTitle(it) !== it.title;
+
+// ---------------------------------------------------------------- Einige Datenbank-Texte auf Tigrinya (sonst Englisch)
+const TI_INCIDENT: Record<string, string> = { Attack: "መጥቃዕቲ", "Suspicious Activity": "ጥርጡር ንጥፈት", "Suspicious Approach": "ጥርጡር ምቕራብ", Approach: "ምቕራብ",
+  Incident: "ፍጻመ", Hijack: "ጠለፋ", Boarding: "ምድያብ", "Attempted Boarding": "ፈተነ ምድያብ", Explosion: "ነትጒ", Advisory: "ምኽሪ", Warning: "መጠንቀቕታ", "Missile Attack": "መጥቃዕቲ ሚሳይል" };
+const TI_COUNTRY: Record<string, string> = { Eritrea: "ኤርትራ", Ethiopia: "ኢትዮጵያ", Yemen: "የመን", Djibouti: "ጅቡቲ", Sudan: "ሱዳን", "Saudi Arabia": "ስዑዲ ዓረብ", Somalia: "ሶማል", Egypt: "ግብጺ" };
+const tiPlace = (p: string) => { let x = p; for (const [en, ti] of Object.entries(TI_COUNTRY)) x = x.replace(new RegExp(`\\b${en}\\b`, "g"), ti); return x.replace(/\bRed Sea\b/g, "ቀይሕ ባሕሪ"); };
+function tiRule(s: string): string {
+  let m: RegExpMatchArray | null;
+  if ((m = s.match(/^Earthquake (?:of unknown magnitude|M([\d.]+))(?:, (.+))?$/))) return `ምንቕጥቃጥ ምድሪ${m[1] ? ` ${m[1]}` : ""}${m[2] ? `፣ ${tiPlace(m[2])}` : ""}`;
+  if ((m = s.match(/^(.+?)(?:, (.+))? \(UKMTO #(\d+)\)$/))) return `${TI_INCIDENT[m[1].trim()] || m[1]}${m[2] ? `፣ ${tiPlace(m[2])}` : ""} (UKMTO ቁ. ${m[3]})`;
+  if ((m = s.match(/^(?:Internet connectivity dip|Major internet drop|Internet connectivity drop) in (\w+)/))) return `ኣብ ${TI_COUNTRY[m[1]] || m[1]} ምንካይ ምትእስሳር ኢንተርነት`;
+  if ((m = s.match(/^(\d+) reports on Eritrea from (\d+) outlets in 6 hours$/))) return `ኣብ 6 ሰዓታት ${m[1]} ጸብጻባት ብዛዕባ ኤርትራ ካብ ${m[2]} ማዕከናት`;
+  return s;
+}

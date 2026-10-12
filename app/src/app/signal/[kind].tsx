@@ -6,7 +6,8 @@ import { Button, Empty, Group, Head, ListRow, openLink, Screen, T } from "../../
 import { fmtFull, num } from "../../lib/de";
 import { useData } from "../../lib/data";
 import { feedState } from "../../lib/feeds";
-import { km, nearest, PLACES, RADIUS, seaMeta } from "../../lib/places";
+import { km, nearest, nearText, PLACES, RADIUS, seaMeta } from "../../lib/places";
+import { lang, t } from "../../lib/i18n";
 import { space } from "../../lib/theme";
 import { Skeleton } from "../../components/Skeleton";
 
@@ -20,7 +21,7 @@ const META: Record<Kind, { title: string; feed: string; who: string; about: stri
 const COUNTRY: Record<string, string> = { ER: "Eritrea", ET: "Äthiopien" };
 // Fachbegriffe aus der Messung kürzen: „(PING-SLASH24 12 % unter dem Üblichen)“ → „(−12 %)“
 const plain = (s: string) => s.replace(/\s*\((?:PING-SLASH24|BGP|ACTIVE PROBING|MERIT-NT)[^)]*?(\d+)\s*%[^)]*\)/i, " (−$1 %)");
-const where = (lat: number, lon: number) => { const n = nearest(lat, lon); return n.d < 8 ? `bei ${n.p.name}` : `etwa ${num(Math.round(n.d))} km von ${n.p.name}`; };
+const where = (lat: number, lon: number) => nearText(nearest(lat, lon));
 
 export default function Signal() {
   const { kind: raw } = useLocalSearchParams<{ kind: string }>();
@@ -35,69 +36,69 @@ export default function Signal() {
     const list = PLACES.map((p) => ({ id: p.id, name: p.name, n: data.fires.filter((f) => km(p.lat, p.lon, f.lat, f.lon) <= RADIUS.fire).length })).filter((x) => x.n);
     const far = data.fires.filter((f) => nearest(f.lat, f.lon).d > RADIUS.fire).length;
     list.sort((a, b) => b.n - a.n);
-    return far ? [...list, { id: "_far", name: `Weiter als ${RADIUS.fire} km von bekannten Orten`, n: far }] : list;
+    return far ? [...list, { id: "_far", name: t("Weiter als {km} km von bekannten Orten", { km: RADIUS.fire }), n: far }] : list;
   }, [data, kind]);
 
-  if (!known) return <Screen topInset={false} refresh={false}><Stack.Screen options={{ title: "Messwerte" }} /><Empty text="Diese Seite gibt es nicht. Alle Messwerte stehen in der Lage." /></Screen>;
-  if (!data) return <Screen topInset={false} refresh={false}><Stack.Screen options={{ title: m.title }} /><Skeleton rows={5} /></Screen>;
+  if (!known) return <Screen topInset={false} refresh={false}><Stack.Screen options={{ title: t("Messwerte") }} /><Empty text={t("Diese Seite gibt es nicht. Alle Messwerte stehen in der Lage.")} /></Screen>;
+  if (!data) return <Screen topInset={false} refresh={false}><Stack.Screen options={{ title: t(m.title) }} /><Skeleton rows={5} /></Screen>;
   const st = feedState(data, m.feed);
   const down = !st.ok || (kind === "fires" && !!data.firesError);
   // Ohne aktuelle Daten nie „alles ruhig“ anzeigen
   const sample = data.firesCapped || data.firesTotal > data.fires.length;
-  const none = (okText: string) => <T v="small">{down ? `Keine aktuellen Daten von ${m.who}.` : okText}</T>;
+  const none = (okText: string) => <T v="small">{down ? t("Keine aktuellen Daten von {source}.", { source: m.who }) : okText}</T>;
 
   return (
     <Screen topInset={false}>
-      <Stack.Screen options={{ title: m.title }} />
-      <T v="caption">{st.last ? `Stand ${fmtFull(st.last)} · ${m.who}` : m.who}{down ? " · derzeit keine aktuellen Daten" : ""}</T>
-      <T v="body" style={{ marginTop: space.s }}>{m.about}</T>
+      <Stack.Screen options={{ title: t(m.title) }} />
+      <T v="caption">{st.last ? t("Stand {time} · {source}", { time: fmtFull(st.last), source: m.who }) : m.who}{down ? ` · ${t("derzeit keine aktuellen Daten")}` : ""}</T>
+      <T v="body" style={{ marginTop: space.s }}>{t(m.about)}</T>
 
       {kind === "internet" ? ["ER", "ET"].map((c) => {
         const list = data.outages.filter((o) => o.country === c);
         return (
           <View key={c}>
-            <Head title={COUNTRY[c]} />
+            <Head title={t(COUNTRY[c])} />
             {list.length ? (
               <Group>{list.map((o, i) => <ListRow key={i} first={i === 0} icon="warning-outline" tone="alert" label={plain(o.title)} sub={fmtFull(o.t)} external={!!o.url} onPress={o.url ? () => openLink(o.url) : undefined} />)}</Group>
-            ) : none("Keine Auffälligkeit in 48 Stunden.")}
+            ) : none(t("Keine Auffälligkeit in 48 Stunden."))}
           </View>
         );
       }) : null}
 
       {kind === "fires" ? (
         <>
-          <Head title={sample ? `${num(data.fires.length)} von ${data.firesCapped ? "mindestens " : ""}${num(data.firesTotal)} Hitzepunkten, nach Ort` : `${num(data.firesTotal)} in 24 Stunden, nach Ort`} />
-          <T v="caption" style={{ marginBottom: space.s }}>{sample ? "Semay lädt nur eine Auswahl, die Zahlen sind deshalb Mindestwerte; alle Punkte zeigt NASA FIRMS. " : ""}Ein Punkt kann zu zwei nahen Orten zählen.</T>
+          <Head title={sample ? (data.firesCapped ? t("{shown} von mindestens {total} Hitzepunkten, nach Ort", { shown: num(data.fires.length), total: num(data.firesTotal) }) : t("{shown} von {total} Hitzepunkten, nach Ort", { shown: num(data.fires.length), total: num(data.firesTotal) })) : t("{total} in 24 Stunden, nach Ort", { total: num(data.firesTotal) })} />
+          <T v="caption" style={{ marginBottom: space.s }}>{sample ? `${t("Semay lädt nur eine Auswahl, die Zahlen sind deshalb Mindestwerte; alle Punkte zeigt NASA FIRMS.")} ` : ""}{t("Ein Punkt kann zu zwei nahen Orten zählen.")}</T>
           {areas.length ? (
-            <Group>{areas.map((a, i) => <ListRow key={a.id} first={i === 0} label={a.id === "_far" ? a.name : `Umkreis ${a.name}`} hint={a.id === "_far" ? undefined : `bis ${RADIUS.fire} km`} value={num(a.n)}
+            <Group>{areas.map((a, i) => <ListRow key={a.id} first={i === 0} label={a.id === "_far" ? a.name : t("Umkreis {place}", { place: a.name })} hint={a.id === "_far" ? undefined : t("bis {km} km", { km: RADIUS.fire })} value={num(a.n)}
               onPress={a.id !== "_far" ? () => router.push(`/place/${a.id}`) : undefined} align />)}</Group>
-          ) : none("Keine Hitzepunkte in 24 Stunden.")}
+          ) : none(t("Keine Hitzepunkte in 24 Stunden."))}
         </>
       ) : null}
 
       {kind === "quakes" ? (
         <>
-          <Head title="Letzte 7 Tage" />
+          <Head title={t("Letzte 7 Tage")} />
           {data.quakes.length ? (
             <Group>{[...data.quakes].sort((a, b) => (a.t < b.t ? 1 : -1)).map((q, i) => (
-              <ListRow key={i} first={i === 0} label={q.mag != null ? `Stärke ${Number(q.mag).toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}, ${where(q.lat, q.lon)}` : q.title} sub={fmtFull(q.t)}
+              <ListRow key={i} first={i === 0} label={q.mag != null ? t("Stärke {mag}, {where}", { mag: Number(q.mag).toLocaleString(lang() === "de" ? "de-DE" : "en-GB", { minimumFractionDigits: 1, maximumFractionDigits: 1 }), where: where(q.lat, q.lon) }) : q.title} sub={fmtFull(q.t)}
                 external={!!q.url} onPress={q.url ? () => openLink(q.url) : undefined} />
             ))}</Group>
-          ) : none("Keine Erdbeben ab Stärke 2,5.")}
+          ) : none(t("Keine Erdbeben ab Stärke 2,5."))}
         </>
       ) : null}
 
       {kind === "sea" ? (
         <>
-          <Head title="Letzte 30 Tage" />
+          <Head title={t("Letzte 30 Tage")} />
           {data.maritime.length ? <Group>{[...data.maritime].sort((a, b) => (a.t < b.t ? 1 : -1)).map((x, i) => <ListRow key={i} first={i === 0} icon="boat-outline" label={x.title} sub={seaMeta(x)} external onPress={() => openLink(x.url || m.url)} />)}</Group>
-            : none("Keine Vorfälle.")}
+            : none(t("Keine Vorfälle."))}
         </>
       ) : null}
 
       <View style={{ flexDirection: "row", gap: space.s, marginTop: space.xl, flexWrap: "wrap" }}>
-        {kind !== "internet" ? <View style={{ flexGrow: 1 }}><Button label="Auf der Karte" icon="map-outline" onPress={() => router.navigate("/map")} /></View> : null}
-        <View style={{ flexGrow: 1 }}><Button label={`Bei ${m.who} ansehen`} icon="open-outline" kind="secondary" onPress={() => openLink(m.url)} /></View>
+        {kind !== "internet" ? <View style={{ flexGrow: 1 }}><Button label={t("Auf der Karte")} icon="map-outline" onPress={() => router.navigate("/map")} /></View> : null}
+        <View style={{ flexGrow: 1 }}><Button label={t("Bei {source} ansehen", { source: m.who })} icon="open-outline" kind="secondary" onPress={() => openLink(m.url)} /></View>
       </View>
     </Screen>
   );

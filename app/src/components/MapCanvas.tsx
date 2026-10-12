@@ -9,6 +9,7 @@ import MAP from "../data/map.json";
 import REG from "../data/regions.json";
 import { fmtCap, fmtCapDay, fmtFull, num, plural } from "../lib/de";
 import { font, radius, useTheme } from "../lib/theme";
+import { t as tr } from "../lib/i18n";
 import { PLACES } from "../lib/places";
 import type { Data } from "../lib/types";
 import { tap } from "./ui";
@@ -33,16 +34,16 @@ export type Mark = { x: number; y: number; kind: string; at: number; when: strin
 /** Alle antippbaren Markierungen mit Beschreibung und Herkunft */
 export function marksOf(data: Data, layers: Layers): Mark[] {
   const out: Mark[] = [];
-  if (layers.fire) for (const f of data.fires) { const [x, y] = proj(f.lat, f.lon); out.push({ x, y, kind: "Hitzepunkt", at: +new Date(f.t), when: fmtFull(f.t),
-    text: `${f.sat ? `Satellit ${f.sat}. ` : ""}${f.frp != null ? `Strahlungsleistung ${num(f.frp)} MW. ` : ""}Ein Hitzepunkt ist kein bestätigter Angriff: Auch Feldbrände, Gasfackeln und Vulkane werden erfasst.`,
-    place: "Ort auf etwa 375 m genau", url: f.url, src: "NASA FIRMS" }); }
-  if (layers.quake) for (const q of data.quakes) { const [x, y] = proj(q.lat, q.lon); out.push({ x, y, kind: "Erdbeben", at: +new Date(q.t), when: fmtFull(q.t), text: q.title, url: q.url, src: "USGS" }); }
-  if (layers.ship) for (const m of data.maritime) { const [x, y] = proj(m.lat, m.lon); out.push({ x, y, kind: "Vorfall auf See", at: +new Date(m.t), when: fmtFull(m.t), text: m.title,
-    place: "Ort ungefähr, wie von UKMTO angegeben", url: m.url || "https://www.ukmto.org/recent-incidents", src: "UKMTO" }); }
-  if (layers.sat) for (const p of data.sat.filter((p) => p.images.length)) { const [x, y] = proj(p.lat, p.lon); out.push({ x, y, kind: "Satelliten-Ort", at: +new Date(p.images[0].t),
-    when: `neuestes Bild vom ${fmtCap(p.images[0].t)}`, text: `${p.name}: ${plural(p.images.length, "klares Bild", "klare Bilder")}, das neueste vom ${fmtCapDay(p.images[0].t)}.`, sat: p.id }); }
+  if (layers.fire) for (const f of data.fires) { const [x, y] = proj(f.lat, f.lon); out.push({ x, y, kind: tr("Hitzepunkt"), at: +new Date(f.t), when: fmtFull(f.t),
+    text: `${f.sat ? `${tr("Satellit {sat}.", { sat: f.sat })} ` : ""}${f.frp != null ? `${tr("Strahlungsleistung {mw} MW.", { mw: num(f.frp) })} ` : ""}${tr("Ein Hitzepunkt ist kein bestätigter Angriff: Auch Feldbrände, Gasfackeln und Vulkane werden erfasst.")}`,
+    place: tr("Ort auf etwa 375 m genau"), url: f.url, src: "NASA FIRMS" }); }
+  if (layers.quake) for (const q of data.quakes) { const [x, y] = proj(q.lat, q.lon); out.push({ x, y, kind: tr("Erdbeben"), at: +new Date(q.t), when: fmtFull(q.t), text: q.title, url: q.url, src: "USGS" }); }
+  if (layers.ship) for (const m of data.maritime) { const [x, y] = proj(m.lat, m.lon); out.push({ x, y, kind: tr("Vorfall auf See"), at: +new Date(m.t), when: fmtFull(m.t), text: m.title,
+    place: tr("Ort ungefähr, wie von UKMTO angegeben"), url: m.url || "https://www.ukmto.org/recent-incidents", src: "UKMTO" }); }
+  if (layers.sat) for (const p of data.sat.filter((p) => p.images.length)) { const [x, y] = proj(p.lat, p.lon); out.push({ x, y, kind: tr("Satelliten-Ort"), at: +new Date(p.images[0].t),
+    when: tr("neuestes Bild vom {date}", { date: fmtCap(p.images[0].t) }), text: tr("{place}: {count}, das neueste vom {date}.", { place: p.name, count: plural(p.images.length, "klares Bild", "klare Bilder"), date: fmtCapDay(p.images[0].t) }), sat: p.id }); }
   // Orte zuletzt: Messwerte haben beim Antippen Vorrang, weil sie näher gesucht werden
-  for (const p of PLACES) { const [x, y] = proj(p.lat, p.lon); out.push({ x, y, kind: "Ort", at: 0, when: p.country, text: "", pid: p.id, name: p.name, minor: !p.major }); }
+  for (const p of PLACES) { const [x, y] = proj(p.lat, p.lon); out.push({ x, y, kind: tr("Ort"), at: 0, when: p.country, text: "", pid: p.id, name: p.name, minor: !p.major }); }
   return out;
 }
 
@@ -62,10 +63,10 @@ export function MapSvg({ data, layers, box, w, h, sel, since, mini }: {
       {MAP.countries.map((c: any, i: number) => <Path key={i} d={c.d} fill={c.n === "Eritrea" ? t.landEr : t.land} stroke={c.n === "Eritrea" ? t.ink : t.border} strokeWidth={(c.n === "Eritrea" ? 1.4 : 0.8) * k} />)}
       <Path d={(REG as any).Ethiopia} fill="none" stroke={t.border} strokeWidth={0.8 * k} strokeDasharray={`${3 * k} ${3 * k}`} />
       <Path d={(REG as any).Eritrea} fill="none" stroke={t.border} strokeWidth={0.8 * k} strokeDasharray={`${3 * k} ${3 * k}`} />
-      {mini ? null : LABELS.map(([n, la, lo]) => { const [x, y] = proj(la, lo); return <SvgText fontFamily={font.semibold} key={n} x={x} y={y} fontSize={11 * k} fontWeight="700" letterSpacing={1.5 * k} fill={t.muted} textAnchor="middle">{n}</SvgText>; })}
-      {mini ? null : (() => { const [x, y] = proj(16.9, 40.4); return <SvgText fontFamily={font.semibold} x={x} y={y} fontSize={12 * k} fontStyle="italic" fill={t.accent} textAnchor="middle" transform={`rotate(-32 ${x} ${y})`}>Rotes Meer</SvgText>; })()}
+      {mini ? null : LABELS.map(([n, la, lo]) => { const [x, y] = proj(la, lo); return <SvgText fontFamily={font.semibold} key={n} x={x} y={y} fontSize={11 * k} fontWeight="700" letterSpacing={1.5 * k} fill={t.muted} textAnchor="middle">{tr(n)}</SvgText>; })}
+      {mini ? null : (() => { const [x, y] = proj(16.9, 40.4); return <SvgText fontFamily={font.semibold} x={x} y={y} fontSize={12 * k} fontStyle="italic" fill={t.accent} textAnchor="middle" transform={`rotate(-32 ${x} ${y})`}>{tr("Rotes Meer")}</SvgText>; })()}
       {mini ? null : [["TIGRAY", 13.78, 38.44], ["AFAR", 13.3, 40.3], ["AMHARA", 11.58, 38.05]].map(([n, la, lo]) => { const [x, y] = proj(la as number, lo as number);
-        return <SvgText fontFamily={font.semibold} key={n as string} x={x} y={y} fontSize={9.5 * k} fontStyle="italic" fontWeight="700" letterSpacing={1 * k} fill={t.faint} textAnchor="middle">{n as string}</SvgText>; })}
+        return <SvgText fontFamily={font.semibold} key={n as string} x={x} y={y} fontSize={9.5 * k} fontStyle="italic" fontWeight="700" letterSpacing={1 * k} fill={t.faint} textAnchor="middle">{tr(n as string)}</SvgText>; })}
     </G>
   ), [t, k, mini]);
   // Alle Hitzepunkte als ein einziger Pfad aus Kreisen: ein Zeichenobjekt statt Tausender (wichtig auf schwächeren Handys)
@@ -232,17 +233,17 @@ export function ZoomMap({ data, layers, w, h, box, onBox, sel, onSelect, since }
   return (
     <View style={{ width: w, height: h, overflow: "hidden", backgroundColor: t.water }}>
       <View ref={viewRef} collapsable={false} {...pr.panHandlers} onLayout={measure}
-        accessible accessibilityLabel="Karte. Mit zwei Fingern zoomen, doppelt tippen zum Vergrößern, auf eine Markierung tippen für Einzelheiten."
+        accessible accessibilityLabel={tr("Karte. Mit zwei Fingern zoomen, doppelt tippen zum Vergrößern, auf eine Markierung tippen für Einzelheiten.")}
         style={{ width: w, height: h, ...(Platform.OS === "web" ? { cursor: "grab", touchAction: "none", userSelect: "none" } as any : {}) }}>
         <Animated.View pointerEvents="none" style={{ width: w, height: h, transform: [{ translateX: tx }, { translateY: ty }, { scale: sc }] }}>
           <MapSvg data={data} layers={layers} box={box} w={w} h={h} sel={sel} since={since} />
         </Animated.View>
       </View>
       <View style={{ position: "absolute", right: 10, top: 10, borderRadius: radius.m, backgroundColor: t.card, borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule, overflow: "hidden" }}>
-        {btn("add", "Vergrößern", () => zoomAt(w / 2, h / 2, 1.6))}
+        {btn("add", tr("Vergrößern"), () => zoomAt(w / 2, h / 2, 1.6))}
         <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: t.rule }} />
-        {btn("remove", "Verkleinern", () => zoomAt(w / 2, h / 2, 1 / 1.6))}
-        {zoomed ? <><View style={{ height: StyleSheet.hairlineWidth, backgroundColor: t.rule }} />{btn("scan-outline", "Ganze Karte", () => onBox(fit(FULL, h / w)))}</> : null}
+        {btn("remove", tr("Verkleinern"), () => zoomAt(w / 2, h / 2, 1 / 1.6))}
+        {zoomed ? <><View style={{ height: StyleSheet.hairlineWidth, backgroundColor: t.rule }} />{btn("scan-outline", tr("Ganze Karte"), () => onBox(fit(FULL, h / w)))}</> : null}
       </View>
     </View>
   );

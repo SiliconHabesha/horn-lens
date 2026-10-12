@@ -19,6 +19,8 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { Platform, Pressable, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { DataProvider, useData } from "../lib/data";
+import { LangProvider, useLang } from "../lib/lang";
+import { t as tr } from "../lib/i18n";
 import { WELCOME_KEY } from "./welcome";
 import SetPassword from "../components/SetPassword";
 import { ToastHost } from "../components/Toast";
@@ -35,43 +37,21 @@ export default function Root() {
   useEffect(() => { if (Platform.OS === "web") Font.loadAsync({ NotoSansEthiopic_400Regular, NotoSansEthiopic_600SemiBold }).catch(() => {}); }, []);
   useEffect(() => { SystemUI.setBackgroundColorAsync(t.bg).catch(() => {}); }, [t.bg]);
   useEffect(() => { if (loaded) SplashScreen.hideAsync().catch(() => {}); }, [loaded]);
-  useEffect(() => { if (Platform.OS === "web") { try { document.documentElement.lang = "de"; document.title = "Semay – Lagebild Horn von Afrika"; } catch { /* egal */ } } }, []);
+  useEffect(() => { if (Platform.OS === "web") { try { document.title = "Semay – " + tr("Lagebild Horn von Afrika"); } catch { /* egal */ } } }, []);
   if (!loaded) return null;
   return (
     <SafeAreaProvider>
+      <LangProvider>
       <DataProvider>
         <StatusBar style={t.dark ? "light" : "dark"} />
         <Gate>
-        <Stack screenOptions={({ navigation }: any) => ({
-          headerStyle: { backgroundColor: t.bg }, headerTintColor: t.ink, headerShadowVisible: false,
-          headerTitleStyle: { fontFamily: font.semibold, fontSize: 16 }, headerTitleAlign: "center", headerBackTitle: "Zurück",
-          contentStyle: { backgroundColor: t.bg },
-          // Direkt geöffnet (Link, Benachrichtigung): trotzdem ein Weg zurück zur Lage
-          ...(navigation.canGoBack() ? {} : { headerLeft: () => <HomeBack /> }),
-        })}>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false, title: "Semay" }} />
-          <Stack.Screen name="item/[id]" options={{ title: "Meldung" }} />
-          <Stack.Screen name="place/[id]" options={{ title: "Ort" }} />
-          <Stack.Screen name="places" options={{ title: "Orte" }} />
-          <Stack.Screen name="signal/[kind]" options={{ title: "Messwerte" }} />
-          <Stack.Screen name="search" options={{ title: "Suchen", animation: "fade" }} />
-          <Stack.Screen name="claim/[id]" options={{ title: "Behauptung" }} />
-          <Stack.Screen name="claim-form" options={{ title: "Behauptung", presentation: "modal" }} />
-          <Stack.Screen name="report/[date]" options={{ title: "Tagesbericht" }} />
-          <Stack.Screen name="more" options={{ title: "Mehr" }} />
-          <Stack.Screen name="sources" options={{ title: "Quellen" }} />
-          <Stack.Screen name="method" options={{ title: "So arbeitet Semay" }} />
-          <Stack.Screen name="satellite" options={{ title: "Satellit" }} />
-          <Stack.Screen name="corrections" options={{ title: "Korrekturen" }} />
-          <Stack.Screen name="login" options={{ title: "Redaktion", presentation: "modal" }} />
-          <Stack.Screen name="auth-callback" options={{ headerShown: false }} />
-          <Stack.Screen name="welcome" options={{ headerShown: false, presentation: "modal", gestureEnabled: true }} />
-        </Stack>
+        <AppStack />
         <FirstRun />
         <ToastHost />
         {pushSupported ? <NotificationRouter /> : null}
         </Gate>
       </DataProvider>
+      </LangProvider>
     </SafeAreaProvider>
   );
 }
@@ -83,14 +63,14 @@ export function ErrorBoundary({ retry }: { error: Error; retry: () => Promise<vo
     <SafeAreaProvider>
       <View style={{ flex: 1, backgroundColor: t.bg, alignItems: "center", justifyContent: "center", padding: 32, gap: 16 }}>
         <Ionicons name="alert-circle-outline" size={36} color={t.muted} />
-        <Text style={{ fontFamily: font.semibold, fontSize: 18, color: t.ink, textAlign: "center" }}>Hier ist etwas schiefgegangen.</Text>
-        <Text style={{ fontFamily: font.regular, fontSize: 15, color: t.muted, textAlign: "center", maxWidth: 360 }}>Der Fehler liegt bei uns, nicht bei dir. Bitte erneut versuchen oder zur Lage zurückgehen.</Text>
+        <Text style={{ fontFamily: font.semibold, fontSize: 18, color: t.ink, textAlign: "center" }}>{tr("Hier ist etwas schiefgegangen.")}</Text>
+        <Text style={{ fontFamily: font.regular, fontSize: 15, color: t.muted, textAlign: "center", maxWidth: 360 }}>{tr("Der Fehler liegt bei uns, nicht bei dir. Bitte erneut versuchen oder zur Lage zurückgehen.")}</Text>
         <View style={{ flexDirection: "row", gap: 12 }}>
           <Pressable onPress={() => { retry().catch(() => {}); }} accessibilityRole="button" style={{ backgroundColor: t.ink, borderRadius: 12, paddingHorizontal: 18, height: 46, justifyContent: "center" }}>
-            <Text style={{ fontFamily: font.semibold, fontSize: 16, color: t.bg }}>Erneut versuchen</Text>
+            <Text style={{ fontFamily: font.semibold, fontSize: 16, color: t.bg }}>{tr("Erneut versuchen")}</Text>
           </Pressable>
           <Pressable onPress={() => { try { router.replace("/"); } catch { /* egal */ } }} accessibilityRole="button" style={{ borderRadius: 12, paddingHorizontal: 18, height: 46, justifyContent: "center", borderWidth: 1, borderColor: t.rule }}>
-            <Text style={{ fontFamily: font.semibold, fontSize: 16, color: t.ink }}>Zur Lage</Text>
+            <Text style={{ fontFamily: font.semibold, fontSize: 16, color: t.ink }}>{tr("Zur Lage")}</Text>
           </Pressable>
         </View>
       </View>
@@ -98,20 +78,56 @@ export function ErrorBoundary({ retry }: { error: Error; retry: () => Promise<vo
   );
 }
 
+// Die Bildschirme mit ihren Titeln (in der gewählten Sprache; neu gezeichnet, wenn sie wechselt)
+function AppStack() {
+  const t = useTheme();
+  useLang();
+  return (
+    <Stack screenOptions={({ navigation }: any) => ({
+          headerStyle: { backgroundColor: t.bg }, headerTintColor: t.ink, headerShadowVisible: false,
+          headerTitleStyle: { fontFamily: font.semibold, fontSize: 16 }, headerTitleAlign: "center", headerBackTitle: tr("Zurück"),
+          contentStyle: { backgroundColor: t.bg },
+          // Direkt geöffnet (Link, Benachrichtigung): trotzdem ein Weg zurück zur Lage
+          ...(navigation.canGoBack() ? {} : { headerLeft: () => <HomeBack /> }),
+        })}>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false, title: "Semay" }} />
+          <Stack.Screen name="item/[id]" options={{ title: tr("Meldung") }} />
+          <Stack.Screen name="place/[id]" options={{ title: tr("Ort") }} />
+          <Stack.Screen name="places" options={{ title: tr("Orte") }} />
+          <Stack.Screen name="signal/[kind]" options={{ title: tr("Messwerte") }} />
+          <Stack.Screen name="search" options={{ title: tr("Suchen"), animation: "fade" }} />
+          <Stack.Screen name="claim/[id]" options={{ title: tr("Behauptung") }} />
+          <Stack.Screen name="claim-form" options={{ title: tr("Behauptung"), presentation: "modal" }} />
+          <Stack.Screen name="report/[date]" options={{ title: tr("Tagesbericht") }} />
+          <Stack.Screen name="more" options={{ title: tr("Mehr") }} />
+          <Stack.Screen name="sources" options={{ title: tr("Quellen") }} />
+          <Stack.Screen name="method" options={{ title: tr("So arbeitet Semay") }} />
+          <Stack.Screen name="satellite" options={{ title: tr("Satellit") }} />
+          <Stack.Screen name="corrections" options={{ title: tr("Korrekturen") }} />
+          <Stack.Screen name="login" options={{ title: tr("Redaktion"), presentation: "modal" }} />
+          <Stack.Screen name="auth-callback" options={{ headerShown: false }} />
+          <Stack.Screen name="welcome" options={{ headerShown: false, presentation: "modal", gestureEnabled: true }} />
+        </Stack>
+  );
+}
+
 // Alle lesen ohne Konto. Nur wer über „Passwort vergessen“ kommt, setzt zuerst ein neues Passwort.
 function Gate({ children }: { children: React.ReactNode }) {
   const { recovery } = useData();
+  const { ready, lang } = useLang();
+  if (!ready) return null;
   if (recovery) return <SetPassword />;
-  return <>{children}</>;
+  // Neue Sprache: alles neu zeichnen, damit jeder Text sie übernimmt
+  return <View key={lang} style={{ flex: 1 }}>{children}</View>;
 }
 
 function HomeBack() {
   const t = useTheme();
   return (
-    <Pressable onPress={() => router.replace("/")} accessibilityRole="button" accessibilityLabel="Zur Lage" hitSlop={10}
+    <Pressable onPress={() => router.replace("/")} accessibilityRole="button" accessibilityLabel={tr("Zur Lage")} hitSlop={10}
       style={{ flexDirection: "row", alignItems: "center", gap: 2, paddingHorizontal: 8 }}>
       <Ionicons name="chevron-back" size={22} color={t.ink} />
-      <Text style={{ fontFamily: font.medium, fontSize: 16, color: t.ink }}>Lage</Text>
+      <Text style={{ fontFamily: font.medium, fontSize: 16, color: t.ink }}>{tr("Lage")}</Text>
     </Pressable>
   );
 }

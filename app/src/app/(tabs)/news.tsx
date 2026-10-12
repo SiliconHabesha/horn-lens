@@ -10,6 +10,7 @@ import { Skeleton } from "../../components/Skeleton";
 import { Banner, Chip, ChipRow, Empty, IconButton, T, TabTools, tap, Toggle } from "../../components/ui";
 import { ago, REGION_ORDER, REGIONS, TYPE_ORDER, TYPES } from "../../lib/de";
 import { useData } from "../../lib/data";
+import { t as tr } from "../../lib/i18n";
 import { narrow, storiesOf, type Story } from "../../lib/stories";
 import { noOutline, font, radius, space, useTheme } from "../../lib/theme";
 import type { Item } from "../../lib/types";
@@ -82,25 +83,25 @@ export default function News() {
   const header = (
     <View style={{ paddingTop: ins.top + space.m + (winW >= 900 ? space.xl : 0), gap: space.m, paddingBottom: space.s, maxWidth: 760, width: "100%", alignSelf: "center" }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-        <T v="display" accessibilityRole="header">{mode === "saved" ? "Gemerkt" : "Meldungen"}</T>
+        <T v="display" accessibilityRole="header">{mode === "saved" ? tr("Gemerkt") : tr("Meldungen")}</T>
         <TabTools noSearch>
-          <IconButton icon={mode === "saved" ? "close" : "bookmark-outline"} label={mode === "saved" ? "Gemerkt schließen" : `Gemerkt (${saved.length})`}
+          <IconButton icon={mode === "saved" ? "close" : "bookmark-outline"} label={mode === "saved" ? tr("Gemerkt schließen") : tr("Gemerkt ({n})", { n: saved.length })}
             onPress={() => setMode(mode === "saved" ? (grouped ? "stories" : "items") : "saved")} />
         </TabTools>
       </View>
-      {offline && loadedAt ? <Banner icon="cloud-offline-outline" tone="warn" text={`Keine Verbindung. Stand: ${ago(loadedAt)}.`} action="Erneut versuchen" onAction={refresh} /> : null}
+      {offline && loadedAt ? <Banner icon="cloud-offline-outline" tone="warn" text={tr("Keine Verbindung. Stand: {ago}.", { ago: ago(loadedAt) })} action={tr("Erneut versuchen")} onAction={refresh} /> : null}
       <View style={{ flexDirection: "row", gap: 8 }}>
         <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: t.card, borderRadius: radius.m, paddingHorizontal: 12, height: 44,
           borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule }}>
           <Ionicons name="search" size={17} color={t.faint} />
-          <TextInput value={q} onChangeText={setQ} placeholder={mode === "saved" ? "Gemerktes durchsuchen" : "In Meldungen suchen"} placeholderTextColor={t.faint}
+          <TextInput value={q} onChangeText={setQ} placeholder={mode === "saved" ? tr("Gemerktes durchsuchen") : tr("In Meldungen suchen")} placeholderTextColor={t.faint}
             style={{ ...noOutline, flex: 1, fontFamily: font.regular, fontSize: 16, color: t.ink, height: 42 }} returnKeyType="search" clearButtonMode="while-editing"
-            accessibilityLabel="Meldungen durchsuchen" autoCorrect={false} />
-          {q ? <Pressable onPress={() => setQ("")} accessibilityRole="button" accessibilityLabel="Suche löschen" hitSlop={10}><Ionicons name="close-circle" size={18} color={t.faint} /></Pressable> : null}
+            accessibilityLabel={tr("Meldungen durchsuchen")} autoCorrect={false} />
+          {q ? <Pressable onPress={() => setQ("")} accessibilityRole="button" accessibilityLabel={tr("Suche löschen")} hitSlop={10}><Ionicons name="close-circle" size={18} color={t.faint} /></Pressable> : null}
         </View>
         {mode !== "saved" ? (
           <Pressable onPress={() => { tap(); setShowFilters(!showFilters); }} accessibilityRole="button" accessibilityState={{ expanded: showFilters }}
-            accessibilityLabel={active ? `Filter, ${active} aktiv` : "Filter"}
+            accessibilityLabel={active ? tr("Filter, {n} aktiv", { n: active }) : tr("Filter")}
             style={({ pressed }) => ({ height: 44, minWidth: 44, paddingHorizontal: 12, borderRadius: radius.m, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
               backgroundColor: active || showFilters ? t.ink : t.card, borderWidth: StyleSheet.hairlineWidth, borderColor: active || showFilters ? t.ink : t.rule, opacity: pressed ? 0.7 : 1 })}>
             <Ionicons name="options-outline" size={18} color={active || showFilters ? t.bg : t.ink} />
@@ -110,33 +111,33 @@ export default function News() {
       </View>
       {mode !== "saved" && showFilters ? (
         <View style={{ backgroundColor: t.card, borderRadius: radius.l, padding: space.m, gap: space.s, borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule }}>
-          <T v="label" color={t.muted}>Zeitraum</T>
+          <T v="label" color={t.muted}>{tr("Zeitraum")}</T>
           <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-            <Chip label="24 Stunden" active={hours === 24} onPress={() => setHours(24)} />
-            <Chip label="3 Tage" active={hours === 72} onPress={() => setHours(72)} />
+            <Chip label={tr("24 Stunden")} active={hours === 24} onPress={() => setHours(24)} />
+            <Chip label={tr("3 Tage")} active={hours === 72} onPress={() => setHours(72)} />
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.m, minHeight: 44 }}>
-            <T v="body" style={{ flex: 1 }}>Nur neue seit dem letzten Besuch</T>
-            <Toggle value={onlyNew} onValueChange={(v) => { tap(); setOnlyNew(v); }} accessibilityLabel="Nur neue Meldungen" />
+            <T v="body" style={{ flex: 1 }}>{tr("Nur neue seit dem letzten Besuch")}</T>
+            <Toggle value={onlyNew} onValueChange={(v) => { tap(); setOnlyNew(v); }} accessibilityLabel={tr("Nur neue Meldungen")} />
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.m, minHeight: 44 }}>
-            <T v="body" style={{ flex: 1 }}>Meldungen zur selben Geschichte bündeln</T>
-            <Toggle value={grouped} onValueChange={(v) => { tap(); setMode(v ? "stories" : "items"); }} accessibilityLabel="Meldungen zur selben Geschichte bündeln" />
+            <T v="body" style={{ flex: 1 }}>{tr("Meldungen zur selben Geschichte bündeln")}</T>
+            <Toggle value={grouped} onValueChange={(v) => { tap(); setMode(v ? "stories" : "items"); }} accessibilityLabel={tr("Meldungen zur selben Geschichte bündeln")} />
           </View>
           {mode === "stories" ? (
             <>
-              <T v="label" color={t.muted} style={{ marginTop: 4 }}>Reihenfolge</T>
+              <T v="label" color={t.muted} style={{ marginTop: 4 }}>{tr("Reihenfolge")}</T>
               <View style={{ flexDirection: "row", gap: 8 }}>
-                <Chip label="Neueste zuerst" active={!most} onPress={() => setMost(false)} />
-                <Chip label="Meistberichtet zuerst" active={most} onPress={() => setMost(true)} />
+                <Chip label={tr("Neueste zuerst")} active={!most} onPress={() => setMost(false)} />
+                <Chip label={tr("Meistberichtet zuerst")} active={most} onPress={() => setMost(true)} />
               </View>
             </>
           ) : null}
           {typesPresent.length > 1 ? (
             <>
-              <T v="label" color={t.muted} style={{ marginTop: 4 }}>Quellenart</T>
+              <T v="label" color={t.muted} style={{ marginTop: 4 }}>{tr("Quellenart")}</T>
               <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-                <Chip label="Alle" active={!type} onPress={() => setType(null)} />
+                <Chip label={tr("Alle")} active={!type} onPress={() => setType(null)} />
                 {typesPresent.map((k) => <Chip key={k} label={TYPES[k]} color={t.type[k]} active={type === k} onPress={() => setType(type === k ? null : k)} />)}
               </View>
             </>
@@ -144,31 +145,31 @@ export default function News() {
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
             {active ? (
               <Pressable onPress={() => { tap(); setHours(24); setType(null); setOnlyNew(false); setMost(false); setMode("stories"); }} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center" }}>
-                <T v="smallStrong" color={t.accent}>Zurücksetzen</T>
+                <T v="smallStrong" color={t.accent}>{tr("Zurücksetzen")}</T>
               </Pressable>
             ) : <View />}
             <Pressable onPress={() => { tap(); setShowFilters(false); }} accessibilityRole="button" style={{ minHeight: 44, minWidth: 44, justifyContent: "center", alignItems: "flex-end" }}>
-              <T v="smallStrong">Fertig</T>
+              <T v="smallStrong">{tr("Fertig")}</T>
             </Pressable>
           </View>
         </View>
       ) : null}
       {mode !== "saved" ? (
         <ChipRow>
-          <Chip label="Alle" active={region === "all"} onPress={() => setRegion("all")} />
+          <Chip label={tr("Alle")} active={region === "all"} onPress={() => setRegion("all")} />
           {REGION_ORDER.filter((r) => counts[r] > 0 || region === r).map((r) => <Chip key={r} label={REGIONS[r]} count={counts[r]} active={region === r} onPress={() => setRegion(r)} />)}
         </ChipRow>
       ) : null}
       {mode !== "saved" && active && !showFilters ? (
-        <T v="caption">Filter: {[hours === 72 ? "3 Tage" : null, onlyNew ? "nur neue" : null, most && mode === "stories" ? "meistberichtet zuerst" : null, mode === "items" ? "einzeln" : null, type ? TYPES[type] : null].filter(Boolean).join(", ")}</T>
+        <T v="caption">{tr("Filter: {list}", { list: [hours === 72 ? tr("3 Tage") : null, onlyNew ? tr("nur neue") : null, most && mode === "stories" ? tr("meistberichtet zuerst") : null, mode === "items" ? tr("einzeln") : null, type ? TYPES[type] : null].filter(Boolean).join(", ") })}</T>
       ) : null}
     </View>
   );
 
   const rows: (Item | Story)[] = mode === "stories" ? stories : mode === "items" ? list : savedList;
-  const emptyText = mode === "saved" ? (q ? "Nichts Gemerktes passt zur Suche." : "Noch nichts gemerkt. In einer Meldung auf das Lesezeichen tippen.")
-    : q || onlyNew || type ? "Keine Meldung passt zu diesen Filtern."
-    : region === "eritrea" ? "Keine Meldungen zu Eritrea in diesem Zeitraum. Aus dem Land dringen kaum unabhängige Nachrichten." : "Keine Meldungen in diesem Zeitraum aus unseren Quellen.";
+  const emptyText = mode === "saved" ? (q ? tr("Nichts Gemerktes passt zur Suche.") : tr("Noch nichts gemerkt. In einer Meldung auf das Lesezeichen tippen."))
+    : q || onlyNew || type ? tr("Keine Meldung passt zu diesen Filtern.")
+    : region === "eritrea" ? tr("Keine Meldungen zu Eritrea in diesem Zeitraum. Aus dem Land dringen kaum unabhängige Nachrichten.") : tr("Keine Meldungen in diesem Zeitraum aus unseren Quellen.");
 
   return (
     <FlatList

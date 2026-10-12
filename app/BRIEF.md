@@ -132,3 +132,13 @@ Entscheidungen des Inhabers: Lesen ohne Anmeldung; alle Meldungen, Geschichten, 
 - Lage beginnt mit „Auf einen Blick“ (lib/brief.ts): wenige Sätze nach festen Regeln, ohne KI und Wertung, je mit Quelle. Reihenfolge: Auffälliges, meistberichtetes Thema, Zahl der Meldungen, Rotes Meer, Internet Eritrea, Hitzepunkte (mit Ort der meisten), spürbare Erdbeben, geänderte Behauptungen. Daneben/darunter die Karte. Die Kacheln entfallen, „Auffällig“ steckt jetzt in den Sätzen.
 - Schlagzeilen auf Deutsch: neue Spalte `items.title_de`, Funktion `translate` (MyMemory, frei, nur Schlagzeilen, ohne Leserdaten), Zeitplan „hornlens-translate“ um :17 und :47. Freies Kontingent etwa 5.000 Zeichen am Tag; reicht für die täglich neuen Schlagzeilen. In der Meldung steht das Original immer dabei („Maschinell übersetzt“). Schlagzeilen ganz in Großbuchstaben werden lesbar gesetzt.
 - „Meistberichtet“ heißt jetzt „Die Themen heute“.
+
+## Runde 14 (12.10.2026): Deutsch, Englisch, Tigrinya; Karte und Satellit
+
+- Sprachen: `src/lib/i18n.ts` (`t("Deutscher Text", {platzhalter})`), Wörterbücher `src/i18n/parts/*.json` (Schlüssel = deutscher Text), Regeln in `app/I18N.md`, Prüfung `node scripts/i18n-check.mjs`. Sprachwahl unter Mehr („Sprache · Language · ቋንቋ“), sonst Gerätesprache. Wechsel zeichnet die App neu.
+- Datenbanktexte: Deutsch über Wörterbuch und Regeln (`de()`), Englisch im Original, Tigrinya über einige Regeln (Seevorfälle, Erdbeben, Internet), sonst Englisch. Datumsangaben auf Tigrinya mit eigenen Monats- und Tagesnamen, falls das Gerät keine hat.
+- Schlagzeilen: `title_en`, `title_ti` zusätzlich zu `title_de` (Funktion translate, MyMemory). Tigrinya-Maschinenübersetzung ist verständlich, aber holprig; immer als „maschinell übersetzt“ mit Original.
+- Benachrichtigungen in der Sprache des Geräts (`push_tokens.lang`, `app_push_lang`).
+- Tigrinya-Texte der Oberfläche: von Claude geschrieben, von einer Muttersprachlerin oder einem Muttersprachler gegenzulesen.
+- Karte: am Computer groß mit Liste rechts, am Handy Karte oben, Liste darunter. Liste „Was die Karte zeigt“ (Seevorfälle, Erdbeben, wo die Hitzepunkte liegen, Satelliten-Orte), Antippen zoomt hin. Legende auf der Karte.
+- Satellit: erst Ort und Zusammenhang, dann der Vergleich; Aufnahmedaten kurz unter dem Bild; am Computer Bild und Auswahl nebeneinander.

@@ -6,6 +6,7 @@ import { toast } from "../components/Toast";
 import { Banner, Button, Chip, T, tap, Toggle } from "../components/ui";
 import { de, REGION_ORDER, REGIONS, STATUS, STATUS_ORDER, todayBerlin } from "../lib/de";
 import { useData } from "../lib/data";
+import { t as tr } from "../lib/i18n";
 import { sb } from "../lib/supabase";
 import { font, radius, space, useTheme } from "../lib/theme";
 import { Skeleton } from "../components/Skeleton";
@@ -61,8 +62,8 @@ export default function ClaimForm() {
   }, [claim]);
 
   if (!data) return <View style={{ flex: 1, backgroundColor: t.bg, padding: space.l }}><Skeleton rows={5} /></View>;
-  if (!data.owner) return <View style={{ flex: 1, backgroundColor: t.bg, padding: space.l }}><T>Nur für den Betreiber von Semay.</T></View>;
-  if (mode !== "add" && !claim) return <View style={{ flex: 1, backgroundColor: t.bg, padding: space.l }}><T>Diese Behauptung gibt es nicht mehr. Vielleicht wurde sie zusammengelegt oder entfernt.</T></View>;
+  if (!data.owner) return <View style={{ flex: 1, backgroundColor: t.bg, padding: space.l }}><T>{tr("Nur für den Betreiber von Semay.")}</T></View>;
+  if (mode !== "add" && !claim) return <View style={{ flex: 1, backgroundColor: t.bg, padding: space.l }}><T>{tr("Diese Behauptung gibt es nicht mehr. Vielleicht wurde sie zusammengelegt oder entfernt.")}</T></View>;
 
   const input = { fontFamily: font.regular, fontSize: 15.5, color: t.ink, backgroundColor: t.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
     borderColor: t.rule, paddingHorizontal: 12, paddingVertical: 10 } as const;
@@ -71,16 +72,16 @@ export default function ClaimForm() {
     setErr(null); setUnsure(false);
     const src = sources.map((s) => ({ title: s.title.trim() || hostOf(s.url.trim()), url: s.url.trim() })).filter((s) => s.url || s.title);
     const day = toIso(first);
-    if (mode !== "status" && !validDay(day)) return setErr("Bitte das Datum der ersten Meldung als Tag.Monat.Jahr schreiben, z. B. 11.10.2026.");
-    if (mode !== "status" && day > todayBerlin()) return setErr("Das Datum der ersten Meldung liegt in der Zukunft.");
-    if (src.some((s) => !/^https?:\/\/[^/\s?#]+\.[^/\s?#]+/.test(s.url))) return setErr("Jede Quelle braucht einen vollständigen Link, der mit https:// beginnt.");
-    if (note.trim().length < 3) return setErr("Bitte eine kurze Notiz schreiben.");
+    if (mode !== "status" && !validDay(day)) return setErr(tr("Bitte das Datum der ersten Meldung als Tag.Monat.Jahr schreiben, z. B. 11.10.2026."));
+    if (mode !== "status" && day > todayBerlin()) return setErr(tr("Das Datum der ersten Meldung liegt in der Zukunft."));
+    if (src.some((s) => !/^https?:\/\/[^/\s?#]+\.[^/\s?#]+/.test(s.url))) return setErr(tr("Jede Quelle braucht einen vollständigen Link, der mit https:// beginnt."));
+    if (note.trim().length < 3) return setErr(tr("Bitte eine kurze Notiz schreiben."));
     const hosts = new Set(src.map((s) => hostOf(s.url)));
     if (mode !== "edit" && status === "confirmed" && !admission && hosts.size < 2)
-      return setErr("„Bestätigt“ braucht zwei unabhängige Quellen auf zwei verschiedenen Websites oder ein Eingeständnis der betroffenen Seite.");
-    if (mode !== "edit" && status === "confirmed" && admission && !src.length) return setErr("Bitte verlinken, wo die betroffene Seite es eingeräumt hat.");
-    if (mode === "add" && !src.length) return setErr("Eine neue Behauptung braucht mindestens eine Quelle.");
-    if (mode !== "status" && (!statement.trim() || !claimant.trim())) return setErr("Bitte Aussage und „Wer sagt es“ ausfüllen.");
+      return setErr(tr("„Bestätigt“ braucht zwei unabhängige Quellen auf zwei verschiedenen Websites oder ein Eingeständnis der betroffenen Seite."));
+    if (mode !== "edit" && status === "confirmed" && admission && !src.length) return setErr(tr("Bitte verlinken, wo die betroffene Seite es eingeräumt hat."));
+    if (mode === "add" && !src.length) return setErr(tr("Eine neue Behauptung braucht mindestens eine Quelle."));
+    if (mode !== "status" && (!statement.trim() || !claimant.trim())) return setErr(tr("Bitte Aussage und „Wer sagt es“ ausfüllen."));
     // Was du nicht änderst, geht im Original zurück und gilt nicht als geändert
     const val = (v: string, key: "statement" | "claimant" | "disputed_by") => (v.trim() === init[key].trim() ? (init.raw?.[key] ?? init[key]) ?? "" : v.trim());
     let fn: string, payload: any;
@@ -100,15 +101,15 @@ export default function ClaimForm() {
       if (error && /fetch|network|timeout|abort/i.test(String(error.message))) throw error;
       if (error) {
         const m = String(error.message || "").replace(/\.\s*$/, "");
-        setErr(`Nicht gespeichert: ${de(m) || "die Datenbank hat es abgelehnt"}.`);
+        setErr(tr("Nicht gespeichert: {reason}.", { reason: de(m) || tr("die Datenbank hat es abgelehnt") }));
         setBusy(false);
         return;
       }
       await refresh();
-      toast(mode === "add" ? "Behauptung angelegt" : mode === "status" ? (same ? "Beleg gespeichert" : "Stufe geändert") : "Berichtigung gespeichert");
+      toast(mode === "add" ? tr("Behauptung angelegt") : mode === "status" ? (same ? tr("Beleg gespeichert") : tr("Stufe geändert")) : tr("Berichtigung gespeichert"));
       close();
     } catch {
-      setErr("Die Verbindung ist abgebrochen. Vielleicht wurde gespeichert, vielleicht nicht. Bitte neu laden und nachsehen, bevor du noch einmal speicherst.");
+      setErr(tr("Die Verbindung ist abgebrochen. Vielleicht wurde gespeichert, vielleicht nicht. Bitte neu laden und nachsehen, bevor du noch einmal speicherst."));
       setUnsure(true); setBusy(false);
     }
   };
@@ -117,85 +118,85 @@ export default function ClaimForm() {
     || (mode !== "status" && (statement !== init.statement || claimant !== init.claimant || disputed !== init.disputed_by));
   const cancel = () => {
     if (!dirty || busy) return close();
-    const text = "Deine Eingaben gehen verloren.";
-    if (Platform.OS === "web") { if (window.confirm(`Verwerfen?\n\n${text}`)) close(); return; }
-    Alert.alert("Verwerfen?", text, [{ text: "Weiter bearbeiten", style: "cancel" }, { text: "Verwerfen", style: "destructive", onPress: close }]);
+    const text = tr("Deine Eingaben gehen verloren.");
+    if (Platform.OS === "web") { if (window.confirm(`${tr("Verwerfen?")}\n\n${text}`)) close(); return; }
+    Alert.alert(tr("Verwerfen?"), text, [{ text: tr("Weiter bearbeiten"), style: "cancel" }, { text: tr("Verwerfen"), style: "destructive", onPress: close }]);
   };
   const close = () => { try { if (router.canGoBack()) { router.back(); return; } } catch { /* ohne Verlauf */ } router.replace("/claims"); };
   const same = mode === "status" && claim && status === claim.status;
-  const title = mode === "add" ? "Neue Behauptung" : mode === "edit" ? "Angaben berichtigen" : same ? "Beleg ergänzen" : "Stufe ändern";
+  const title = mode === "add" ? tr("Neue Behauptung") : mode === "edit" ? tr("Angaben berichtigen") : same ? tr("Beleg ergänzen") : tr("Stufe ändern");
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: t.bg }} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}>
-      <Stack.Screen options={{ title, headerLeft: () => <Pressable onPress={cancel} hitSlop={10} accessibilityRole="button" style={{ paddingHorizontal: 16, minHeight: 44, justifyContent: "center" }}><T v="bodyStrong" color={t.accent}>Abbrechen</T></Pressable> }} />
+      <Stack.Screen options={{ title, headerLeft: () => <Pressable onPress={cancel} hitSlop={10} accessibilityRole="button" style={{ paddingHorizontal: 16, minHeight: 44, justifyContent: "center" }}><T v="bodyStrong" color={t.accent}>{tr("Abbrechen")}</T></Pressable> }} />
       <ScrollView contentContainerStyle={{ padding: space.l, gap: space.l, paddingBottom: 80, maxWidth: 760, width: "100%", alignSelf: "center" }} keyboardShouldPersistTaps="handled">
         {claim && mode === "status" ? <T v="small">{claim.statement}</T> : null}
         {mode !== "status" ? (
           <>
-            <Field label="Aussage"><TextInput style={[input, { minHeight: 80, textAlignVertical: "top" }]} multiline value={statement} onChangeText={setStatement} placeholder="Eine überprüfbare Aussage" placeholderTextColor={t.faint} /></Field>
-            <Field label="Wer sagt es"><TextInput style={[input, { minHeight: 64, textAlignVertical: "top" }]} multiline value={claimant} onChangeText={setClaimant} placeholder="z. B. ein Ministerium, eine Agentur, Augenzeugen" placeholderTextColor={t.faint} /></Field>
-            <Field label="Wer bestreitet es (optional)"><TextInput style={[input, { minHeight: 80, textAlignVertical: "top" }]} multiline value={disputed} onChangeText={setDisputed} placeholder="z. B. die betroffene Regierung oder Gruppe" placeholderTextColor={t.faint} /></Field>
+            <Field label={tr("Aussage")}><TextInput style={[input, { minHeight: 80, textAlignVertical: "top" }]} multiline value={statement} onChangeText={setStatement} placeholder={tr("Eine überprüfbare Aussage")} placeholderTextColor={t.faint} /></Field>
+            <Field label={tr("Wer sagt es")}><TextInput style={[input, { minHeight: 64, textAlignVertical: "top" }]} multiline value={claimant} onChangeText={setClaimant} placeholder={tr("z. B. ein Ministerium, eine Agentur, Augenzeugen")} placeholderTextColor={t.faint} /></Field>
+            <Field label={tr("Wer bestreitet es (optional)")}><TextInput style={[input, { minHeight: 80, textAlignVertical: "top" }]} multiline value={disputed} onChangeText={setDisputed} placeholder={tr("z. B. die betroffene Regierung oder Gruppe")} placeholderTextColor={t.faint} /></Field>
             {mode === "add" ? (
-              <Field label="Region">
+              <Field label={tr("Region")}>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                   {REGION_ORDER.map((r) => <Chip key={r} label={REGIONS[r]} active={region === r} onPress={() => setRegion(r)} />)}
                 </View>
               </Field>
             ) : null}
-            <Field label="Zuerst gemeldet">
+            <Field label={tr("Zuerst gemeldet")}>
               <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-                {[0, 1, 2].map((n) => { const d = dayMinus(n); return <Chip key={n} label={n === 0 ? "Heute" : n === 1 ? "Gestern" : "Vorgestern"} active={first === d} onPress={() => pickFirst(d)} />; })}
+                {[0, 1, 2].map((n) => { const d = dayMinus(n); return <Chip key={n} label={n === 0 ? tr("Heute") : n === 1 ? tr("Gestern") : tr("Vorgestern")} active={first === d} onPress={() => pickFirst(d)} />; })}
               </View>
               <TextInput style={input} value={firstText} onChangeText={(v) => { setFirstText(v); setFirst(toIso(v)); }}
                 placeholder={todayBerlin().split("-").reverse().join(".")} placeholderTextColor={t.faint} autoCapitalize="none"
-                accessibilityLabel="Datum der ersten Meldung, Tag.Monat.Jahr" keyboardType="numbers-and-punctuation" />
-              {first && !validDay(first) ? <T v="caption" color={t.warn}>Bitte als Tag.Monat.Jahr schreiben, z. B. {todayBerlin().split("-").reverse().join(".")}.</T>
-                : validDay(first) && first > todayBerlin() ? <T v="caption" color={t.warn}>Dieses Datum liegt in der Zukunft.</T> : null}
+                accessibilityLabel={tr("Datum der ersten Meldung, Tag.Monat.Jahr")} keyboardType="numbers-and-punctuation" />
+              {first && !validDay(first) ? <T v="caption" color={t.warn}>{tr("Bitte als Tag.Monat.Jahr schreiben, z. B. {example}.", { example: todayBerlin().split("-").reverse().join(".") })}</T>
+                : validDay(first) && first > todayBerlin() ? <T v="caption" color={t.warn}>{tr("Dieses Datum liegt in der Zukunft.")}</T> : null}
             </Field>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.m }}>
-              <T v="body" style={{ flex: 1 }}>Von einer Konfliktpartei behauptet</T>
-              <Toggle value={party} onValueChange={(v) => { tap(); setParty(v); }} accessibilityLabel="Von einer Konfliktpartei behauptet" />
+              <T v="body" style={{ flex: 1 }}>{tr("Von einer Konfliktpartei behauptet")}</T>
+              <Toggle value={party} onValueChange={(v) => { tap(); setParty(v); }} accessibilityLabel={tr("Von einer Konfliktpartei behauptet")} />
             </View>
           </>
         ) : null}
         {mode !== "edit" ? (
-          <Field label={mode === "add" || same ? "Stufe" : "Neue Stufe"}>
+          <Field label={mode === "add" || same ? tr("Stufe") : tr("Neue Stufe")}>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {STATUS_ORDER.map((k) => <Chip key={k} label={STATUS[k][0]} color={t.status[k]} active={status === k} onPress={() => setStatus(k)} />)}
             </View>
-            <T v="caption">{same ? "Gleiche Stufe wie bisher: Es wird nur ein neuer Beleg eingetragen." : STATUS[status]?.[1]}</T>
+            <T v="caption">{same ? tr("Gleiche Stufe wie bisher: Es wird nur ein neuer Beleg eingetragen.") : STATUS[status]?.[1]}</T>
           </Field>
         ) : null}
-        <Field label="Notiz">
+        <Field label={tr("Notiz")}>
           <TextInput style={[input, { minHeight: 80, textAlignVertical: "top" }]} multiline value={note} onChangeText={setNote}
-            placeholder={mode === "edit" ? "Was war falsch, und woher stammt die richtige Fassung?" : same ? "Was belegt dieser neue Beleg?" : "Was hat sich geändert, und warum diese Stufe?"} placeholderTextColor={t.faint} />
+            placeholder={mode === "edit" ? tr("Was war falsch, und woher stammt die richtige Fassung?") : same ? tr("Was belegt dieser neue Beleg?") : tr("Was hat sich geändert, und warum diese Stufe?")} placeholderTextColor={t.faint} />
         </Field>
         {mode !== "edit" ? (
           <>
             {sources.map((s, i) => (
               <View key={i} style={{ gap: 6 }}>
-                <T v="smallStrong">Quelle {i + 1}</T>
+                <T v="smallStrong">{tr("Quelle {n}", { n: i + 1 })}</T>
                 <TextInput style={input} value={s.title} onChangeText={(v) => setSources(sources.map((x, j) => (j === i ? { ...x, title: v } : x)))}
-                  placeholder="Medium und Datum, z. B. Reuters, 10. Okt. 2026" placeholderTextColor={t.faint} accessibilityLabel={`Quelle ${i + 1}: Medium und Datum`} />
+                  placeholder={tr("Medium und Datum, z. B. Reuters, 10. Okt. 2026")} placeholderTextColor={t.faint} accessibilityLabel={tr("Quelle {n}: Medium und Datum", { n: i + 1 })} />
                 <TextInput style={input} value={s.url} onChangeText={(v) => setSources(sources.map((x, j) => (j === i ? { ...x, url: v } : x)))}
-                  placeholder="https://…" placeholderTextColor={t.faint} autoCapitalize="none" keyboardType="url" autoCorrect={false} accessibilityLabel={`Quelle ${i + 1}: Link`} />
+                  placeholder="https://…" placeholderTextColor={t.faint} autoCapitalize="none" keyboardType="url" autoCorrect={false} accessibilityLabel={tr("Quelle {n}: Link", { n: i + 1 })} />
               </View>
             ))}
             <Pressable onPress={() => { tap(); setSources([...sources, { title: "", url: "" }]); }} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center", alignSelf: "flex-start" }}>
-              <T v="smallStrong" color={t.accent}>+ Weitere Quelle</T>
+              <T v="smallStrong" color={t.accent}>{tr("+ Weitere Quelle")}</T>
             </Pressable>
             {status === "confirmed" ? (
               <>
                 <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.m }}>
-                  <T v="body" style={{ flex: 1 }}>Die betroffene Seite hat es eingeräumt</T>
-                  <Toggle value={admission} onValueChange={(v) => { tap(); setAdmission(v); }} accessibilityLabel="Die betroffene Seite hat es eingeräumt" />
+                  <T v="body" style={{ flex: 1 }}>{tr("Die betroffene Seite hat es eingeräumt")}</T>
+                  <Toggle value={admission} onValueChange={(v) => { tap(); setAdmission(v); }} accessibilityLabel={tr("Die betroffene Seite hat es eingeräumt")} />
                 </View>
-                <T v="caption">„Bestätigt“ braucht zwei unabhängige Quellen (eine übernommene Agenturmeldung zählt einmal) oder ein Eingeständnis der betroffenen Seite.</T>
+                <T v="caption">{tr("„Bestätigt“ braucht zwei unabhängige Quellen (eine übernommene Agenturmeldung zählt einmal) oder ein Eingeständnis der betroffenen Seite.")}</T>
               </>
             ) : null}
           </>
         ) : null}
-        {err ? <Banner icon="alert-circle-outline" tone="warn" text={err} action={unsure ? "Erneut laden" : undefined} onAction={unsure ? () => { refresh(); close(); } : undefined} /> : null}
-        <Button label={busy ? "Speichert …" : mode === "add" ? "Behauptung anlegen" : mode === "edit" ? "Berichtigung speichern" : same ? "Beleg speichern" : "Stufe speichern"} onPress={submit} disabled={busy} />
+        {err ? <Banner icon="alert-circle-outline" tone="warn" text={err} action={unsure ? tr("Erneut laden") : undefined} onAction={unsure ? () => { refresh(); close(); } : undefined} /> : null}
+        <Button label={busy ? tr("Speichert …") : mode === "add" ? tr("Behauptung anlegen") : mode === "edit" ? tr("Berichtigung speichern") : same ? tr("Beleg speichern") : tr("Stufe speichern")} onPress={submit} disabled={busy} />
       </ScrollView>
     </KeyboardAvoidingView>
   );

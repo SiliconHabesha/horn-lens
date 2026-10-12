@@ -6,6 +6,8 @@ import type { Session } from "@supabase/supabase-js";
 import { AppState, Platform } from "react-native";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { addTexts, de, deDates, resetTexts, srcName } from "./de";
+import { t } from "./i18n";
+import { useLang } from "./lang";
 import { refreshPushOwner } from "./push";
 import { sb } from "./supabase";
 import type { Alert, Claim, Data, Item, Report } from "./types";
@@ -145,6 +147,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const seenWritten = useRef(false);
   const loadedRef = useRef<number | null>(null);
   const [saved, setSaved] = useState<Item[]>([]);
+  // Letzte Rohdaten: bei einem Sprachwechsel daraus neu aufbereiten, ohne neu zu laden
+  const lastRaw = useRef<Raw | null>(null);
+  const { lang } = useLang();
+  useEffect(() => { if (lastRaw.current) setData(toData(lastRaw.current)); }, [lang]);
 
   const uid = session?.user?.id ?? null;
   useEffect(() => {
@@ -174,7 +180,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     if (!isRefresh) {
       try {
         const c = await AsyncStorage.getItem(CACHE(uid));
-        if (c && my === token.current) { const raw = JSON.parse(c); if (raw.uid === uid) { setData(toData(raw.raw)); setLoadedAt(raw.at); } }
+        if (c && my === token.current) { const raw = JSON.parse(c); if (raw.uid === uid) { lastRaw.current = raw.raw; setData(toData(raw.raw)); setLoadedAt(raw.at); } }
       } catch { /* kein Zwischenspeicher */ }
     }
     try {
@@ -187,7 +193,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         }
       } else raw = await loadPublic();
       if (my !== token.current) return;
-      setData(toData(raw)); setError(null); setOffline(false); setLoadedAt(Date.now());
+      lastRaw.current = raw; setData(toData(raw)); setError(null); setOffline(false); setLoadedAt(Date.now());
       // Kurzes Antippen spürbar machen, wenn Ziehen-zum-Aktualisieren fertig ist
       if (isRefresh && !silent && Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       AsyncStorage.setItem(CACHE(uid), JSON.stringify({ at: Date.now(), uid, raw })).catch(() => {});
@@ -195,7 +201,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       if (!seenWritten.current) { seenWritten.current = true; AsyncStorage.setItem(SEEN, String(Date.now())).catch(() => {}); }
     } catch (e: any) {
       if (my !== token.current) return;
-      setError(String(e?.message || e || "Fehler"));
+      setError(String(e?.message || e || t("Fehler")));
       setOffline(true);
     } finally {
       if (my === token.current) { setLoading(false); setRefreshing(false); loadingRef.current = false; }

@@ -7,8 +7,10 @@ import { ItemRow, shareItem, shareStory, titleStyle, whenOf } from "../../compon
 import { toast } from "../../components/Toast";
 import { Button, Empty, openLink, Screen, T, tap } from "../../components/ui";
 import { fmtWhen, headline, plural, srcName, translated, TYPE_NOTE, TYPE_ORDER, TYPES } from "../../lib/de";
+import { lang, t as tr } from "../../lib/i18n";
 
-const LANGS: Record<string, string> = { en: "Englisch", am: "Amharisch", ti: "Tigrinya", ar: "Arabisch", fr: "Französisch", it: "Italienisch" };
+// Sprachnamen auf Deutsch; übersetzt wird beim Zeichnen mit tr()
+const LANGS: Record<string, string> = { de: "Deutsch", en: "Englisch", am: "Amharisch", ti: "Tigrinya", ar: "Arabisch", fr: "Französisch", it: "Italienisch" };
 import { knownItem, useData } from "../../lib/data";
 import { placesIn } from "../../lib/places";
 import { conflictStory, sidesOf, storiesOf, VOICE_TYPES } from "../../lib/stories";
@@ -28,9 +30,9 @@ export default function ItemDetail() {
   if (!it) {
     return (
       <Screen topInset={false} refresh={false}>
-        <Stack.Screen options={{ title: "Meldung" }} />
+        <Stack.Screen options={{ title: tr("Meldung") }} />
         {!data ? <Skeleton rows={4} />
-          : <Empty icon="newspaper-outline" text="Diese Meldung ist älter als 72 Stunden und nicht mehr abrufbar. Gemerkte Meldungen bleiben unter „Gemerkt“." />}
+          : <Empty icon="newspaper-outline" text={tr("Diese Meldung ist älter als 72 Stunden und nicht mehr abrufbar. Gemerkte Meldungen bleiben unter „Gemerkt“.")} />}
       </Screen>
     );
   }
@@ -51,24 +53,24 @@ export default function ItemDetail() {
 
   return (
     <Screen topInset={false} refresh={false}>
-      <Stack.Screen options={{ title: story && story.items.length > 1 ? "Geschichte" : "Meldung" }} />
+      <Stack.Screen options={{ title: story && story.items.length > 1 ? tr("Geschichte") : tr("Meldung") }} />
       <T v="title" style={titleStyle(headline(it), true)} accessibilityRole="header">{headline(it)}</T>
       {translated(it) ? (
         <View style={{ marginTop: space.s, paddingLeft: 10, borderLeftWidth: 2, borderColor: t.rule }}>
-          <T v="caption">Maschinell übersetzt. Original ({LANGS[it.language || ""] || "Fremdsprache"}):</T>
+          <T v="caption">{tr("Maschinell übersetzt. Original ({lang}):", { lang: tr(LANGS[it.language || ""] || "Fremdsprache") })}</T>
           <T v="small" style={titleStyle(it.title)}>{it.title}</T>
         </View>
       ) : null}
       <View style={{ flexDirection: "row", flexWrap: "wrap", rowGap: 4, marginTop: space.s, alignItems: "center" }}>
         <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: c, marginRight: 8 }} />
         <T v="smallStrong" color={t.ink}>{srcName(it.origin_domain || it.source_name)}</T>
-        <T v="small">{" · "}{TYPES[it.source_type] || it.source_type} · {it.published_at ? whenOf(it) : `ohne Zeitangabe der Quelle, ${whenOf(it)}`}</T>
+        <T v="small">{" · "}{TYPES[it.source_type] || it.source_type} · {it.published_at ? whenOf(it) : tr("ohne Zeitangabe der Quelle, {when}", { when: whenOf(it) })}</T>
       </View>
       {placesIn(it.title).length ? (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: space.s, alignItems: "center" }}>
           <Ionicons name="location-outline" size={15} color={t.muted} />
           {placesIn(it.title).map((pl) => (
-            <Pressable key={pl.id} onPress={() => { tap(); router.push(`/place/${pl.id}`); }} accessibilityRole="button" accessibilityLabel={`Mehr zu ${pl.name}`} hitSlop={8}
+            <Pressable key={pl.id} onPress={() => { tap(); router.push(`/place/${pl.id}`); }} accessibilityRole="button" accessibilityLabel={tr("Mehr zu {name}", { name: pl.name })} hitSlop={8}
               style={({ pressed }) => ({ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule, backgroundColor: t.card, opacity: pressed ? 0.6 : 1 })}>
               <T v="caption" color={t.ink}>{pl.name}</T>
             </Pressable>
@@ -77,31 +79,31 @@ export default function ItemDetail() {
       ) : null}
 
       <View style={{ flexDirection: "row", gap: space.s, marginTop: space.l, flexWrap: "wrap" }}>
-        <View style={{ flexGrow: 1 }}><Button label="Original lesen" icon="open-outline" onPress={() => openLink(it.url)} /></View>
-        <Pressable onPress={() => { tap(); toggleSaved(it); toast(on ? "Nicht mehr gemerkt" : "Gemerkt. Zu finden unter Meldungen › Gemerkt", on ? "bookmark-outline" : "bookmark",
-            { label: "Rückgängig", run: () => toggleSaved(it) }); }} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={on ? "Nicht mehr merken" : "Merken"}
+        <View style={{ flexGrow: 1 }}><Button label={tr("Original lesen")} icon="open-outline" onPress={() => openLink(it.url)} /></View>
+        <Pressable onPress={() => { tap(); toggleSaved(it); toast(on ? tr("Nicht mehr gemerkt") : tr("Gemerkt. Zu finden unter Meldungen › Gemerkt"), on ? "bookmark-outline" : "bookmark",
+            { label: tr("Rückgängig"), run: () => toggleSaved(it) }); }} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={on ? tr("Nicht mehr merken") : tr("Merken")}
           style={({ pressed }) => [sq(t), { opacity: pressed ? 0.6 : 1 }]}>
           <Ionicons name={on ? "bookmark" : "bookmark-outline"} size={20} color={on ? t.accent : t.ink} />
         </Pressable>
-        <Pressable onPress={() => (story && story.items.length > 1 ? shareStory(story) : shareItem(it))} accessibilityRole="button" accessibilityLabel={story && story.items.length > 1 ? "Geschichte mit allen Medien teilen" : "Teilen"} style={({ pressed }) => [sq(t), { opacity: pressed ? 0.6 : 1 }]}>
+        <Pressable onPress={() => (story && story.items.length > 1 ? shareStory(story) : shareItem(it))} accessibilityRole="button" accessibilityLabel={story && story.items.length > 1 ? tr("Geschichte mit allen Medien teilen") : tr("Teilen")} style={({ pressed }) => [sq(t), { opacity: pressed ? 0.6 : 1 }]}>
           <Ionicons name={Platform.OS === "ios" ? "share-outline" : "share-social-outline"} size={20} color={t.ink} />
         </Pressable>
       </View>
 
-      {it.language !== "de" ? (
-        <Pressable onPress={() => { tap(); openLink(`https://translate.google.com/translate?sl=auto&tl=de&u=${encodeURIComponent(it.url)}`); }} accessibilityRole="link"
-          accessibilityHint="Öffnet den Artikel im Google Übersetzer" style={{ minHeight: 44, justifyContent: "center", alignSelf: "flex-start", marginTop: space.xs }}>
-          <T v="smallStrong" color={t.accent}>Auf Deutsch lesen (Google Übersetzer) ↗</T>
+      {it.language !== lang() ? (
+        <Pressable onPress={() => { tap(); openLink(`https://translate.google.com/translate?sl=auto&tl=${lang()}&u=${encodeURIComponent(it.url)}`); }} accessibilityRole="link"
+          accessibilityHint={tr("Öffnet den Artikel im Google Übersetzer")} style={{ minHeight: 44, justifyContent: "center", alignSelf: "flex-start", marginTop: space.xs }}>
+          <T v="smallStrong" color={t.accent}>{tr("Auf Deutsch lesen (Google Übersetzer)")} ↗</T>
         </Pressable>
       ) : null}
-      <T v="small" style={{ marginTop: space.l }}>{TYPE_NOTE[it.source_type] || "Quelle noch nicht eingeordnet."} Eine Meldung ist keine geprüfte Tatsache.</T>
+      <T v="small" style={{ marginTop: space.l }}>{TYPE_NOTE[it.source_type] || tr("Quelle noch nicht eingeordnet.")} {tr("Eine Meldung ist keine geprüfte Tatsache.")}</T>
 
       {story && story.items.length > 1 ? (
         <>
-          <T v="h2" style={{ marginTop: space.xl }} accessibilityRole="header">Dieselbe Geschichte bei {plural(story.sources, "Medium", "Medien")}</T>
-          <T v="caption" style={{ marginTop: 2 }}>Zuerst {fmtWhen(story.first)} · zuletzt {fmtWhen(story.last)}</T>
+          <T v="h2" style={{ marginTop: space.xl }} accessibilityRole="header">{tr("Dieselbe Geschichte bei {count}", { count: plural(story.sources, "Medium", "Medien") })}</T>
+          <T v="caption" style={{ marginTop: 2 }}>{tr("Zuerst {first} · zuletzt {last}", { first: fmtWhen(story.first), last: fmtWhen(story.last) })}</T>
           {/* Wer berichtet: jede Seite mit ihrer Zahl an Medien, nicht nur eine Gesamtzahl */}
-          <View style={{ marginTop: space.m, gap: 6 }} accessible accessibilityLabel={`Wer berichtet: ${sides.map((x) => `${TYPES[x.type] || x.type}, ${plural(x.media, "Medium", "Medien")}`).join("; ")}`}>
+          <View style={{ marginTop: space.m, gap: 6 }} accessible accessibilityLabel={tr("Wer berichtet: {list}", { list: sides.map((x) => `${TYPES[x.type] || x.type}, ${plural(x.media, "Medium", "Medien")}`).join("; ") })}>
             {sides.map((x) => (
               <View key={x.type} style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: t.type[x.type] || t.type.aggregator }} />
@@ -119,21 +121,21 @@ export default function ItemDetail() {
             </View>
           ))}
           {missing.length ? <View style={{ marginTop: space.m }}>
-            <T v="small">Noch keine Meldung dazu in unseren Quellen von: {missing.map((k) => TYPES[k]).join(", ")}</T>
-            <T v="caption">Bezogen auf die Quellen, die Semay abruft. Schweigen ist keine Aussage.</T>
+            <T v="small">{tr("Noch keine Meldung dazu in unseren Quellen von: {types}", { types: missing.map((k) => TYPES[k]).join(", ") })}</T>
+            <T v="caption">{tr("Bezogen auf die Quellen, die Semay abruft. Schweigen ist keine Aussage.")}</T>
           </View> : null}
           <Pressable onPress={() => { tap(); setHow(!how); }} accessibilityRole="button" accessibilityState={{ expanded: how }} style={{ marginTop: space.s, minHeight: 44, justifyContent: "center", alignSelf: "flex-start" }}>
-            <T v="smallStrong" color={t.accent}>Wie wird zusammengefasst?</T>
+            <T v="smallStrong" color={t.accent}>{tr("Wie wird zusammengefasst?")}</T>
           </Pressable>
           {how ? (
-            <T v="caption">Schlagzeilen gehören zusammen, wenn sie seltene Wörter teilen{story.shared.length ? ` (hier: ${story.shared.join(", ")})` : ""} und höchstens 48 Stunden auseinanderliegen. Das geschieht automatisch und kann irren. „Noch keine Meldung“ bezieht sich auf die erreichbaren Quellen der letzten 72 Stunden; Schlagzeilen in Tigrinya, Amharisch oder Arabisch werden nicht zugeordnet.</T>
+            <T v="caption">{tr("Schlagzeilen gehören zusammen, wenn sie seltene Wörter teilen{shared} und höchstens 48 Stunden auseinanderliegen. Das geschieht automatisch und kann irren. „Noch keine Meldung“ bezieht sich auf die erreichbaren Quellen der letzten 72 Stunden; Schlagzeilen in Tigrinya, Amharisch oder Arabisch werden nicht zugeordnet.", { shared: story.shared.length ? ` ${tr("(hier: {words})", { words: story.shared.join(", ") })}` : "" })}</T>
           ) : null}
         </>
       ) : null}
 
       {data?.owner ? (
         <View style={{ marginTop: space.xl }}>
-          <Button label="Behauptung daraus anlegen" icon="add-circle-outline" kind="secondary"
+          <Button label={tr("Behauptung daraus anlegen")} icon="add-circle-outline" kind="secondary"
             onPress={() => router.push({ pathname: "/claim-form", params: { mode: "add", src_title: `${it.origin_domain || it.source_name}: ${it.title}`.slice(0, 300), src_url: it.url } })} />
         </View>
       ) : null}
