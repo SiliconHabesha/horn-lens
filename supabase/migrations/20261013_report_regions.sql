@@ -1,4 +1,4 @@
--- Semay, 13.10.2026: Tagesbericht mit den neuen Regionen und den neuen Prüfstufen-Schlüsseln (private.status_new).
+-- Semay, 13.10.2026: Tagesbericht mit den neuen Regionen (Stufen wie gespeichert; die App bildet alte Schlüssel ab).
 CREATE OR REPLACE FUNCTION public.build_daily_report(p_date date DEFAULT ((now() AT TIME ZONE 'Europe/Berlin'::text))::date)
  RETURNS bigint LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
 AS $function$
@@ -36,13 +36,13 @@ begin
       from sources where active
     ),
     'claims', (
-      select coalesce(jsonb_agg(jsonb_build_object('id', c.id, 'statement', c.statement, 'status', private.status_new(c.status),
+      select coalesce(jsonb_agg(jsonb_build_object('id', c.id, 'statement', c.statement, 'status', c.status,
         'region', c.region, 'party_claim', c.party_claim) order by (c.region = 'eritrea') desc, c.updated_at desc), '[]'::jsonb)
       from claims c where c.active
     ),
     'changes', (
       select coalesce(jsonb_agg(jsonb_build_object('claim_id', e.claim_id, 'statement', c.statement, 'at', e.at,
-        'status', private.status_new(e.status), 'note', e.note, 'source_title', e.source_title, 'source_url', e.source_url)
+        'status', e.status, 'note', e.note, 'source_title', e.source_title, 'source_url', e.source_url)
         order by e.at desc), '[]'::jsonb)
       from claim_events e join claims c on c.id = e.claim_id
       where e.at between w_start and w_end

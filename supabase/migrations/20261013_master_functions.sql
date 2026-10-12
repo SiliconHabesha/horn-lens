@@ -2,7 +2,8 @@
 -- Neue Prüfstufen (Schlüssel): unverified, checking, partly, supported, conflicting, refuted, unverifiable.
 -- Alte Schlüssel: confirmed→supported, likely→partly, unconfirmed→unverified, disputed→conflicting, false→refuted.
 -- Solange die alten Prüfregeln (CHECK) noch gelten, speichert private.status_db() die alte Entsprechung;
--- private.status_new() gibt immer den neuen Schlüssel aus. So funktioniert die App vor und nach der Umstellung.
+-- Ausgabe an die App: der gespeicherte Schlüssel (alt oder neu); die App bildet alte Schlüssel selbst ab (normStatus),
+-- damit auch eine noch nicht aktualisierte App-Fassung die Stufen weiter versteht. So funktioniert die App vor und nach der Umstellung.
 
 create or replace function private.status_new(k text) returns text language sql immutable set search_path = '' as $$
   select case k when 'confirmed' then 'supported' when 'likely' then 'partly' when 'unconfirmed' then 'unverified'
@@ -167,9 +168,9 @@ begin
             and public.in_fire_box(lat, lon) order by (detail->>'frp_mw')::numeric desc nulls last limit 1500) f)),
   'alerts', public.current_alerts(),
   'claims', (select coalesce(json_agg(c order by (c.region = 'eritrea') desc, c.updated_at desc), '[]'::json) from (
-     select cl.id, cl.statement, cl.claimant, cl.disputed_by, cl.region, private.status_new(cl.status) as status, cl.party_claim, cl.first_reported, cl.updated_at,
+     select cl.id, cl.statement, cl.claimant, cl.disputed_by, cl.region, cl.status, cl.party_claim, cl.first_reported, cl.updated_at,
        cl.event_time, cl.open_questions, cl.rationale, cl.dependencies, cl.checked_at,
-       (select coalesce(json_agg(json_build_object('at', e.at, 'status', private.status_new(e.status), 'note', e.note, 'source_title', e.source_title,
+       (select coalesce(json_agg(json_build_object('at', e.at, 'status', e.status, 'note', e.note, 'source_title', e.source_title,
           'source_url', e.source_url, 'extra', e.extra_sources, 'admission', e.admission, 'direction', e.direction, 'legacy', e.legacy_status) order by e.at desc, e.id desc), '[]'::json)
         from public.claim_events e where e.claim_id = cl.id) as events
      from public.claims cl where cl.active) c),
