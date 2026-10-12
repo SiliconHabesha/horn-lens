@@ -9,7 +9,7 @@ import { Button, Empty, openLink, Screen, T, tap } from "../../components/ui";
 import { fmtWhen, plural, srcName, TYPE_NOTE, TYPE_ORDER, TYPES } from "../../lib/de";
 import { knownItem, useData } from "../../lib/data";
 import { placesIn } from "../../lib/places";
-import { storiesOf, VOICE_TYPES } from "../../lib/stories";
+import { conflictStory, sidesOf, storiesOf, VOICE_TYPES } from "../../lib/stories";
 import { radius, space, useTheme } from "../../lib/theme";
 import type { Item } from "../../lib/types";
 import { Skeleton } from "../../components/Skeleton";
@@ -19,8 +19,7 @@ export default function ItemDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data, saved, isSaved, toggleSaved } = useData();
   const [how, setHow] = useState(false);
-  // Offene Ausgabe: nur Meldungen, die sie auch in der Liste zeigt (Rotes Meer)
-  const pool = data ? (data.owner ? data.items : data.items.filter((i) => i.regions.length === 1 && i.regions[0] === "red_sea")) : [];
+  const pool = data ? data.items : [];
   const it: Item | undefined = pool.find((x) => String(x.id) === String(id)) || saved.find((x) => String(x.id) === String(id)) || knownItem(Number(id));
   const story = useMemo(() => (data && it ? storiesOf(data).find((s) => s.items.some((x) => x.id === it.id)) : undefined), [data, it]);
 
@@ -29,8 +28,7 @@ export default function ItemDetail() {
       <Screen topInset={false} refresh={false}>
         <Stack.Screen options={{ title: "Meldung" }} />
         {!data ? <Skeleton rows={4} />
-          : !data.owner && data.items.some((x) => String(x.id) === String(id)) ? <Empty icon="lock-closed-outline" text="Diese Meldung gehört nicht zur offenen Ausgabe." />
-          : <Empty icon="newspaper-outline" text={data.owner ? "Diese Meldung ist älter als 72 Stunden und nicht mehr abrufbar. Gemerkte Meldungen bleiben unter „Gemerkt“." : "Diese Meldung ist nicht verfügbar: älter als 72 Stunden oder nicht Teil der offenen Ausgabe."} />}
+          : <Empty icon="newspaper-outline" text="Diese Meldung ist älter als 72 Stunden und nicht mehr abrufbar. Gemerkte Meldungen bleiben unter „Gemerkt“." />}
       </Screen>
     );
   }
@@ -44,7 +42,9 @@ export default function ItemDetail() {
   const okTypes = new Set((data?.sources || []).filter((s) => s.last_ok_at && Date.now() - new Date(s.last_ok_at).getTime() < 24 * 3600e3).map((s) => s.source_type));
   const tracked = new Set(pool.filter((x) => latin(x.title) && okTypes.has(x.source_type)).map((x) => x.source_type));
   const reported = new Set((story?.items || [it]).map((x) => x.source_type));
-  const missing = data?.owner && story && story.items.length > 1 && latin(it.title) ? VOICE_TYPES.filter((k) => tracked.has(k) && !reported.has(k)) : [];
+  // Nur bei Geschichten zu Eritrea, Äthiopien oder Tigray: bei Meldungen etwa zum Jemen wäre „Eritrea schweigt“ irreführend
+  const missing = story && story.items.length > 1 && latin(it.title) && conflictStory(story.items) ? VOICE_TYPES.filter((k) => tracked.has(k) && !reported.has(k)) : [];
+  const sides = story && story.items.length > 1 && Object.keys(story.types).length > 1 ? sidesOf(story.items).sort((a, b) => TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type)) : [];
   const on = isSaved(it);
 
   return (
@@ -80,12 +80,28 @@ export default function ItemDetail() {
         </Pressable>
       </View>
 
+      {it.language !== "de" ? (
+        <Pressable onPress={() => { tap(); openLink(`https://translate.google.com/translate?sl=auto&tl=de&u=${encodeURIComponent(it.url)}`); }} accessibilityRole="link"
+          accessibilityHint="Öffnet den Artikel im Google Übersetzer" style={{ minHeight: 44, justifyContent: "center", alignSelf: "flex-start", marginTop: space.xs }}>
+          <T v="smallStrong" color={t.accent}>Auf Deutsch lesen (Google Übersetzer) ↗</T>
+        </Pressable>
+      ) : null}
       <T v="small" style={{ marginTop: space.l }}>{TYPE_NOTE[it.source_type] || "Quelle noch nicht eingeordnet."} Eine Meldung ist keine geprüfte Tatsache.</T>
 
       {story && story.items.length > 1 ? (
         <>
           <T v="h2" style={{ marginTop: space.xl }} accessibilityRole="header">Dieselbe Geschichte bei {plural(story.sources, "Medium", "Medien")}</T>
           <T v="caption" style={{ marginTop: 2 }}>Zuerst {fmtWhen(story.first)} · zuletzt {fmtWhen(story.last)}</T>
+          {/* Wer berichtet: jede Seite mit ihrer Zahl an Medien, nicht nur eine Gesamtzahl */}
+          <View style={{ marginTop: space.m, gap: 6 }} accessible accessibilityLabel={`Wer berichtet: ${sides.map((x) => `${TYPES[x.type] || x.type}, ${plural(x.media, "Medium", "Medien")}`).join("; ")}`}>
+            {sides.map((x) => (
+              <View key={x.type} style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: t.type[x.type] || t.type.aggregator }} />
+                <T v="small" color={t.ink} style={{ flex: 1 }}>{TYPES[x.type] || x.type}</T>
+                <T v="caption">{plural(x.media, "Medium", "Medien")}</T>
+              </View>
+            ))}
+          </View>
           {byType.map(([k, list]) => (
             <View key={k} style={{ marginTop: byType.length > 1 ? space.m : space.s }}>
               {byType.length > 1 ? <T v="label" color={t.muted}>{TYPES[k]}</T> : null}

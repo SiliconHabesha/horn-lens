@@ -16,10 +16,9 @@ import * as SystemUI from "expo-system-ui";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect } from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Platform, Pressable, Text } from "react-native";
+import { Platform, Pressable, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { DataProvider, useData } from "../lib/data";
-import Login from "./login";
 import { WELCOME_KEY } from "./welcome";
 import SetPassword from "../components/SetPassword";
 import { ToastHost } from "../components/Toast";
@@ -62,7 +61,9 @@ export default function Root() {
           <Stack.Screen name="more" options={{ title: "Mehr" }} />
           <Stack.Screen name="sources" options={{ title: "Quellen" }} />
           <Stack.Screen name="method" options={{ title: "So arbeitet Horn Lens" }} />
-          <Stack.Screen name="login" options={{ title: "Anmelden", presentation: "modal" }} />
+          <Stack.Screen name="satellite" options={{ title: "Satellit" }} />
+          <Stack.Screen name="corrections" options={{ title: "Korrekturen" }} />
+          <Stack.Screen name="login" options={{ title: "Redaktion", presentation: "modal" }} />
           <Stack.Screen name="auth-callback" options={{ headerShown: false }} />
           <Stack.Screen name="welcome" options={{ headerShown: false, presentation: "modal", gestureEnabled: true }} />
         </Stack>
@@ -75,13 +76,31 @@ export default function Root() {
   );
 }
 
-// Die Web-Fassung ist privat: ohne Anmeldung nur der Anmeldebildschirm (so gewünscht; Impressum und Datenschutz liegen unter /impressum.html und /datenschutz.html)
-const WEB_PRIVATE = true;
+// Fängt Abstürze eines Bildschirms ab: statt einer weißen Seite ein Hinweis und ein Weg zurück
+export function ErrorBoundary({ retry }: { error: Error; retry: () => Promise<void> }) {
+  const t = useTheme();
+  return (
+    <SafeAreaProvider>
+      <View style={{ flex: 1, backgroundColor: t.bg, alignItems: "center", justifyContent: "center", padding: 32, gap: 16 }}>
+        <Ionicons name="alert-circle-outline" size={36} color={t.muted} />
+        <Text style={{ fontFamily: font.semibold, fontSize: 18, color: t.ink, textAlign: "center" }}>Hier ist etwas schiefgegangen.</Text>
+        <Text style={{ fontFamily: font.regular, fontSize: 15, color: t.muted, textAlign: "center", maxWidth: 360 }}>Der Fehler liegt bei uns, nicht bei dir. Bitte erneut versuchen oder zur Lage zurückgehen.</Text>
+        <View style={{ flexDirection: "row", gap: 12 }}>
+          <Pressable onPress={() => { retry().catch(() => {}); }} accessibilityRole="button" style={{ backgroundColor: t.ink, borderRadius: 12, paddingHorizontal: 18, height: 46, justifyContent: "center" }}>
+            <Text style={{ fontFamily: font.semibold, fontSize: 16, color: t.bg }}>Erneut versuchen</Text>
+          </Pressable>
+          <Pressable onPress={() => { try { router.replace("/"); } catch { /* egal */ } }} accessibilityRole="button" style={{ borderRadius: 12, paddingHorizontal: 18, height: 46, justifyContent: "center", borderWidth: 1, borderColor: t.rule }}>
+            <Text style={{ fontFamily: font.semibold, fontSize: 16, color: t.ink }}>Zur Lage</Text>
+          </Pressable>
+        </View>
+      </View>
+    </SafeAreaProvider>
+  );
+}
+
+// Alle lesen ohne Konto. Nur wer über „Passwort vergessen“ kommt, setzt zuerst ein neues Passwort.
 function Gate({ children }: { children: React.ReactNode }) {
-  const { session, authReady, recovery } = useData();
-  if (Platform.OS !== "web" || !WEB_PRIVATE) return <>{children}</>;
-  if (!authReady) return null;
-  if (!session) return <Login gate />;
+  const { recovery } = useData();
   if (recovery) return <SetPassword />;
   return <>{children}</>;
 }

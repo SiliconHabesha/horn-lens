@@ -47,46 +47,46 @@ export default function More() {
   const email = session?.user?.email;
   return (
     <Screen topInset={false} refresh={false}>
-      <Head title="Konto" first />
-      <Card style={{ gap: space.m }}>
-        {session ? (
-          <>
+      {session ? (
+        <>
+          <Head title="Redaktion" first />
+          <Card style={{ gap: space.m }}>
             <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
               <Ionicons name={data?.owner ? "shield-checkmark" : "person-circle-outline"} size={26} color={data?.owner ? t.status.confirmed : t.ink} />
               <View style={{ flex: 1 }}>
                 <T v="bodyStrong">{email}</T>
-                <T v="caption">{data?.owner ? "Voller Zugang" : "Offene Ausgabe"}</T>
+                <T v="caption">{data?.owner ? "Angemeldet: Behauptungen pflegen, Tagesbericht" : "Angemeldet, ohne Redaktionsrechte"}</T>
               </View>
             </View>
             <Button label="Abmelden" kind="secondary" icon="log-out-outline" onPress={confirmSignOut} />
-            <Pressable onPress={() => { tap(); confirmDelete(); }} accessibilityRole="button" style={{ alignSelf: "center", minHeight: 44, justifyContent: "center" }} hitSlop={8}>
-              <T v="smallStrong" color={t.warn}>Konto löschen</T>
-            </Pressable>
-          </>
-        ) : (
-          <>
-            <T v="small">Ohne Anmeldung: offene Ausgabe (Rotes Meer und Messwerte).</T>
-            <Button label="Anmelden mit Apple, Google oder E-Mail" icon="log-in-outline" onPress={() => router.push("/login")} />
-          </>
-        )}
-      </Card>
-      {data?.owner ? <Group style={{ marginTop: space.m }}><ListRow first icon="sparkles-outline" label="KI-Zusammenfassung in Claude" external onPress={() => openLink(CLAUDE_PAGE)} /></Group> : null}
+            {/* Ältere Leserkonten können sich weiter löschen; das Redaktionskonto nicht aus Versehen */}
+            {!data?.owner ? (
+              <Pressable onPress={() => { tap(); confirmDelete(); }} accessibilityRole="button" style={{ alignSelf: "center", minHeight: 44, justifyContent: "center" }} hitSlop={8}>
+                <T v="smallStrong" color={t.warn}>Konto löschen</T>
+              </Pressable>
+            ) : null}
+          </Card>
+          {data?.owner ? <Group style={{ marginTop: space.m }}><ListRow first icon="sparkles-outline" label="KI-Zusammenfassung in Claude" external onPress={() => openLink(CLAUDE_PAGE)} /></Group> : null}
+        </>
+      ) : null}
 
-      <Head title="Benachrichtigungen" />
+      <Head title="Benachrichtigungen" first={!session} />
       <PushSettings />
 
       <Head title="Inhalte" />
       <Group>
         <ListRow first icon="location-outline" label="Orte" sub="Was Horn Lens zu Asmara, Assab, Adigrat und mehr weiß" onPress={() => router.push("/places")} />
-        <ListRow icon="bookmark-outline" label="Gemerkte Meldungen" sub="Nur auf diesem Gerät, beim Abmelden gelöscht" onPress={() => router.navigate(`/news?mode=saved&k=${Date.now()}`)} />
-        <ListRow icon="search-outline" label="Suchen" sub="Orte, Meldungen und Quellen" onPress={() => router.push("/search")} />
+        <ListRow icon="planet-outline" label="Satellitenbilder" sub="Vorher und nachher vergleichen" onPress={() => router.push("/satellite")} />
+        <ListRow icon="bookmark-outline" label="Gemerkte Meldungen" sub="Nur auf diesem Gerät gespeichert" onPress={() => router.navigate(`/news?mode=saved&k=${Date.now()}`)} />
+        <ListRow icon="search-outline" label="Suchen" sub="Orte, Meldungen, Behauptungen und Quellen" onPress={() => router.push("/search")} />
       </Group>
 
       <Head title="Über Horn Lens" />
       <Group>
         <ListRow first icon="book-outline" label="Einführung und Legende" sub="Farben der Quellen, Stufen der Behauptungen" onPress={() => router.push("/welcome")} />
         <ListRow icon="compass-outline" label="So arbeitet Horn Lens" sub="Regeln, Grenzen, Nachweise" onPress={() => router.push("/method")} />
-        <ListRow icon="library-outline" label="Unsere Quellen" sub="Wer berichtet, wie wir sie einordnen, ob sie erreichbar sind" onPress={() => router.push("/sources")} />
+        <ListRow icon="library-outline" label="Unsere Quellen" sub="Wer berichtet, wie wir sie einordnen, was noch fehlt" onPress={() => router.push("/sources")} />
+        <ListRow icon="git-compare-outline" label="Korrekturen" sub="Jede Änderung an einer Behauptung" onPress={() => router.push("/corrections")} />
         <ListRow icon="people-outline" label="BELES" sub="Die App für Eritreerinnen und Eritreer weltweit" external onPress={() => openLink(BELES_URL)} />
       </Group>
 
@@ -99,6 +99,11 @@ export default function More() {
       <View style={{ alignItems: "center", marginTop: space.xxl, gap: 6 }}>
         <Mark size={26} color={t.muted} dot={t.accent} />
         <T v="caption">Horn Lens {Constants.expoConfig?.version || ""}, powered by BELES</T>
+        {!session ? (
+          <Pressable onPress={() => { tap(); router.push("/login"); }} accessibilityRole="link" hitSlop={8} style={{ minHeight: 44, justifyContent: "center" }}>
+            <T v="caption" color={t.muted} style={{ textDecorationLine: "underline" }}>Anmeldung für die Redaktion</T>
+          </Pressable>
+        ) : null}
       </View>
     </Screen>
   );

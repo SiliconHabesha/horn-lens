@@ -6,8 +6,8 @@ import React, { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { itemTime, StoryCard } from "../../components/items";
 import { LageSkeleton } from "../../components/Skeleton";
-import { Banner, Button, Empty, Group, Head, IconButton, ListRow, Screen, T, tap } from "../../components/ui";
-import { fmtDay, fmtIsoDay, fmtTime, fmtWhen, num, plural, todayBerlin } from "../../lib/de";
+import { Button, Empty, Group, Head, ListRow, Screen, T, TabTools, tap } from "../../components/ui";
+import { fmtDay, fmtIsoDay, fmtShort, fmtTime, fmtWhen, num, plural, todayBerlin } from "../../lib/de";
 import { useData } from "../../lib/data";
 import { feedState } from "../../lib/feeds";
 import { dedupe, poolOf, storiesOf } from "../../lib/stories";
@@ -34,8 +34,7 @@ export default function Lage() {
     // Geschichten der letzten 24 Stunden: erst Eritrea (meistberichtet zuerst), dann was sonst die meisten Medien aufgreifen
     const recent = storiesOf(data).filter((s) => Date.now() - new Date(s.last).getTime() < DAY);
     const bySize = (a: typeof recent[0], b: typeof recent[0]) => b.sources - a.sources || (a.last < b.last ? 1 : -1);
-    const focus = data.owner ? "eritrea" : "red_sea";
-    const mine = recent.filter((s) => s.items.some((i) => i.regions.includes(focus))).sort(bySize);
+    const mine = recent.filter((s) => s.items.some((i) => i.regions.includes("eritrea"))).sort(bySize);
     const rest = recent.filter((s) => !mine.includes(s)).sort(bySize);
     const top = [...mine.slice(0, 3), ...rest.slice(0, 2), ...mine.slice(3)].slice(0, 5);
     const items = recent.flatMap((s) => s.items.filter((i) => Date.now() - new Date(itemTime(i)).getTime() < DAY));
@@ -44,12 +43,15 @@ export default function Lage() {
     const types: Record<string, number> = {};
     for (const ty of media.values()) types[ty] = (types[ty] || 0) + 1;
     const newest = data.sat.flatMap((p) => p.images.map((i) => ({ p, i }))).sort((a, b) => (a.i.t < b.i.t ? 1 : -1))[0];
-    return { fresh, changed, top, count: recent.length, media: media.size, types, newest };
+    const after = (x: string) => new Date(x).getTime() > seenBefore;
+    const sea = data.maritime.filter((m) => after(m.t)).length;
+    const quakes = data.quakes.filter((q) => after(q.t) && (q.mag ?? 0) >= 4.5).length;
+    return { fresh, changed, sea, quakes, top, count: recent.length, media: media.size, types, newest };
   }, [data, seenBefore]);
 
   if (!data || !d) {
     return (
-      <Screen title="Lage" refresh={false}>
+      <Screen title="Lage" refresh={false} right={<TabTools />}>
         {loading ? <LageSkeleton />
           : <><Empty icon="cloud-offline-outline" text="Keine Verbindung zum Server. Bitte Internet prüfen und erneut versuchen." />
             <Button label="Erneut versuchen" icon="refresh" onPress={refresh} /></>}
@@ -60,14 +62,12 @@ export default function Lage() {
   // Messwerte: ohne aktuelle Daten „–“, nie eine erfundene Null
   const firms = feedState(data, "firms"), ukmto = feedState(data, "ukmto"), usgs = feedState(data, "usgs"), ioda = feedState(data, "ioda");
   const er = data.outages.filter((o) => o.country === "ER").length, et = data.outages.filter((o) => o.country === "ET").length;
-  // Was schon unter „Wichtig jetzt“ steht, erscheint hier ohne Warnfarbe (Warnfarbe nur einmal je Bildschirm)
+  // Was schon unter „Auffällig“ steht, erscheint hier ohne Warnfarbe (Warnfarbe nur einmal je Bildschirm)
   const warned = new Set(data.alerts.map((a) => a.kind));
-  const warnedIn = (country: RegExp) => data.alerts.some((a) => a.kind === "outage" && country.test(a.title));
   const signals: { icon: Icon; label: string; hint: string; value: string; tone?: "alert" | "none"; to: string }[] = [];
-  if (data.owner) {
-    signals.push({ icon: "wifi-outline", label: "Internet Eritrea", hint: "48 Std.", value: !ioda.ok ? "–" : num(er), tone: !ioda.ok ? "none" : er && !warnedIn(/Eritrea/) ? "alert" : undefined, to: "/signal/internet" });
-    signals.push({ icon: "wifi-outline", label: "Internet Äthiopien", hint: "48 Std.", value: !ioda.ok ? "–" : num(et), tone: !ioda.ok ? "none" : et && !warnedIn(/Äthiopien|Ethiopia/) ? "alert" : undefined, to: "/signal/internet" });
-  }
+  // Internet: kurze Rückgänge sind häufig und meist harmlos. Gewarnt wird nur über „Auffällig“ (dort mit Schwelle).
+  signals.push({ icon: "wifi-outline", label: "Internet Eritrea", hint: "48 Std.", value: !ioda.ok ? "–" : num(er), tone: !ioda.ok ? "none" : undefined, to: "/signal/internet" });
+  signals.push({ icon: "wifi-outline", label: "Internet Äthiopien", hint: "48 Std.", value: !ioda.ok ? "–" : num(et), tone: !ioda.ok ? "none" : undefined, to: "/signal/internet" });
   signals.push({ icon: "flame-outline", label: "Hitzepunkte", hint: "24 Std.", value: data.firesError || !firms.ok ? "–" : `${data.firesCapped ? "≥ " : ""}${num(data.firesTotal)}`, tone: data.firesError || !firms.ok ? "none" : undefined, to: "/signal/fires" });
   signals.push({ icon: "boat-outline", label: "Vorfälle auf See", hint: "30 Tage", value: !ukmto.ok ? "–" : num(data.maritime.length),
     tone: !ukmto.ok ? "none" : data.maritime.some((m) => Date.now() - new Date(m.t).getTime() < 2 * DAY) && !warned.has("maritime") ? "alert" : undefined, to: "/signal/sea" });
@@ -79,16 +79,13 @@ export default function Lage() {
   const since = firstVisit ? "in 24 Stunden" : `seit ${fmtWhen(seenBefore)}`;
   const news: { text: string; to: string }[] = [];
   if (d.fresh) news.push({ text: `${plural(d.fresh, "neue Meldung", "neue Meldungen")} ${since}`, to: "/news?new=1" });
-  if (data.owner && d.changed) news.push({ text: `${plural(d.changed, "Behauptung", "Behauptungen")} geändert ${since}`, to: "/claims" });
+  if (d.changed) news.push({ text: `${plural(d.changed, "Behauptung", "Behauptungen")} geändert ${since}`, to: "/claims" });
+  if (d.sea) news.push({ text: `${plural(d.sea, "neuer Vorfall", "neue Vorfälle")} auf See ${since}`, to: "/signal/sea" });
+  if (d.quakes) news.push({ text: `${plural(d.quakes, "spürbares Erdbeben", "spürbare Erdbeben")} ${since}`, to: "/signal/quakes" });
 
   return (
     <Screen title="Lage" sub={`${fmtDay(data.now)} · Stand ${fmtTime(loadedAt || data.now)} Uhr`}
-      right={<View style={{ flexDirection: "row", gap: 8 }}>
-        <IconButton icon="search" label="Suchen" onPress={() => router.push("/search")} />
-        <IconButton icon="ellipsis-horizontal" label="Mehr" onPress={() => router.push("/more")} />
-      </View>}>
-
-      {!data.owner ? <Banner icon="information-circle-outline" text="Offene Ausgabe: Rotes Meer, Messwerte und Satellitenbilder. Voller Zugang nach Freischaltung." /> : null}
+      right={<TabTools />}>
 
       {/* Was ist neu seit dem letzten Öffnen; gestörte Quellen */}
       {news.length || (data.owner && broken) ? (
@@ -112,10 +109,10 @@ export default function Lage() {
         </View>
       ) : null}
 
-      {/* Wichtig jetzt: eine Zeile je Hinweis */}
+      {/* Auffällig: automatische Hinweise mit fester Schwelle, eine Zeile je Hinweis */}
       {data.alerts.length ? (
         <>
-          <Head title="Wichtig jetzt" />
+          <Head title="Auffällig" />
           <Group style={{ overflow: "hidden" }}>
             {/* Warnstreifen links, gerade statt als Bogen an der runden Ecke */}
             <View pointerEvents="none" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, backgroundColor: t.warn }} />
@@ -129,8 +126,8 @@ export default function Lage() {
         </>
       ) : null}
 
-      {/* Die wichtigsten Geschichten */}
-      <Head title={data.owner ? "Wichtigste Geschichten" : "Rotes Meer"} action="Alle Meldungen" onAction={() => router.navigate("/news")} />
+      {/* Geschichten des Tages: zu Eritrea zuerst, dann nach Zahl der Medien. Keine redaktionelle Gewichtung. */}
+      <Head title="Meistberichtet, 24 Std." action="Alle Meldungen" onAction={() => router.navigate("/news")} />
       {d.top.length ? d.top.map((s, i) => (
         <View key={s.key} style={i ? { borderTopWidth: StyleSheet.hairlineWidth, borderColor: t.rule } : undefined}>
           <StoryCard s={s} seenBefore={seenBefore} />
@@ -150,6 +147,7 @@ export default function Lage() {
           sub={report ? `${fmtIsoDay(report.report_date)}${report.report_date !== todayBerlin() && berlinHour >= 8 ? " · der heutige fehlt noch" : ""}` : "Der erste entsteht um 7:15 Uhr (deutsche Zeit)"}
           onPress={report ? () => router.push(`/report/${report.report_date}`) : undefined} /> : null}
         <ListRow first={!data.owner} icon="location-outline" label="Orte" sub="Asmara, Assab, Adigrat und mehr" onPress={() => router.push("/places")} />
+        <ListRow icon="planet-outline" label="Satellitenbilder" sub={d.newest ? `${data.sat.length} Orte · neuestes Bild vom ${fmtShort(d.newest.i.t)}` : "Vorher und nachher vergleichen"} onPress={() => router.push("/satellite")} />
       </Group>
     </Screen>
   );

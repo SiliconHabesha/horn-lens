@@ -22,7 +22,7 @@ export function ToastHost() {
   // Über der Tab-Leiste nur auf den Haupt-Bildschirmen mit Leiste unten; sonst nah am unteren Rand
   const path = usePathname();
   const { width } = useWindowDimensions();
-  const overTabs = width < 900 && ["/", "/news", "/claims", "/map", "/satellite"].includes(path);
+  const overTabs = width < 900 && ["/", "/news", "/claims", "/map"].includes(path);
   const reduce = useReduceMotion();
   const [msg, setMsg] = useState<Msg | null>(null);
   const v = useRef(new Animated.Value(0)).current;

@@ -99,6 +99,7 @@ def route(r):
         # Angemeldet, aber nicht freigeschaltet: die Datenbank lehnt ab, die App zeigt die offene Ausgabe
         return r.fulfill(status=400, headers=headers, body=json.dumps({"code": "42501", "message": "not allowed"}))
     if path.startswith("/rest/v1/rpc/app_data"): body = owner_data
+    elif path.startswith("/rest/v1/rpc/app_public"): body = {**owner_data, "reports": []}
     elif path.startswith("/rest/v1/rpc/app_texts"): body = {}
     elif path.startswith("/rest/v1/rpc/app_report"): body = report
     elif path.startswith("/rest/v1/rpc/public_alerts"): body = alerts[:1]
@@ -128,6 +129,8 @@ with sync_playwright() as p:
         for (vw, vh, tag) in ((390, 844, "mob"), (1280, 900, "desk")):
             ctx = b.new_context(viewport={"width": vw, "height": vh}, device_scale_factor=2 if tag == "mob" else 1, locale="de-DE", timezone_id="Europe/Berlin",
                                 color_scheme="dark" if (mode == "owner" and tag == "desk") else "light")
+            if mode == "public":
+                ctx.add_init_script("localStorage.setItem('hl:seen:v1', String(Date.now() - 4*3600e3)); localStorage.setItem('hl:welcome:v1', '1');")
             if mode == "owner":
                 ctx.add_init_script(f"localStorage.setItem('sb-mkcaioabbzccawjmtndw-auth-token', {json.dumps(json.dumps(SESSION))}); localStorage.setItem('hl:seen:v1', String(Date.now() - 4*3600e3));" + ("" if tag == "mob" else "localStorage.setItem('hl:welcome:v1', '1');"))
             ctx.route("**/*.supabase.co/**", route)
@@ -145,12 +148,6 @@ with sync_playwright() as p:
                 if path is not None: pg.goto(f"http://127.0.0.1:{PORT}{path}")
                 pg.wait_for_timeout(wait)
                 pg.screenshot(path=str(SHOTS / f"{pre}-{name}.png"), full_page=full)
-            if mode == "public":
-                # Die Web-Fassung ist privat: ohne Anmeldung nur der Anmeldebildschirm
-                shot("gate", "/news", 2500)
-                R[f"{pre} gate"] = pg.evaluate("document.body.innerText").replace("\n", " | ")[:200]
-                R[f"{pre} errors"] = errs[:5]
-                ctx.close(); continue
             if mode == "owner" and tag == "mob":
                 # Erster Start: Einführung erscheint, drei Seiten, dann zurück zur Lage
                 pg.goto(f"http://127.0.0.1:{PORT}/"); pg.wait_for_timeout(2500)
@@ -165,7 +162,7 @@ with sync_playwright() as p:
             R[f"{pre} lage text"] = pg.evaluate("document.body.innerText").replace("\n", " | ")[:400]
             shot("news", "/news", 1500)
             R[f"{pre} news text"] = pg.evaluate("document.body.innerText").replace("\n", " | ")[:300]
-            if mode == "owner":
+            if True:
                 shot("news-items", None, 100)
                 shot("story", f"/item/{6173 + 100000}", 1500)
                 R[f"{pre} story text"] = pg.evaluate("document.body.innerText").replace("\n", " | ")[:700]
@@ -192,11 +189,15 @@ with sync_playwright() as p:
                 R[f"{pre} toast"] = pg.evaluate("document.body.innerText.includes('Nicht mehr gemerkt')")
                 shot("places", "/places", 1200)
                 R[f"{pre} places text"] = pg.evaluate("document.body.innerText").replace("\n", " | ")[:300]
+            shot("claims", "/claims")
+            R[f"{pre} claims text"] = pg.evaluate("document.body.innerText").replace("\n", " | ")[:300]
+            shot("claim", "/claim/4")
+            if tag == "mob": scrolls("claim", 3)
+            R[f"{pre} claim text"] = pg.evaluate("document.body.innerText").replace("\n", " | ")[:500]
+            shot("corrections", "/corrections")
+            R[f"{pre} corrections text"] = pg.evaluate("document.body.innerText").replace("\n", " | ")[:300]
+            shot("sources", "/sources")
             if mode == "owner":
-                shot("claims", "/claims")
-                shot("claim", "/claim/4")
-                if tag == "mob": scrolls("claim", 2)
-                R[f"{pre} claim text"] = pg.evaluate("document.body.innerText").replace("\n", " | ")[:500]
                 shot("form", "/claim-form?mode=edit&id=4")
                 shot("report", "/report/2026-10-11")
             shot("map", "/map", 1500)
@@ -216,6 +217,8 @@ with sync_playwright() as p:
             pg.get_by_label("Ganze Karte").click(); pg.wait_for_timeout(500)
             shot("satellite", "/satellite", 2500)
             shot("more", "/more")
+            if tag == "mob": scrolls("more", 2)
+            R[f"{pre} more text"] = pg.evaluate("document.body.innerText").replace("\n", " | ")[:400]
             if mode == "owner" and tag == "mob":
                 # Abmelden: danach darf nichts Privates mehr im Speicher oder auf dem Bildschirm sein
                 pg.get_by_text("Abmelden", exact=True).click(); pg.wait_for_timeout(1500)
@@ -235,7 +238,7 @@ with sync_playwright() as p:
         pg = ctx.new_page(); errs = []
         pg.on("pageerror", lambda e: errs.append(str(e)))
         for path in TOUR:
-            if who == "member" and path in ("/claims", "/claim/4", "/report/2026-10-11"): continue
+            if who == "member" and path in ("/report/2026-10-11",): continue
             pg.goto(f"http://127.0.0.1:{PORT}{path}"); pg.wait_for_timeout(1500)
             name = path.strip("/").replace("/", "-") or "lage"
             pg.screenshot(path=str(SHOTS / f"tour-{who}-{name}.png"))

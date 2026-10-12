@@ -96,3 +96,16 @@ Offen (braucht den Inhaber): Apple-Schlüssel für das Widerrufen bei Kontolösc
 
 ## Runde 9: Marke (12. Oktober 2026)
 Neues Zeichen „( • )“: zwei Klammern um einen Punkt in einer Linse – jede Angabe steht in ihrem Zusammenhang. Ersetzt den Sonnenuntergang über dem Meer (wirkte wie eine Reise-App). Farben bleiben (Tiefsee, Gischt, Lagune), werden als Markenfarben festgeschrieben (`BRAND` in theme.ts). Keine Landesfarben, keine Karte im Zeichen. Neu erzeugt: App-Symbol (iOS, Android adaptiv und einfarbig), Startbildschirm hell/dunkel, Benachrichtigungssymbol, Favicon, Web-Symbole, Vorschaubild für geteilte Links. In der App: Zeichen auf Anmeldung, Einführung, Fußzeile „Mehr“ und als Marke oben in der Seitenleiste am Computer; Impressum und Datenschutz mit Kopfzeile. Markenhandbuch als Design-System-Seite in Claude.
+
+## Runde 10 (12.10.2026): offene Ausgabe für alle
+
+Entscheidungen des Inhabers: Lesen ohne Anmeldung; alle Meldungen, Geschichten, Behauptungen, Messwerte, Karte und Satellit für alle; Tagesbericht nur Betreiber; Behauptungen öffentlich mit Absicherung.
+
+- Datenbank: `app_public()` (anonym, ohne Tagesberichte), `app_data()` nur Betreiber, beide über `private.payload()`. Hinweise als Benachrichtigung für alle; Push-Kennungen nur im Expo-Format.
+- App: keine Anmeldeschranke mehr; Anmeldung nur „für die Redaktion“ (E-Mail und Passwort, unten unter Mehr). Kein Apple/Google-Login, keine Registrierung.
+- Reiter: Lage, Meldungen, Behauptungen, Karte. Satellit ist eine eigene Seite (von Lage, Karte, Orten, Seitenleiste). Suchen und Mehr auf jedem Reiter.
+- Lage: „Auffällig“ statt „Wichtig jetzt“, „Meistberichtet, 24 Std.“, neu-seit-Zeile mit Meldungen, Behauptungen, See, Erdbeben.
+- Geschichte: wer berichtet je Seite; „noch keine Meldung von …“ nur bei Geschichten zu Eritrea, Äthiopien, Tigray, Afar. Link „Auf Deutsch lesen (Google Übersetzer)“.
+- Behauptungen: Links zu Methode und Korrekturen, „Korrektur melden“ per E-Mail, neue Seite `/corrections`.
+- Quellen: Übersicht „Welche Seiten wir hören“ mit Lücken.
+- Technik: ErrorBoundary, Zeitlimit 20 s für Anfragen, Bildspeicher begrenzt, Sicherheits-Header (Rahmen verboten, HSTS), allowBackup aus. Datenschutz angepasst.

@@ -1,5 +1,5 @@
 // Daten laden, zwischenspeichern und für alle Bildschirme bereitstellen.
-// Angemeldet als Betreiber: alles (über geprüfte Datenbank-Funktionen). Sonst: nur, was auch die öffentliche Fassung zeigt.
+// Alle lesen ohne Konto (app_public). Angemeldet als Betreiber: zusätzlich Tagesberichte und Bearbeiten (app_data).
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import type { Session } from "@supabase/supabase-js";
@@ -12,7 +12,6 @@ import type { Alert, Claim, Data, Item, Report } from "./types";
 
 const firmsUrl = (lat: number, lon: number) => `https://firms.modaps.eosdis.nasa.gov/map/#d:24hrs;@${lon},${lat},10z`;
 const platformOf = (item: string) => (/^S2([A-D])_/.test(item || "") ? `Sentinel-2${item[2]}` : "Sentinel-2");
-const PUBLIC_FIRE_CAP = 2000;
 
 type Raw = { owner: boolean; texts: Record<string, string> | null; data: any };
 
@@ -22,50 +21,11 @@ async function loadOwner(): Promise<Raw> {
   return { owner: true, texts: (t.data as any) || null, data: d.data };
 }
 
-async function all<T>(make: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: any }>, max: number) {
-  const out: T[] = [];
-  for (let off = 0; off < max; off += 1000) {
-    const { data, error } = await make(off, Math.min(off + 999, max - 1));
-    if (error) throw error;
-    out.push(...(data || []));
-    if (!data || data.length < 1000) break;
-  }
-  return out;
-}
-
+// Offene Ausgabe: alles Lesbare in einer Abfrage (Meldungen, Behauptungen, Messwerte, Satellit), ohne Tagesbericht
 async function loadPublic(): Promise<Raw> {
-  const iso = (h: number) => new Date(Date.now() - h * 3600e3).toISOString();
-  const q = <T,>(p: PromiseLike<{ data: T | null; error: any }>) => Promise.resolve(p).then((r) => { if (r.error) throw r.error; return r.data as T; });
-  const [sources, items, fires, quakes, maritime, places, images, alerts] = await Promise.all([
-    q<any[]>(sb.from("sources").select("id,name,kind,source_type,homepage,stance_note,last_ok_at,last_fetch_at,last_error,last_item_count").eq("active", true).order("name")),
-    q<any[]>(sb.from("items").select("id,title,url,language,regions,origin_domain,published_at,fetched_at,source:sources(id,name,source_type)")
-      .or(`published_at.gte.${iso(72)},and(published_at.is.null,fetched_at.gte.${iso(72)})`).eq("regions", "{red_sea}").order("published_at", { ascending: false, nullsFirst: false }).limit(500)),
-    // Gebiet wie public.in_fire_box: Eritrea, Tigray, Afar und Grenzgebiete, ohne Jemen und Saudi-Arabien
-    all<any>((a, b) => sb.from("signals").select("occurred_at,lat,lon,detail,url").eq("kind", "fire").gte("occurred_at", iso(24))
-      .gte("lat", 11.5).lte("lat", 18.1).gte("lon", 36.3).lte("lon", 43.6).or("lon.lte.42.4,lat.lte.14").order("occurred_at", { ascending: false }).range(a, b), PUBLIC_FIRE_CAP),
-    q<any[]>(sb.from("signals").select("occurred_at,lat,lon,title,detail,url").eq("kind", "quake").gte("occurred_at", iso(168)).order("occurred_at", { ascending: false }).limit(500)),
-    q<any[]>(sb.from("signals").select("occurred_at,lat,lon,title,url").eq("kind", "maritime").gte("occurred_at", iso(720)).order("occurred_at", { ascending: false }).limit(500)),
-    q<any[]>(sb.from("sat_places").select("id,name,country,why:why_public,lat,lon,half_km,sort").eq("active", true).order("sort")),
-    all<any>((a, b) => sb.from("sat_images").select("id,place_id,captured_at,cloud_pct,item_id,bytes").order("captured_at", { ascending: false }).range(a, b), 10000),
-    q<any[]>(sb.rpc("public_alerts")),
-  ]);
-  return {
-    owner: false, texts: null,
-    data: {
-      now: new Date().toISOString(), sources, reports: [],
-      items: items.map((i) => ({ ...i, source_id: i.source.id, source_name: srcName(de(i.source.name)), source_type: i.source.source_type })),
-      signals: {
-        fires_total: fires.length, fires_capped: fires.length >= PUBLIC_FIRE_CAP,
-        fires: fires.map((x) => [x.lat, x.lon, Math.round(new Date(x.occurred_at).getTime() / 1000), x.detail?.satellite ?? null, x.detail?.frp_mw ?? null]),
-        quakes: quakes.map((x) => ({ t: x.occurred_at, lat: x.lat, lon: x.lon, title: x.title, mag: x.detail?.magnitude ?? null, url: x.url })),
-        maritime: maritime.map((x) => ({ t: x.occurred_at, lat: x.lat, lon: x.lon, title: x.title, url: x.url })),
-        outages: [],
-      },
-      alerts, claims: [],
-      sat: places.map((p) => ({ ...p, images: images.filter((i) => i.place_id === p.id)
-        .map((i) => [i.id, Math.round(new Date(i.captured_at).getTime() / 1000), i.cloud_pct, i.item_id, i.bytes]) })),
-    },
-  };
+  const [d, t] = await Promise.all([sb.rpc("app_public"), sb.rpc("app_texts")]);
+  if (d.error) throw d.error;
+  return { owner: false, texts: (t.data as any) || null, data: d.data };
 }
 
 const localizeAlerts = (list: Alert[]) => list.map((a) => ({ ...a, title: de(a.title), note: de(a.note), source: de(a.source) }));
@@ -205,12 +165,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  // Die Web-Fassung ist ohne Anmeldung gesperrt: dann gar nichts laden
-  const gated = Platform.OS === "web" && !uid;
   const loadingRef = useRef(false);
   const load = useCallback(async (isRefresh: boolean, silent = false) => {
     const my = ++token.current;
-    if (gated) { setData(null); setLoading(false); setRefreshing(false); return; }
     loadingRef.current = true;
     if (isRefresh) { if (!silent) setRefreshing(true); } else { setLoading(true); setData(null); }
     // Sofort den letzten Stand dieses Kontos zeigen, dann frisch laden
@@ -243,14 +200,24 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     } finally {
       if (my === token.current) { setLoading(false); setRefreshing(false); loadingRef.current = false; }
     }
-  }, [uid, gated]);
+  }, [uid]);
 
   useEffect(() => { if (authReady) load(false); }, [authReady, uid, load]);
   loadedRef.current = loadedAt;
-  // Zurück in der App (oder im Browser-Tab): älter als 10 Minuten, dann still neu laden
+  // Zurück in der App (oder im Browser-Tab): älter als 10 Minuten, dann still neu laden.
+  // War man länger als 30 Minuten weg, beginnt ein neuer Besuch: „neu“ zählt dann ab dem vorigen Besuch.
+  const awaySince = useRef<number | null>(null);
   useEffect(() => {
     const sub = AppState.addEventListener("change", (s) => {
-      if (s === "active" && authReady && !loadingRef.current && loadedRef.current && Date.now() - loadedRef.current > 10 * 60e3) load(true, true);
+      if (s !== "active") { if (awaySince.current == null) awaySince.current = Date.now(); return; }
+      const away = awaySince.current; awaySince.current = null;
+      if (away && Date.now() - away > 30 * 60e3) {
+        AsyncStorage.getItem(SEEN).then((v) => {
+          if (v) { setSeenBefore(Number(v)); setFirstVisit(false); }
+          AsyncStorage.setItem(SEEN, String(Date.now())).catch(() => {});
+        }).catch(() => {});
+      }
+      if (authReady && !loadingRef.current && loadedRef.current && Date.now() - loadedRef.current > 10 * 60e3) load(true, true);
     });
     return () => sub.remove();
   }, [authReady, load]);
@@ -297,7 +264,9 @@ export function useData() {
 }
 
 // ---------------------------------------------------------------- Satellitenbilder
+// Höchstens 16 Bilder im Speicher (ältestes fliegt zuerst), sonst wird es auf schwachen Handys eng
 const imgCache = new Map<number, Promise<string>>();
+const IMG_MAX = 16;
 const B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 function hexToBase64(hex: string) {
   const h = hex.startsWith("\\x") ? hex.slice(2) : hex;
@@ -323,6 +292,9 @@ export function satImageUri(id: number, retry = false): Promise<string> {
     })();
     p.catch(() => imgCache.delete(id));
     imgCache.set(id, p);
+    while (imgCache.size > IMG_MAX) imgCache.delete(imgCache.keys().next().value as number);
+  } else {
+    const p = imgCache.get(id)!; imgCache.delete(id); imgCache.set(id, p); // zuletzt benutzt nach hinten
   }
   return imgCache.get(id)!;
 }

@@ -76,7 +76,7 @@ export default function Welcome() {
             <Row icon="newspaper-outline" color={t.ink} title="Meldungen aller Seiten" sub="Schlagzeilen aus Eritrea, Äthiopien, Tigray, der Diaspora und von außen, nebeneinander." />
             <Row icon="layers-outline" color={t.ink} title="Geschichten" sub="Berichten mehrere Medien dasselbe, fasst Horn Lens sie zusammen und zeigt, welche Seiten darüber berichten." />
             <Row icon="map-outline" color={t.ink} title="Messwerte und Satellitenbilder" sub="Hitzepunkte, Erdbeben, Vorfälle auf See, Internetverbindung und Vorher-Nachher-Bilder." />
-            {data && !data.owner ? <T v="caption" style={{ marginTop: space.s }}>Ohne Anmeldung siehst du die offene Ausgabe: Rotes Meer, Messwerte und Satellitenbilder.</T> : null}
+            <T v="caption" style={{ marginTop: space.s }}>Kostenlos, ohne Konto, ohne Werbung und ohne Tracking.</T>
           </Page>
           <Page w={pageW} icon="people-outline" title="Wer sagt was"
             lead="Jede Quelle hat eine Farbe für ihre Art. So siehst du auf einen Blick, ob nur eine Seite berichtet oder viele.">

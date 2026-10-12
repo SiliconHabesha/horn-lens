@@ -59,7 +59,7 @@ export default function PlaceScreen() {
         {d.sat.map(({ x: sp }) => <ListRow key={sp.id} icon="planet-outline" label={sp.name} sub={`Satellitenbilder · neuestes ${fmtCapDay(sp.images[0].t)}`} onPress={() => router.navigate(`/satellite?place=${sp.id}`)} />)}
       </Group>
 
-      {data.owner ? (
+      {(
         <>
           <Head title="Meldungen" />
           {items.length ? items.map((it, i) => (
@@ -69,7 +69,7 @@ export default function PlaceScreen() {
           )) : <T v="small">Keine in den letzten 72 Stunden.</T>}
           {d.items.length > items.length ? <T v="caption" style={{ paddingVertical: 10 }}>Die neuesten 10 von {num(d.items.length)}.</T> : null}
         </>
-      ) : null}
+      )}
 
       {d.claims.length ? (
         <>

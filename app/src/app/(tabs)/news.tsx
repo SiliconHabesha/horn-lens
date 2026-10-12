@@ -7,7 +7,7 @@ import { FlatList, Pressable, RefreshControl, StyleSheet, TextInput, View, useWi
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { dedupe, ItemRow, itemTime, StoryCard } from "../../components/items";
 import { Skeleton } from "../../components/Skeleton";
-import { Banner, Chip, ChipRow, Empty, IconButton, T, tap, Toggle } from "../../components/ui";
+import { Banner, Chip, ChipRow, Empty, IconButton, T, TabTools, tap, Toggle } from "../../components/ui";
 import { ago, REGION_ORDER, REGIONS, TYPE_ORDER, TYPES } from "../../lib/de";
 import { useData } from "../../lib/data";
 import { narrow, storiesOf, type Story } from "../../lib/stories";
@@ -22,7 +22,6 @@ export default function News() {
   const p = useLocalSearchParams<{ region?: string; new?: string; mode?: string; k?: string }>();
   const { data, refreshing, refresh, seenBefore, offline, loadedAt, loading, saved, session } = useData();
   const uid = session?.user?.id ?? null;
-  const owner = !!data?.owner;
   const [mode, setMode] = useState<Mode>(p.mode === "saved" ? "saved" : "stories");
   const [region, setRegion] = useState<string>(p.region && REGIONS[p.region] ? p.region : "all");
   const [hours, setHours] = useState(24);
@@ -36,8 +35,6 @@ export default function News() {
   useEffect(() => { if (p.region && REGIONS[p.region]) { setRegion(p.region); setMode((m) => (m === "saved" ? "stories" : m)); } }, [p.region, p.k]);
   useEffect(() => { if (p.new === "1") { setOnlyNew(true); setHours(72); } }, [p.new, p.k]);
   useEffect(() => { if (p.mode === "saved") setMode("saved"); }, [p.mode, p.k]);
-  // Die offene Ausgabe hat keine Regionen-Auswahl: dann immer alle
-  useEffect(() => { if (data && !data.owner && region !== "all") setRegion("all"); }, [data, region]);
   // Filter bleiben gemerkt (je Konto, beim Abmelden gelöscht); Sprünge aus anderen Bildschirmen haben Vorrang
   const FKEY = `hl:cache:newsfilter:${uid || "public"}`;
   const [restored, setRestored] = useState(false);
@@ -55,9 +52,8 @@ export default function News() {
 
   const base = useMemo(() => {
     if (!data) return [];
-    const pool = owner ? data.items : data.items.filter((i) => i.regions.length === 1 && i.regions[0] === "red_sea");
-    return pool.filter((i) => Date.now() - new Date(itemTime(i)).getTime() < hours * 3600e3);
-  }, [data, owner, hours]);
+    return data.items.filter((i) => Date.now() - new Date(itemTime(i)).getTime() < hours * 3600e3);
+  }, [data, hours]);
   // Zahlen an den Regionen: so viele Einträge, wie man nach dem Antippen sieht (Geschichten oder einzelne Meldungen)
   const counts = useMemo(() => {
     if (!data) return {} as Record<string, number>;
@@ -86,9 +82,11 @@ export default function News() {
   const header = (
     <View style={{ paddingTop: ins.top + space.m + (winW >= 900 ? space.xl : 0), gap: space.m, paddingBottom: space.s, maxWidth: 760, width: "100%", alignSelf: "center" }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-        <T v="display" accessibilityRole="header">{mode === "saved" ? "Gemerkt" : owner ? "Meldungen" : "Rotes Meer"}</T>
-        <IconButton icon={mode === "saved" ? "close" : "bookmark-outline"} label={mode === "saved" ? "Gemerkt schließen" : `Gemerkt (${saved.length})`}
-          onPress={() => setMode(mode === "saved" ? (grouped ? "stories" : "items") : "saved")} />
+        <T v="display" accessibilityRole="header">{mode === "saved" ? "Gemerkt" : "Meldungen"}</T>
+        <TabTools>
+          <IconButton icon={mode === "saved" ? "close" : "bookmark-outline"} label={mode === "saved" ? "Gemerkt schließen" : `Gemerkt (${saved.length})`}
+            onPress={() => setMode(mode === "saved" ? (grouped ? "stories" : "items") : "saved")} />
+        </TabTools>
       </View>
       {offline && loadedAt ? <Banner icon="cloud-offline-outline" tone="warn" text={`Keine Verbindung. Stand: ${ago(loadedAt)}.`} action="Erneut versuchen" onAction={refresh} /> : null}
       <View style={{ flexDirection: "row", gap: 8 }}>
@@ -155,7 +153,7 @@ export default function News() {
           </View>
         </View>
       ) : null}
-      {mode !== "saved" && owner ? (
+      {mode !== "saved" ? (
         <ChipRow>
           <Chip label="Alle" active={region === "all"} onPress={() => setRegion("all")} />
           {REGION_ORDER.filter((r) => counts[r] > 0 || region === r).map((r) => <Chip key={r} label={REGIONS[r]} count={counts[r]} active={region === r} onPress={() => setRegion(r)} />)}

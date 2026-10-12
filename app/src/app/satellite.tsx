@@ -4,14 +4,14 @@ import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, LayoutChangeEvent, PanResponder, Pressable, View } from "react-native";
-import { Card, Chip, ChipRow, Empty, openLink, Screen, T, tap } from "../../components/ui";
-import { fmtCap, fmtCapDay, isEnglish, num } from "../../lib/de";
-import { nearest as nearestPlace } from "../../lib/places";
-import { Bone } from "../../components/Skeleton";
-import { satImageUri, useData } from "../../lib/data";
-import { toast } from "../../components/Toast";
-import { radius, space, useTheme } from "../../lib/theme";
-import type { SatImage, SatPlace } from "../../lib/types";
+import { Card, Chip, ChipRow, Empty, openLink, Screen, T, tap } from "../components/ui";
+import { fmtCap, fmtCapDay, isEnglish, num } from "../lib/de";
+import { nearest as nearestPlace } from "../lib/places";
+import { Bone } from "../components/Skeleton";
+import { satImageUri, useData } from "../lib/data";
+import { toast } from "../components/Toast";
+import { radius, space, useTheme } from "../lib/theme";
+import type { SatImage, SatPlace } from "../lib/types";
 
 const group = (p: SatPlace) => p.country_raw.startsWith("Eritrea /") ? "Grenze" : p.country_raw.startsWith("Eritrea") ? "Eritrea"
   : p.country_raw.startsWith("Ethiopia") ? "Äthiopien" : "Rotes Meer";
@@ -108,8 +108,8 @@ export default function Satellite() {
     onPanResponderMove: (_e, g) => { if (wRef.current) setSplit(Math.max(0, Math.min(1, startRef.current + g.dx / wRef.current))); },
   }), []);
 
-  if (!data) return <Screen title="Satellit"><Bone h={36} w={240} style={{ borderRadius: radius.pill }} /><Bone h={320} style={{ marginTop: space.m, borderRadius: radius.l }} /></Screen>;
-  if (!places.length) return <Screen title="Satellit"><Empty icon="planet-outline" text={data.satError ? "Die Satellitenbilder konnten nicht geladen werden." : "Noch kein klares Bild gesammelt."} /></Screen>;
+  if (!data) return <Screen topInset={false}><Bone h={36} w={240} style={{ borderRadius: radius.pill }} /><Bone h={320} style={{ marginTop: space.m, borderRadius: radius.l }} /></Screen>;
+  if (!places.length) return <Screen topInset={false}><Empty icon="planet-outline" text={data.satError ? "Die Satellitenbilder konnten nicht geladen werden." : "Noch kein klares Bild gesammelt."} /></Screen>;
 
   const years = [...new Set(places.flatMap((x) => x.images.map((i) => new Date(i.t).getUTCFullYear())))].sort();
   // Vorlagen: zeigen das echte Datum und sind gesperrt, wenn kein Bild nah genug am Wunschdatum liegt
@@ -133,7 +133,7 @@ export default function Satellite() {
   const scalePct = place.half_km > 0 ? 100 / (2 * place.half_km) : 0;
 
   return (
-    <Screen title="Satellit">
+    <Screen topInset={false}>
       <ChipRow>
         {GROUPS.flatMap((g) => places.filter((x) => group(x) === g)).map((x) => <Chip key={x.id} label={x.name} active={x.id === place.id} onPress={() => setPlaceId(x.id)} />)}
       </ChipRow>

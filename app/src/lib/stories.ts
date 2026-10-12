@@ -157,11 +157,11 @@ export function narrow(s: Story, keep: (it: Item) => boolean): Story | null {
 
 // ---------------------------------------------------------------- Für die Bildschirme
 
-/** Meldungen, die diese Ausgabe zeigt (offene Ausgabe: nur Rotes Meer) */
-export const poolOf = (data: Data) => (data.owner ? data.items : data.items.filter((i) => i.regions.length === 1 && i.regions[0] === "red_sea"));
+/** Meldungen, die die App zeigt (alle der letzten 72 Stunden, für alle Leser gleich) */
+export const poolOf = (data: Data) => data.items;
 
 const memo = new WeakMap<Data, Story[]>();
-/** Alle Geschichten der letzten 72 Stunden (offene Ausgabe: nur Rotes Meer). Einmal je Datenstand berechnet. */
+/** Alle Geschichten der letzten 72 Stunden. Einmal je Datenstand berechnet. */
 export function storiesOf(data: Data): Story[] {
   let s = memo.get(data);
   if (!s) {
@@ -176,6 +176,15 @@ export function useStories() {
 }
 /** Quellenarten, die in Horn Lens eine Konfliktseite oder Außensicht vertreten: wer hat noch nicht berichtet? */
 export const VOICE_TYPES = ["government_er", "progov_er", "exile", "government_et", "progov_et", "ethiopian_independent", "tigray", "international", "un_ngo"];
+/** Geschichten, bei denen die Frage „wer hat noch nicht berichtet?“ sinnvoll ist: es geht um Eritrea, Äthiopien oder Tigray */
+export const conflictStory = (items: Item[]) => items.some((i) => i.regions.some((r) => r === "eritrea" || r === "tigray" || r === "ethiopia" || r === "afar"));
+
+/** Seiten, die über eine Geschichte berichten, in fester Reihenfolge, mit Zahl der Medien je Seite */
+export function sidesOf(items: Item[]): { type: string; media: number }[] {
+  const by = new Map<string, Set<string>>();
+  for (const i of items) (by.get(i.source_type) || by.set(i.source_type, new Set()).get(i.source_type)!).add(i.origin_domain || i.source_name);
+  return [...by.entries()].map(([type, m]) => ({ type, media: m.size }));
+}
 
 /** Meldungen, die zu einem Text (z. B. einer Behauptung) passen könnten: mindestens zwei gemeinsame seltene Wörter. Stärkste zuerst. */
 export function related(text: string, data: Data, limit = 5): { it: Item; shared: string[] }[] {

@@ -48,7 +48,7 @@ export default function Search() {
   // Einmal je Datenstand vorbereiten, dann pro Tastendruck nur noch vergleichen
   const index = useMemo(() => !data ? null : {
     places: PLACES.map((p) => ({ p, s: norm(`${p.name} ${p.latin.join(" ")} ${p.weak?.alias.join(" ") || ""} ${p.country}`) })),
-    claims: data.owner ? data.claims.map((c) => ({ c, s: norm(`${c.statement} ${c.raw?.statement || ""} ${c.claimant} ${c.disputed_by || ""}`) })) : [],
+    claims: data.claims.map((c) => ({ c, s: norm(`${c.statement} ${c.raw?.statement || ""} ${c.claimant} ${c.disputed_by || ""}`) })),
     items: dedupe(poolOf(data)).sort((a, b) => (itemTime(a) < itemTime(b) ? 1 : -1)).map((i) => ({ i, s: norm(`${i.title} ${i.origin_domain || ""} ${i.source_name}`) })),
     sources: data.sources.map((x) => ({ x, s: norm(`${x.name} ${TYPES[x.source_type] || ""}`) })),
   }, [data]);
@@ -65,7 +65,7 @@ export default function Search() {
     };
   }, [index, dq]);
   const total = res ? res.places.length + res.claims.length + res.items.length + res.sources.length : 0;
-  const suggestions = recent.length ? recent : data?.owner ? ["Assab", "Adigrat", "Badme", "UN", "Rotes Meer"] : ["Assab", "Bab el-Mandeb", "Houthi", "UKMTO"];
+  const suggestions = recent.length ? recent : ["Assab", "Adigrat", "Badme", "UN", "Rotes Meer"];
 
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>

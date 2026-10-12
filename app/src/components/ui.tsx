@@ -1,6 +1,7 @@
 // Bausteine der Oberfläche: Text, Karten, Chips, Status, Kopfzeilen.
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import React from "react";
 import { Linking, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextProps, View, ViewStyle, Switch, SwitchProps, useWindowDimensions } from "react-native";
@@ -13,6 +14,8 @@ export const tap = () => { if (Platform.OS !== "web") Haptics.selectionAsync().c
 
 export async function openLink(url: string | null | undefined) {
   if (!url) return;
+  // E-Mail: das Mailprogramm öffnen, nicht den In-App-Browser
+  if (/^mailto:/i.test(url)) { if (Platform.OS === "web") window.location.href = url; else Linking.openURL(url).catch(() => {}); return; }
   if (Platform.OS === "web") { window.open(url, "_blank", "noopener"); return; }
   try { await WebBrowser.openBrowserAsync(url, { presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET }); }
   catch { Linking.openURL(url).catch(() => {}); }
@@ -183,6 +186,18 @@ export function IconButton({ icon, onPress, label }: { icon: keyof typeof Ionico
         borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule, opacity: pressed ? 0.6 : 1 })}>
       <Ionicons name={icon} size={20} color={t.ink} />
     </Pressable>
+  );
+}
+
+/** Suchen und Mehr oben rechts auf jedem Reiter. Am Computer stehen beide in der Seitenleiste, dann nur, was extra übergeben wird. */
+export function TabTools({ children }: { children?: React.ReactNode }) {
+  const wide = useWindowDimensions().width >= 900;
+  return (
+    <View style={{ flexDirection: "row", gap: 8 }}>
+      {children}
+      {wide ? null : <IconButton icon="search" label="Suchen" onPress={() => router.push("/search")} />}
+      {wide ? null : <IconButton icon="ellipsis-horizontal" label="Mehr" onPress={() => router.push("/more")} />}
+    </View>
   );
 }
 

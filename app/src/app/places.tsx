@@ -30,7 +30,7 @@ export default function Places() {
             <Head title={g} first={g === GROUPS[0][0]} />
             <Group>
               {list.map(({ p, d }, i) => {
-                const sig = [data?.owner && d.items.length ? plural(d.items.length, "Meldung", "Meldungen") : null, d.fires.length ? `${sample ? "mind. " : ""}${plural(d.fires.length, "Hitzepunkt", "Hitzepunkte")}` : null, d.quakes.length ? plural(d.quakes.length, "Erdbeben", "Erdbeben") : null,
+                const sig = [d.items.length ? plural(d.items.length, "Meldung", "Meldungen") : null, d.fires.length ? `${sample ? "mind. " : ""}${plural(d.fires.length, "Hitzepunkt", "Hitzepunkte")}` : null, d.quakes.length ? plural(d.quakes.length, "Erdbeben", "Erdbeben") : null,
                   d.ships.length ? plural(d.ships.length, "Vorfall auf See", "Vorfälle auf See") : null, d.sat.length ? "Satellitenbilder" : null].filter(Boolean).join(" · ");
                 return <ListRow key={p.id} first={i === 0} label={p.name} sub={sig || undefined}
                   onPress={() => router.push(`/place/${p.id}`)} />;

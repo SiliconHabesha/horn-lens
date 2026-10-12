@@ -83,7 +83,7 @@ export default function ClaimDetail() {
         </View>
       ) : null}
 
-      {data?.owner ? <Related c={c} /> : null}
+      <Related c={c} owner={!!data?.owner} />
 
       <T v="h2" style={{ marginTop: space.xl, marginBottom: space.m }}>Verlauf</T>
       <View>
@@ -104,12 +104,27 @@ export default function ClaimDetail() {
           </View>
         ))}
       </View>
+
+      {/* Widerspruch: jeder kann eine Korrektur vorschlagen */}
+      <Card style={{ marginTop: space.l, gap: 6 }}>
+        <T v="bodyStrong">Stimmt etwas nicht?</T>
+        <T v="small">Stand dieser Seite: {fmtDate(c.events[0]?.at || c.updated_at)}. Wer die Stufe oder den Wortlaut für falsch hält, schreibt uns, am besten mit einem Beleg. Jede Meldung wird geprüft; Änderungen stehen im Verlauf.</T>
+        <View style={{ flexDirection: "row", gap: space.l, flexWrap: "wrap" }}>
+          <Pressable onPress={() => { tap(); openLink(`mailto:info@beles.app?subject=${encodeURIComponent(`Horn Lens: Korrektur zu Behauptung ${c.id}`)}&body=${encodeURIComponent(`Behauptung ${c.id}: ${c.statement}\n\nWas stimmt nicht, und welcher Beleg zeigt es?\n`)}`); }}
+            accessibilityRole="link" style={{ minHeight: 44, justifyContent: "center" }}>
+            <T v="smallStrong" color={t.accent}>Korrektur melden</T>
+          </Pressable>
+          <Pressable onPress={() => { tap(); router.push("/method"); }} accessibilityRole="link" style={{ minHeight: 44, justifyContent: "center" }}>
+            <T v="smallStrong" color={t.accent}>So wird gestuft</T>
+          </Pressable>
+        </View>
+      </Card>
     </Screen>
   );
 }
 
 // Neue Meldungen, die zur Behauptung passen könnten: Anlass, die Stufe zu prüfen
-function Related({ c }: { c: Claim }) {
+function Related({ c, owner }: { c: Claim; owner: boolean }) {
   const t = useTheme();
   const { data, seenBefore } = useData();
   const known = new Set(c.events.flatMap((e) => sourcesOf(e).map((s) => s.url)));
@@ -118,19 +133,19 @@ function Related({ c }: { c: Claim }) {
   return (
     <>
       <T v="h2" style={{ marginTop: space.xl }}>Ähnliche Meldungen, 72 Std.</T>
-      <T v="small" style={{ marginTop: 2, marginBottom: space.s }}>Automatisch über gemeinsame Wörter gefunden. Prüfen, ob sie die Behauptung stützen, widerlegen oder nur erwähnen.</T>
+      <T v="small" style={{ marginTop: 2, marginBottom: space.s }}>{owner ? "Automatisch über gemeinsame Wörter gefunden. Prüfen, ob sie die Behauptung stützen, widerlegen oder nur erwähnen." : "Automatisch über gemeinsame Wörter gefunden. Sie können die Behauptung stützen, widerlegen oder nur erwähnen; in die Stufe fließen sie erst nach Prüfung ein."}</T>
       <Card style={{ paddingVertical: space.s }}>
         {list.map(({ it, shared }, i) => (
           <View key={it.id} style={i ? { borderTopWidth: StyleSheet.hairlineWidth, borderColor: t.rule } : undefined}>
             <ItemRow it={it} isNew={new Date(it.fetched_at).getTime() > seenBefore} />
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: -6, marginBottom: 10, marginLeft: 15 }}>
               <T v="caption" style={{ flex: 1 }}>Gemeinsam: {shared.slice(0, 4).join(", ")}</T>
-              <Pressable onPress={() => { tap(); router.push({ pathname: "/claim-form", params: { mode: "status", id: String(c.id),
+              {owner ? <Pressable onPress={() => { tap(); router.push({ pathname: "/claim-form", params: { mode: "status", id: String(c.id),
                 src_title: `${it.origin_domain || it.source_name}, ${fmtDate(it.published_at || it.fetched_at)}`, src_url: it.url } }); }}
                 accessibilityRole="button" accessibilityLabel={`${it.title} als Beleg übernehmen`} hitSlop={8}
                 style={({ pressed }) => ({ paddingHorizontal: 12, minHeight: 36, justifyContent: "center", borderRadius: 999, borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule, backgroundColor: t.card, opacity: pressed ? 0.6 : 1 })}>
                 <T v="caption" color={t.ink}>Als Beleg übernehmen</T>
-              </Pressable>
+              </Pressable> : null}
             </View>
           </View>
         ))}

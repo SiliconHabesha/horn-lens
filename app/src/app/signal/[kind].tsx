@@ -40,7 +40,6 @@ export default function Signal() {
 
   if (!known) return <Screen topInset={false} refresh={false}><Stack.Screen options={{ title: "Messwerte" }} /><Empty text="Diese Seite gibt es nicht. Alle Messwerte stehen in der Lage." /></Screen>;
   if (!data) return <Screen topInset={false} refresh={false}><Stack.Screen options={{ title: m.title }} /><Skeleton rows={5} /></Screen>;
-  if (kind === "internet" && !data.owner) return <Screen topInset={false} refresh={false}><Stack.Screen options={{ title: m.title }} /><Empty text="Internet-Messwerte gibt es nur in der vollen Ausgabe." /></Screen>;
   const st = feedState(data, m.feed);
   const down = !st.ok || (kind === "fires" && !!data.firesError);
   // Ohne aktuelle Daten nie „alles ruhig“ anzeigen

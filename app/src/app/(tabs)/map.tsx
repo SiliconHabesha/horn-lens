@@ -6,7 +6,7 @@ import { LayoutChangeEvent, Pressable, ScrollView, StyleSheet, View, useWindowDi
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { boxOf, Box, fit, FULL, Layers, Mark, proj, ZoomMap } from "../../components/MapCanvas";
 import { Bone } from "../../components/Skeleton";
-import { Banner, Button, Chip, ChipRow, Head, openLink, PlainRow, T, tap } from "../../components/ui";
+import { Banner, Button, Chip, ChipRow, Group, Head, ListRow, openLink, PlainRow, T, TabTools, tap } from "../../components/ui";
 import { placeById, seaMeta } from "../../lib/places";
 import { ago, num, plural } from "../../lib/de";
 import { useData } from "../../lib/data";
@@ -57,14 +57,14 @@ export default function MapScreen() {
     <View style={{ paddingHorizontal: space.l, gap: space.m }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
         <T v="display" accessibilityRole="header">Karte</T>
-        {data ? (
+        <TabTools>{data ? (
           <Pressable onPress={() => { tap(); setShowLayers(!showLayers); }} accessibilityRole="button" accessibilityState={{ expanded: showLayers }} accessibilityLabel="Ebenen und Zeitraum"
             style={({ pressed }) => ({ height: 40, paddingHorizontal: 14, borderRadius: 20, flexDirection: "row", alignItems: "center", gap: 6,
               backgroundColor: showLayers ? t.ink : t.card, borderWidth: StyleSheet.hairlineWidth, borderColor: showLayers ? t.ink : t.rule, opacity: pressed ? 0.7 : 1 })}>
             <Ionicons name="layers-outline" size={17} color={showLayers ? t.bg : t.ink} />
             <T v="smallStrong" color={showLayers ? t.bg : t.ink}>Ebenen</T>
           </Pressable>
-        ) : null}
+        ) : null}</TabTools>
       </View>
       {offline && loadedAt ? <Banner icon="cloud-offline-outline" tone="warn" text={`Keine Verbindung. Stand: ${ago(loadedAt)}.`} action="Erneut versuchen" onAction={refresh} /> : null}
       <ChipRow>
@@ -160,6 +160,12 @@ export default function MapScreen() {
             {data.maritime.length - shipsIn > 0 ? <T v="caption" style={{ marginTop: 6 }}>{plural(data.maritime.length - shipsIn, "älterer Vorfall", "ältere Vorfälle")} ausgeblendet, auf der Karte blass.</T> : null}
           </>
         ) : null}
+
+        <Head title="Weiter zu" />
+        <Group>
+          <ListRow first icon="planet-outline" label="Satellitenbilder" sub={`${data.sat.length} Orte, vorher und nachher vergleichen`} onPress={() => router.push("/satellite")} />
+          <ListRow icon="location-outline" label="Orte" sub="Alles zu einem Ort auf einer Seite" onPress={() => router.push("/places")} />
+        </Group>
       </ScrollView>
     </View>
   );

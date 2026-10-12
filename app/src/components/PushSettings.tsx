@@ -48,7 +48,7 @@ export function PushSettings() {
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12 }}>
           <View style={{ flex: 1 }}>
             <T v="bodyStrong">Hinweise</T>
-            <T v="caption">{data?.owner ? "Vorfälle auf See, starke Erdbeben, Rückgänge der Internetverbindung, viele Meldungen zu Eritrea" : "Vorfälle auf See und starke Erdbeben"}</T>
+            <T v="caption">Vorfälle auf See, starke Erdbeben, starke Rückgänge der Internetverbindung, ungewöhnlich viele Meldungen zu Eritrea</T>
           </View>
           <Toggle value={alerts && !denied} disabled={busy || !pushSupported} onValueChange={(v) => apply(v, report)} accessibilityLabel="Hinweise als Benachrichtigung" />
         </View>

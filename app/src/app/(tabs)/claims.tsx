@@ -3,7 +3,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
-import { Chip, ChipRow, Empty, IconButton, Screen, StatusPill, T, tap } from "../../components/ui";
+import { Chip, ChipRow, Empty, IconButton, Screen, StatusPill, T, TabTools, tap } from "../../components/ui";
 import { fmtDate, isEnglish, REGIONS, STATUS, STATUS_ORDER } from "../../lib/de";
 import { Skeleton } from "../../components/Skeleton";
 import { useData } from "../../lib/data";
@@ -21,10 +21,18 @@ export default function Claims() {
   const lastAt = (c: typeof claims[0]) => c.events[0]?.at || c.updated_at;
   const list = claims.filter((c) => (!st || c.status === st)
     && words.every((w) => `${c.statement} ${c.raw?.statement || ""} ${c.claimant} ${c.disputed_by || ""} ${REGIONS[c.region] || ""}`.toLowerCase().includes(w))).sort((x, y) => (sort === "changed" ? (lastAt(x) < lastAt(y) ? 1 : -1) : (lastAt(x) < lastAt(y) ? -1 : 1)));
-  if (!data) return <Screen title="Behauptungen"><Skeleton rows={5} /></Screen>;
+  if (!data) return <Screen title="Behauptungen" right={<TabTools />}><Skeleton rows={5} /></Screen>;
   return (
-    <Screen title="Behauptungen"
-      right={data?.owner ? <IconButton icon="add" label="Behauptung hinzufügen" onPress={() => router.push("/claim-form?mode=add")} /> : undefined}>
+    <Screen title="Behauptungen" sub="Was Parteien und Medien behaupten, und was die Belege sagen"
+      right={<TabTools>{data.owner ? <IconButton icon="add" label="Behauptung hinzufügen" onPress={() => router.push("/claim-form?mode=add")} /> : null}</TabTools>}>
+      {/* Absicherung: wie gestuft wird, was korrigiert wurde, wie man widerspricht */}
+      <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: space.l, marginTop: -space.s, marginBottom: space.s }}>
+        {([["So wird gestuft", "/method"], ["Korrekturen", "/corrections"]] as const).map(([label, to]) => (
+          <Pressable key={to} onPress={() => { tap(); router.push(to); }} accessibilityRole="link" hitSlop={6} style={{ minHeight: 40, justifyContent: "center" }}>
+            <T v="smallStrong" color={t.accent}>{label}</T>
+          </Pressable>
+        ))}
+      </View>
       <ChipRow>
         <Chip label="Alle" count={claims.length} active={!st} onPress={() => setSt(null)} />
         {STATUS_ORDER.filter((k) => counts[k]).map((k) => (
@@ -65,7 +73,7 @@ export default function Claims() {
               <T v={changed ? "bodyStrong" : "body"} color={t.ink} numberOfLines={3}>{c.statement}</T>
               <T v="caption">
                 {REGIONS[c.region] || c.region}{since ? ` · Stufe seit ${fmtDate(since)}` : ""}{isEnglish(c.raw?.statement, c.statement) ? " · englischer Wortlaut" : ""}
-                {changed ? " · geändert" : sort === "stale" && days >= 7 ? ` · ${days} Tage unverändert` : ""}
+                {changed ? " · geändert" : days >= 14 ? ` · seit ${days} Tagen unverändert` : ""}
               </T>
             </Pressable>
           );
