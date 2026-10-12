@@ -7,6 +7,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { itemTime, StoryCard } from "../../components/items";
 import { LageSkeleton } from "../../components/Skeleton";
 import { SkyBand } from "../../components/SkyBand";
+import { briefOf } from "../../lib/brief";
 import { Button, Empty, Group, Head, ListRow, Screen, T, TabTools, tap } from "../../components/ui";
 import { fmtDay, fmtIsoDay, fmtShort, fmtTime, fmtWhen, num, plural, todayBerlin } from "../../lib/de";
 import { useData } from "../../lib/data";
@@ -84,11 +85,13 @@ export default function Lage() {
   if (d.sea) news.push({ text: `${plural(d.sea, "neuer Vorfall", "neue Vorfälle")} auf See ${since}`, to: "/signal/sea" });
   if (d.quakes) news.push({ text: `${plural(d.quakes, "spürbares Erdbeben", "spürbare Erdbeben")} ${since}`, to: "/signal/quakes" });
 
-  const pick = (label: string) => signals.find((x) => x.label === label)!;
-  const tiles = [pick("Hitzepunkte"), { ...pick("Vorfälle auf See"), label: "Auf See" }, pick("Erdbeben"), { ...pick("Internet Eritrea"), label: "Internet Eritrea", hint: "Rückgänge" }];
+  // Auf einen Blick: wenige Sätze, Wichtigstes zuerst
+  const brief = briefOf(data, storiesOf(data), d.fresh, since);
+  if (d.changed) brief.splice(Math.min(brief.length, data.alerts.length + 2), 0, { icon: "checkmark-done-circle-outline", head: "Behauptungen",
+    text: `${plural(d.changed, "Behauptung hat", "Behauptungen haben")} sich ${since} geändert.`, src: "Redaktion Semay, mit Belegen", to: "/claims" });
 
   return (
-    <Screen hero={<SkyBand data={data} day={fmtDay(data.now)} stand={fmtTime(loadedAt || data.now)} lines={news} tiles={tiles} />}>
+    <Screen hero={<SkyBand data={data} day={fmtDay(data.now)} stand={fmtTime(loadedAt || data.now)} brief={brief} />}>
       {data.owner && broken ? (
         <Pressable onPress={() => { tap(); router.push("/sources"); }} accessibilityRole="button"
           style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 8, minHeight: 36, opacity: pressed ? 0.6 : 1 })}>
@@ -98,23 +101,8 @@ export default function Lage() {
         </Pressable>
       ) : null}
 
-      {/* Auffällig: automatische Hinweise mit fester Schwelle, eine Zeile je Hinweis */}
-      {data.alerts.length ? (
-        <>
-          <Head title="Auffällig" first />
-          <Group>
-            {data.alerts.map((a, i) => {
-              const k = ALERT[a.kind];
-              const src = a.source && !a.title.includes(a.source) ? ` · ${a.source}` : "";
-              return <ListRow key={i} first={i === 0} icon={k?.icon || "alert-circle-outline"} tone="alert" label={a.title} sub={`${k?.label || "Hinweis"} · ${fmtWhen(a.t)}${src}`}
-                onPress={k ? () => router.navigate(`${k.to}${k.to.includes("?") ? "&" : "?"}k=${Date.now()}` as any) : undefined} />;
-            })}
-          </Group>
-        </>
-      ) : null}
-
       {/* Geschichten des Tages: zu Eritrea zuerst, dann nach Zahl der Medien. Keine redaktionelle Gewichtung. */}
-      <Head title="Meistberichtet, 24 Std." first={!data.alerts.length} action="Alle Meldungen" onAction={() => router.navigate("/news")} />
+      <Head title="Die Themen heute" first action="Alle Meldungen" onAction={() => router.navigate("/news")} />
       {d.top.length ? d.top.map((s, i) => (
         <View key={s.key} style={i ? { borderTopWidth: StyleSheet.hairlineWidth, borderColor: t.rule } : undefined}>
           <StoryCard s={s} seenBefore={seenBefore} />

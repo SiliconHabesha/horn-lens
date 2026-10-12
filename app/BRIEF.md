@@ -125,3 +125,10 @@ Entscheidungen des Inhabers: Lesen ohne Anmeldung; alle Meldungen, Geschichten, 
 - Meldungszeilen: alle Schlagzeilen gleich kräftig, „Neu“ als Wort statt fetter Schrift; neben dem Medium steht die Seite in Kurzform (z. B. „Exil Eritrea“, „Regierung Äthiopien“, bei Geschichten „3 Quellenarten“).
 - Auffällig ohne Warnstreifen; Meldungen-Reiter ohne doppelte Suche.
 - Technik: `ForceDark` in theme.ts (erzwingt dunkles Schema für einen Bereich), `Screen hero`, `components/SkyBand.tsx`, `TYPE_SHORT` in de.ts.
+
+## Runde 13 (12.10.2026): sofort verständlich
+
+- Wunsch des Inhabers: Überblick ohne Einlesen, keine Sammlung zum Durcharbeiten.
+- Lage beginnt mit „Auf einen Blick“ (lib/brief.ts): wenige Sätze nach festen Regeln, ohne KI und Wertung, je mit Quelle. Reihenfolge: Auffälliges, meistberichtetes Thema, Zahl der Meldungen, Rotes Meer, Internet Eritrea, Hitzepunkte (mit Ort der meisten), spürbare Erdbeben, geänderte Behauptungen. Daneben/darunter die Karte. Die Kacheln entfallen, „Auffällig“ steckt jetzt in den Sätzen.
+- Schlagzeilen auf Deutsch: neue Spalte `items.title_de`, Funktion `translate` (MyMemory, frei, nur Schlagzeilen, ohne Leserdaten), Zeitplan „hornlens-translate“ um :17 und :47. Freies Kontingent etwa 5.000 Zeichen am Tag; reicht für die täglich neuen Schlagzeilen. In der Meldung steht das Original immer dabei („Maschinell übersetzt“). Schlagzeilen ganz in Großbuchstaben werden lesbar gesetzt.
+- „Meistberichtet“ heißt jetzt „Die Themen heute“.

@@ -63,7 +63,7 @@ export default function News() {
     return Object.fromEntries(REGION_ORDER.map((r) => [r, all.filter((x) => x.items.some((i) => ids.has(i.id) && i.regions.includes(r))).length]));
   }, [data, base, mode]);
   const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  const match = (i: Item) => words.every((w) => `${i.title} ${i.origin_domain || ""} ${i.source_name}`.toLowerCase().includes(w));
+  const match = (i: Item) => words.every((w) => `${i.title} ${i.title_de || ""} ${i.origin_domain || ""} ${i.source_name}`.toLowerCase().includes(w));
   const list = useMemo(() => dedupe(base.filter((i) => (region === "all" || i.regions.includes(region))
       && (!onlyNew || new Date(i.fetched_at).getTime() > seenBefore)
       && (!type || i.source_type === type) && match(i)))

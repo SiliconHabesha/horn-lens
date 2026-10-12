@@ -71,7 +71,7 @@ export const RADIUS = { fire: 40, quake: 100, ship: 150, sat: 40 };
 
 /** Alles, was Semay zu einem Ort hat. Nur vorhandene Daten, nichts geschätzt. */
 export function dossier(p: Place, data: Data, pool: Item[]) {
-  const items = pool.filter((i) => mentions(p, i.title));
+  const items = pool.filter((i) => mentions(p, i.title) || (!!i.title_de && mentions(p, i.title_de)));
   // Grobe Vorauswahl über Breiten- und Längengrade, dann genaue Entfernung
   const near = <T extends { lat: number; lon: number }>(list: T[], r: number) => {
     const dLat = r / 111, dLon = r / (111 * Math.cos((p.lat * Math.PI) / 180));

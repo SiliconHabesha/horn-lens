@@ -56,6 +56,18 @@ for x in REAL:
     h = (_newest - time.mktime(time.strptime(x["published_at"], "%Y-%m-%dT%H:%M:%SZ"))) / 3600 + 0.5
     x["published_at"] = x["fetched_at"] = iso(h); x["id"] += 100000
 items = items + REAL
+# Deutsche Schlagzeilen, wie sie die Funktion „translate“ liefert (nur einige, der Rest bleibt im Original)
+DE = {"Eritrean troops reported near Adigrat as tensions rise": "Eritreische Truppen nahe Adigrat gemeldet, Spannungen steigen",
+  "Exiles report new round-ups in Asmara": "Exilmedien melden neue Razzien in Asmara",
+  "Tigray interim administration calls for calm": "Übergangsverwaltung von Tigray ruft zur Ruhe auf",
+  "Houthi attack reported off Mokha, ship damaged": "Huthi-Angriff vor Mokka gemeldet, Schiff beschädigt",
+  "At least 139 people dead after migrant boat capsizes off Djibouti": "Mindestens 139 Tote nach Kentern eines Migrantenboots vor Dschibuti",
+  "Ethiopia, Eritrea ramp up rhetoric: Are they inching towards war?": "Äthiopien und Eritrea verschärfen den Ton: Steuern sie auf einen Krieg zu?",
+  "Eritrea uges United Nations to intervene in standoff with Ethiopia": "Eritrea fordert die Vereinten Nationen zum Eingreifen im Konflikt mit Äthiopien auf",
+  "Eritrea urges UN to intervene in standoff with Ethiopia": "Eritrea fordert UN zum Eingreifen im Konflikt mit Äthiopien auf",
+  "A CURSE ON ETHIOPIA, A TRAGEDY FOR THE TIGRAY PEOPLE, A CANKER EATING AT THE HORN OF AFRICA": "EIN FLUCH FÜR ÄTHIOPIEN, EINE TRAGÖDIE FÜR DAS VOLK VON TIGRAY"}
+for x in items:
+    if x["title"] in DE: x["title_de"] = DE[x["title"]]
 ev = lambda h, st, note, srcs: {"at": iso(h), "status": st, "note": note, "source_title": srcs[0][0] if srcs else None, "source_url": srcs[0][1] if srcs else None,
   "extra": [{"title": a, "url": b} for a, b in srcs[1:]], "admission": False}
 claims = [

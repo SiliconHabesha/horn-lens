@@ -49,7 +49,7 @@ export default function Search() {
   const index = useMemo(() => !data ? null : {
     places: PLACES.map((p) => ({ p, s: norm(`${p.name} ${p.latin.join(" ")} ${p.weak?.alias.join(" ") || ""} ${p.country}`) })),
     claims: data.claims.map((c) => ({ c, s: norm(`${c.statement} ${c.raw?.statement || ""} ${c.claimant} ${c.disputed_by || ""}`) })),
-    items: dedupe(poolOf(data)).sort((a, b) => (itemTime(a) < itemTime(b) ? 1 : -1)).map((i) => ({ i, s: norm(`${i.title} ${i.origin_domain || ""} ${i.source_name}`) })),
+    items: dedupe(poolOf(data)).sort((a, b) => (itemTime(a) < itemTime(b) ? 1 : -1)).map((i) => ({ i, s: norm(`${i.title} ${i.title_de || ""} ${i.origin_domain || ""} ${i.source_name}`) })),
     sources: data.sources.map((x) => ({ x, s: norm(`${x.name} ${TYPES[x.source_type] || ""}`) })),
   }, [data]);
   const dq = useDeferredValue(q);

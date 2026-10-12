@@ -2,7 +2,7 @@
 import { router } from "expo-router";
 import React from "react";
 import { Platform, Pressable, Share, StyleSheet, View } from "react-native";
-import { fmtIsoDay, fmtWhen, plural, srcName, TYPE_ORDER, TYPE_SHORT, TYPES } from "../lib/de";
+import { fmtIsoDay, fmtWhen, headline, plural, srcName, TYPE_ORDER, TYPE_SHORT, TYPES } from "../lib/de";
 import { font, useTheme } from "../lib/theme";
 import type { Story } from "../lib/stories";
 import type { Item } from "../lib/types";
@@ -24,9 +24,9 @@ export const titleStyle = (title: string, strong = false) => [ETHIOPIC.test(titl
 export async function shareItem(it: Item) {
   tap();
   try {
-    if (Platform.OS === "web" && (navigator as any).share) await (navigator as any).share({ title: it.title, url: it.url });
-    else if (Platform.OS === "web") { await navigator.clipboard.writeText(`${it.title} ${it.url}`); toast("Link kopiert", "link-outline"); }
-    else await Share.share({ message: `${it.title}\n${it.url}`, url: it.url });
+    if (Platform.OS === "web" && (navigator as any).share) await (navigator as any).share({ title: headline(it), url: it.url });
+    else if (Platform.OS === "web") { await navigator.clipboard.writeText(`${headline(it)} ${it.url}`); toast("Link kopiert", "link-outline"); }
+    else await Share.share({ message: `${headline(it)}\n${it.url}`, url: it.url });
   } catch { /* abgebrochen */ }
 }
 
@@ -34,7 +34,7 @@ export async function shareItem(it: Item) {
 export async function shareStory(s: Story) {
   tap();
   const seen = new Set<string>();
-  const lines = [`Bei ${plural(s.sources, "Medium", "Medien")}: ${s.lead.title}`, ""];
+  const lines = [`Bei ${plural(s.sources, "Medium", "Medien")}: ${headline(s.lead)}`, ""];
   for (const it of s.items) {
     const who = srcName(it.origin_domain || it.source_name);
     if (seen.has(who) || seen.size >= 6) continue;
@@ -86,9 +86,9 @@ export function ItemRow({ it, isNew, others, onOpen }: { it: Item; isNew?: boole
   const who = `${srcName(it.origin_domain || it.source_name)}${others ? ` + ${others} ${others === 1 ? "weiteres Medium" : "weitere Medien"}` : ""}`;
   const when = whenOf(it);
   return (
-    <NewsRow title={it.title} types={[it.source_type]} who={who} when={when} isNew={isNew}
+    <NewsRow title={headline(it)} types={[it.source_type]} who={who} when={when} isNew={isNew}
       onPress={() => { onOpen?.(); router.push(`/item/${it.id}`); }}
-      a11y={`${it.title}. ${it.origin_domain || it.source_name}, ${TYPES[it.source_type] || ""}, ${when}${isNew ? ", neu" : ""}`} />
+      a11y={`${headline(it)}. ${it.origin_domain || it.source_name}, ${TYPES[it.source_type] || ""}, ${when}${isNew ? ", neu" : ""}`} />
   );
 }
 
@@ -138,9 +138,9 @@ export function StoryCard({ s, seenBefore }: { s: Story; seenBefore?: number }) 
   const isNew = seenBefore != null && s.items.some((i) => new Date(i.fetched_at).getTime() > seenBefore);
   const types = TYPE_ORDER.filter((k) => s.types[k]);
   return (
-    <NewsRow title={s.lead.title} types={types} who={`${plural(s.sources, "Medium", "Medien")}${s.total ? ` · ${s.items.length} von ${s.total} Meldungen` : ""}`} when={fmtWhen(s.last)} isNew={isNew}
+    <NewsRow title={headline(s.lead)} types={types} who={`${plural(s.sources, "Medium", "Medien")}${s.total ? ` · ${s.items.length} von ${s.total} Meldungen` : ""}`} when={fmtWhen(s.last)} isNew={isNew}
       onPress={() => router.push(`/item/${s.lead.id}`)}
-      a11y={`Geschichte bei ${plural(s.sources, "Medium", "Medien")}: ${s.lead.title}. Quellenarten: ${types.map((k) => TYPES[k]).join(", ")}. Zuletzt ${fmtWhen(s.last)}${isNew ? ", neu" : ""}.`} />
+      a11y={`Geschichte bei ${plural(s.sources, "Medium", "Medien")}${": "}${headline(s.lead)}. Quellenarten: ${types.map((k) => TYPES[k]).join(", ")}. Zuletzt ${fmtWhen(s.last)}${isNew ? ", neu" : ""}.`} />
   );
 }
 

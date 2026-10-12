@@ -161,3 +161,10 @@ export const isEnglish = (orig: string | null | undefined, shown: string | null 
 /** Quellenname für Zeilen: ohne Zusatz in Klammern, Gedankenstrich statt Bindestrich („DW – Africa“) */
 export const srcName = (n: string | null | undefined) => String(n || "").replace(/\s*\([^)]*\)\s*$/, "").replace(/\s+-\s+/g, " – ").trim() || String(n || "");
 export const endDot = (t: string | null | undefined) => { const s = String(t || "").trim(); return /[.!?…“"]$/.test(s) ? s : `${s}.`; };
+
+/** Schlagzeile ganz in Großbuchstaben (manche Quellen schreiben so): Wörter mit großem Anfang, sonst klein */
+const unshout = (s: string) => (/[a-zäöü]/.test(s) || !/[A-ZÄÖÜ]{4}/.test(s) ? s : s.toLowerCase().replace(/(^|[\s\-–„"(/])(\p{L})/gu, (_, a, b) => a + b.toUpperCase()));
+/** Die Schlagzeile, wie die App sie zeigt: deutsch, wenn übersetzt, sonst im Original */
+export const headline = (it: { title: string; title_de?: string | null }) => unshout(it.title_de || it.title);
+/** Wurde die Schlagzeile übersetzt? */
+export const translated = (it: { title_de?: string | null; language?: string | null }) => !!it.title_de && it.language !== "de";

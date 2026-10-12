@@ -1,6 +1,8 @@
 export type Item = {
   id: number; title: string; url: string; language: string | null; regions: string[]; origin_domain: string | null;
   published_at: string | null; fetched_at: string; source_id: string; source_name: string; source_type: string;
+  /** Maschinell übersetzte deutsche Schlagzeile (fehlt, solange nicht übersetzt) */
+  title_de?: string | null;
 };
 export type Source = {
   id: string; name: string; kind: string; source_type: string; homepage: string | null; stance_note: string | null;

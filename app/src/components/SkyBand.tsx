@@ -1,26 +1,22 @@
-// Das Himmelsband oben auf der Lage: Marke, Datum, Neues seit dem letzten Besuch, die Region als kleine Karte
-// und die vier wichtigsten Messwerte. Immer im dunklen Farbschema (Tiefsee), in beiden Modi: der „Himmel“ von Semay.
+// Das Himmelsband oben auf der Lage: „Auf einen Blick“ in wenigen Sätzen und die Region als kleine Karte.
+// Immer im dunklen Farbschema (Tiefsee), in beiden Modi: der „Himmel“ von Semay. Wer nur dieses Band liest, kennt die Lage.
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useFocusEffect } from "expo-router";
 import { setStatusBarStyle } from "expo-status-bar";
 import React, { useCallback, useState } from "react";
-import { useColorScheme } from "react-native";
-import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Pressable, StyleSheet, useColorScheme, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { boxOf, fit, MapSvg } from "./MapCanvas";
-import { Logo } from "./Logo";
-import { T, TabTools, tap } from "./ui";
+import type { BriefLine } from "../lib/brief";
+import { BRAND, ForceDark, radius, space, useTheme } from "../lib/theme";
 import type { Data } from "../lib/types";
-import { BRAND, ForceDark, font, radius, space, useTheme } from "../lib/theme";
-
-type Icon = keyof typeof Ionicons.glyphMap;
-export type Tile = { icon: Icon; label: string; hint: string; value: string; tone?: "alert" | "none"; to: string };
-export type Line = { text: string; to: string };
+import { Logo } from "./Logo";
+import { boxOf, fit, MapSvg } from "./MapCanvas";
+import { T, TabTools, tap } from "./ui";
 
 // Ausschnitt: Eritrea mit Grenzgebiet zu Tigray, Afar und dem Roten Meer bis Bab el-Mandeb
 const REGION = boxOf(18.4, 36.1, 12.0, 43.7);
 
-export function SkyBand(props: { data: Data; day: string; stand: string; lines: Line[]; tiles: Tile[] }) {
+export function SkyBand(props: { data: Data; day: string; stand: string; brief: BriefLine[] }) {
   // Helle Statusleiste über dem dunklen Band; beim Verlassen zurück zum Schema der App
   const scheme = useColorScheme();
   useFocusEffect(useCallback(() => {
@@ -30,73 +26,79 @@ export function SkyBand(props: { data: Data; day: string; stand: string; lines: 
   return <ForceDark.Provider value={true}><Inner {...props} /></ForceDark.Provider>;
 }
 
-function Inner({ data, day, stand, lines, tiles }: { data: Data; day: string; stand: string; lines: Line[]; tiles: Tile[] }) {
+const go = (to: string) => { tap(); router.navigate(`${to}${to.includes("?") ? "&" : "?"}k=${Date.now()}` as any); };
+
+function Inner({ data, day, stand, brief }: { data: Data; day: string; stand: string; brief: BriefLine[] }) {
   const t = useTheme();
   const ins = useSafeAreaInsets();
   const wide = useWindowDimensions().width >= 900;
   const [w, setW] = useState(0);
-  const h = Math.round(Math.min(Math.max(w * (wide ? 0.72 : 0.7), 200), 320));
-  const go = (to: string) => { tap(); router.navigate(`${to}${to.includes("?") ? "&" : "?"}k=${Date.now()}` as any); };
+  const h = Math.round(Math.min(Math.max(w * (wide ? 1.05 : 0.6), 180), wide ? 400 : 260));
   return (
-    <View style={{ backgroundColor: BRAND.ink, paddingTop: ins.top + space.m + (wide ? space.l : 0), paddingBottom: space.l, paddingHorizontal: space.l,
+    <View style={{ backgroundColor: BRAND.ink, paddingTop: ins.top + space.m + (wide ? space.l : 0), paddingBottom: space.xl, paddingHorizontal: space.l,
       borderBottomLeftRadius: wide ? 0 : 24, borderBottomRightRadius: wide ? 0 : 24 }}>
       <View style={{ maxWidth: 760, width: "100%", alignSelf: "center" }}>
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.m }}>
-          {wide ? <View /> : <Logo size={18} color={t.ink} />}
-          <TabTools />
-        </View>
+        {wide ? null : (
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.m, marginBottom: space.l }}>
+            <Logo size={18} color={t.ink} />
+            <TabTools />
+          </View>
+        )}
+        <T v="display" accessibilityRole="header">Lage</T>
+        <T v="small" style={{ marginTop: 2 }}>{day}, Stand {stand} Uhr</T>
 
-        <T v="display" accessibilityRole="header" style={{ marginTop: wide ? 0 : space.l }}>Lage</T>
-        <T v="small" style={{ marginTop: 2 }}>{day} · Stand {stand} Uhr</T>
-
-        {lines.length ? (
-          <View style={{ marginTop: space.s }}>
-            {lines.map((n) => (
-              <Pressable key={n.to} onPress={() => go(n.to)} accessibilityRole="button"
-                style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 8, minHeight: 34, opacity: pressed ? 0.6 : 1 })}>
-                <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: t.accent }} />
-                <T v="smallStrong" color={t.accent} style={{ flex: 1 }}>{n.text}</T>
-                <Ionicons name="chevron-forward" size={15} color={t.accent} />
+        <View style={{ flexDirection: wide ? "row" : "column", gap: wide ? space.xl : 0, marginTop: space.l, alignItems: wide ? "flex-start" : "stretch" }}>
+          {/* Auf einen Blick: ein Satz je Thema, Wichtigstes zuerst */}
+          <View style={{ flex: wide ? 5 : undefined }} accessibilityRole="list">
+            {brief.map((b, i) => (
+              <Pressable key={`${b.head}${i}`} onPress={() => go(b.to)} accessibilityRole="button" accessibilityLabel={`${b.head}: ${b.text} Quelle: ${b.src}`}
+                style={({ pressed }) => ({ flexDirection: "row", gap: 12, paddingVertical: 11, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: t.rule, opacity: pressed ? 0.6 : 1 })}>
+                <View style={{ width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center", marginTop: 1,
+                  backgroundColor: b.alert ? t.warn : "rgba(237,240,238,0.08)" }}>
+                  <Ionicons name={b.icon} size={16} color={b.alert ? BRAND.ink : t.ink} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <T v="body" color={t.ink}><T v="bodyStrong" color={b.alert ? t.warn : t.ink}>{b.head}. </T>{b.text}</T>
+                  <T v="caption" style={{ marginTop: 2 }}>{b.src}</T>
+                </View>
+                <Ionicons name="chevron-forward" size={15} color={t.faint} style={{ marginTop: 8 }} />
               </Pressable>
             ))}
           </View>
-        ) : null}
 
-        <View style={{ flexDirection: wide ? "row" : "column", gap: wide ? space.m : 0, marginTop: space.m }}>
-        {/* Die Region auf einen Blick. Antippen öffnet die große Karte. */}
-        <Pressable onPress={() => go("/map")} accessibilityRole="button" accessibilityLabel="Karte der Region mit Hitzepunkten, Erdbeben und Vorfällen auf See. Öffnet die große Karte."
-          onLayout={(e) => setW(Math.round(e.nativeEvent.layout.width))}
-          style={({ pressed }) => ({ flex: wide ? 3 : undefined, borderRadius: radius.l, overflow: "hidden", borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule, opacity: pressed ? 0.85 : 1 })}>
-          <View pointerEvents="none">
-            {w ? <MapSvg data={data} layers={{ fire: true, quake: true, ship: true, sat: false }} box={fit(REGION, h / w)} w={w} h={h} mini /> : <View style={{ height: 200 }} />}
-          </View>
-          <View pointerEvents="none" style={{ position: "absolute", right: 10, top: 10, flexDirection: "row", alignItems: "center", gap: 4,
-            backgroundColor: "rgba(14,26,31,0.82)", borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 5 }}>
-            <Ionicons name="expand-outline" size={13} color={t.ink} />
-            <T v="caption" color={t.ink}>Karte</T>
-          </View>
-        </Pressable>
-
-        {/* Die vier Messwerte, je eine Kachel. Ohne aktuelle Daten ein Strich, nie eine Null. */}
-        <View style={{ flex: wide ? 2 : undefined, flexDirection: "row", flexWrap: "wrap", alignContent: "flex-start", gap: 8, marginTop: wide ? 0 : space.m }}>
-          {tiles.map((x) => (
-            <Pressable key={x.label} onPress={() => go(x.to)} accessibilityRole="button"
-              accessibilityLabel={`${x.label}, ${x.hint}: ${x.value === "–" ? "keine aktuellen Daten" : x.value}`}
-              style={({ pressed }) => ({ flexGrow: 1, flexBasis: "45%", minHeight: wide ? 0 : 74, height: wide ? (h - 8) / 2 : undefined, justifyContent: wide ? "center" : undefined, padding: 12, borderRadius: radius.m,
-                backgroundColor: "rgba(237,240,238,0.07)", opacity: pressed ? 0.6 : 1 })}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                <Ionicons name={x.icon} size={15} color={x.tone === "alert" ? t.warn : t.muted} />
-                <T v="caption" numberOfLines={1} style={{ flexShrink: 1 }}>{x.label}</T>
-              </View>
-              <View style={{ flexDirection: "row", alignItems: "baseline", gap: 6, marginTop: 4 }}>
-                <T style={{ fontFamily: font.black, fontSize: 24, lineHeight: 28, letterSpacing: -0.5, color: x.tone === "alert" ? t.warn : x.value === "–" ? t.faint : t.ink }}>{x.value}</T>
-                <T v="caption" color={t.faint}>{x.hint}</T>
-              </View>
-            </Pressable>
-          ))}
-        </View>
+          {/* Die Region als Bild. Antippen öffnet die große Karte. */}
+          <Pressable onPress={() => go("/map")} accessibilityRole="button" accessibilityLabel="Karte der Region mit Hitzepunkten, Erdbeben und Vorfällen auf See. Öffnet die große Karte."
+            onLayout={(e) => setW(Math.round(e.nativeEvent.layout.width))}
+            style={({ pressed }) => ({ flex: wide ? 4 : undefined, marginTop: wide ? 0 : space.m, borderRadius: radius.l, overflow: "hidden", borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule, opacity: pressed ? 0.85 : 1 })}>
+            <View pointerEvents="none">
+              {w ? <MapSvg data={data} layers={{ fire: true, quake: true, ship: true, sat: false }} box={fit(REGION, h / w)} w={w} h={h} mini /> : <View style={{ height: 200 }} />}
+            </View>
+            <View pointerEvents="none" style={{ position: "absolute", right: 10, top: 10, flexDirection: "row", alignItems: "center", gap: 4,
+              backgroundColor: "rgba(14,26,31,0.82)", borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 5 }}>
+              <Ionicons name="expand-outline" size={13} color={t.ink} />
+              <T v="caption" color={t.ink}>Karte</T>
+            </View>
+            {/* Legende in einer Zeile */}
+            <View pointerEvents="none" style={{ position: "absolute", left: 10, bottom: 10, flexDirection: "row", alignItems: "center", gap: 10,
+              backgroundColor: "rgba(14,26,31,0.82)", borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 5 }}>
+              <Legend color={t.fire} label="Hitze" shape="dot" />
+              <Legend color={t.ship} label="See" shape="diamond" />
+              <Legend color={t.quake} label="Beben" shape="ring" />
+            </View>
+          </Pressable>
         </View>
       </View>
+    </View>
+  );
+}
+
+function Legend({ color, label, shape }: { color: string; label: string; shape: "dot" | "diamond" | "ring" }) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+      <View style={shape === "dot" ? { width: 7, height: 7, borderRadius: 4, backgroundColor: color }
+        : shape === "diamond" ? { width: 7, height: 7, backgroundColor: color, transform: [{ rotate: "45deg" }] }
+        : { width: 9, height: 9, borderRadius: 5, borderWidth: 1.6, borderColor: color }} />
+      <T v="caption">{label}</T>
     </View>
   );
 }

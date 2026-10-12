@@ -6,7 +6,9 @@ import { Platform, Pressable, StyleSheet, View } from "react-native";
 import { ItemRow, shareItem, shareStory, titleStyle, whenOf } from "../../components/items";
 import { toast } from "../../components/Toast";
 import { Button, Empty, openLink, Screen, T, tap } from "../../components/ui";
-import { fmtWhen, plural, srcName, TYPE_NOTE, TYPE_ORDER, TYPES } from "../../lib/de";
+import { fmtWhen, headline, plural, srcName, translated, TYPE_NOTE, TYPE_ORDER, TYPES } from "../../lib/de";
+
+const LANGS: Record<string, string> = { en: "Englisch", am: "Amharisch", ti: "Tigrinya", ar: "Arabisch", fr: "Französisch", it: "Italienisch" };
 import { knownItem, useData } from "../../lib/data";
 import { placesIn } from "../../lib/places";
 import { conflictStory, sidesOf, storiesOf, VOICE_TYPES } from "../../lib/stories";
@@ -50,7 +52,13 @@ export default function ItemDetail() {
   return (
     <Screen topInset={false} refresh={false}>
       <Stack.Screen options={{ title: story && story.items.length > 1 ? "Geschichte" : "Meldung" }} />
-      <T v="title" style={titleStyle(it.title, true)} accessibilityRole="header">{it.title}</T>
+      <T v="title" style={titleStyle(headline(it), true)} accessibilityRole="header">{headline(it)}</T>
+      {translated(it) ? (
+        <View style={{ marginTop: space.s, paddingLeft: 10, borderLeftWidth: 2, borderColor: t.rule }}>
+          <T v="caption">Maschinell übersetzt. Original ({LANGS[it.language || ""] || "Fremdsprache"}):</T>
+          <T v="small" style={titleStyle(it.title)}>{it.title}</T>
+        </View>
+      ) : null}
       <View style={{ flexDirection: "row", flexWrap: "wrap", rowGap: 4, marginTop: space.s, alignItems: "center" }}>
         <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: c, marginRight: 8 }} />
         <T v="smallStrong" color={t.ink}>{srcName(it.origin_domain || it.source_name)}</T>

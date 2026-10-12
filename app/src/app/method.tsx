@@ -18,6 +18,8 @@ export default function Method() {
       <T v="h2" style={{ marginTop: space.xl, marginBottom: space.s }}>Was du siehst</T>
       <View style={{ gap: 6 }}>
         <B>Meldungen: die Schlagzeile, ein Link zum Original und wer sie veröffentlicht hat. Wir kopieren keine Artikel. Eine Meldung ist keine geprüfte Tatsache.</B>
+        <B>Schlagzeilen in Englisch, Amharisch, Tigrinya oder Arabisch übersetzt Semay maschinell ins Deutsche (MyMemory). Das Original steht in der Meldung immer dabei; die Übersetzung kann Fehler enthalten.</B>
+        <B>„Auf einen Blick“ auf der Lage entsteht nach festen Regeln aus Zahlen und Meldungen, ohne KI und ohne Wertung. Jeder Satz nennt seine Quelle.</B>
         <B>Geschichten: Nennen mehrere Medien in ähnlichen Worten dasselbe, fasst Semay ihre Meldungen automatisch zusammen. Das sagt nichts darüber, ob es stimmt, nur wer darüber berichtet.</B>
         <B>Messwerte: Messungen von Satelliten und Sensoren. Sie zeigen, dass an einem Ort zu einer Zeit etwas geschah, nie wer es war oder warum.</B>
         <B>Satellitenbilder: Sentinel-2-Ausschnitte mit genauer Aufnahmezeit, nur mit höchstens 3 % Wolken.</B>
