@@ -1,8 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Tabs } from "expo-router";
+import { router, Tabs } from "expo-router";
 import React from "react";
 import { Platform, Pressable, useWindowDimensions, View } from "react-native";
-import { router } from "expo-router";
 // Seitenleiste auf großen Bildschirmen: Marke oben, darunter die normale Leiste
 import { BottomTabBar } from "expo-router/build/react-navigation/bottom-tabs";
 import { Logo } from "../../components/Logo";
