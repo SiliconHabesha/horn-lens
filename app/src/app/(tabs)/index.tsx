@@ -6,6 +6,7 @@ import React, { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { itemTime, StoryCard } from "../../components/items";
 import { LageSkeleton } from "../../components/Skeleton";
+import { SkyBand } from "../../components/SkyBand";
 import { Button, Empty, Group, Head, ListRow, Screen, T, TabTools, tap } from "../../components/ui";
 import { fmtDay, fmtIsoDay, fmtShort, fmtTime, fmtWhen, num, plural, todayBerlin } from "../../lib/de";
 import { useData } from "../../lib/data";
@@ -83,39 +84,25 @@ export default function Lage() {
   if (d.sea) news.push({ text: `${plural(d.sea, "neuer Vorfall", "neue Vorfälle")} auf See ${since}`, to: "/signal/sea" });
   if (d.quakes) news.push({ text: `${plural(d.quakes, "spürbares Erdbeben", "spürbare Erdbeben")} ${since}`, to: "/signal/quakes" });
 
-  return (
-    <Screen title="Lage" sub={`${fmtDay(data.now)} · Stand ${fmtTime(loadedAt || data.now)} Uhr`}
-      right={<TabTools />}>
+  const pick = (label: string) => signals.find((x) => x.label === label)!;
+  const tiles = [pick("Hitzepunkte"), { ...pick("Vorfälle auf See"), label: "Auf See" }, pick("Erdbeben"), { ...pick("Internet Eritrea"), label: "Internet Eritrea", hint: "Rückgänge" }];
 
-      {/* Was ist neu seit dem letzten Öffnen; gestörte Quellen */}
-      {news.length || (data.owner && broken) ? (
-        <View style={{ gap: 6 }}>
-          {news.map((n) => (
-            <Pressable key={n.to} onPress={() => { tap(); router.navigate(`${n.to}${n.to.includes("?") ? "&" : "?"}k=${Date.now()}` as any); }} accessibilityRole="button"
-              style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 8, minHeight: 32, opacity: pressed ? 0.6 : 1 })}>
-              <View style={{ width: 14, alignItems: "center" }}><View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: t.accent }} /></View>
-              <T v="smallStrong" color={t.accent} style={{ flex: 1 }}>{n.text}</T>
-              <Ionicons name="chevron-forward" size={15} color={t.accent} />
-            </Pressable>
-          ))}
-          {data.owner && broken ? (
-            <Pressable onPress={() => { tap(); router.push("/sources"); }} accessibilityRole="button"
-              style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 8, minHeight: 32, opacity: pressed ? 0.6 : 1 })}>
-              <View style={{ width: 14, alignItems: "center" }}><Ionicons name="alert-circle-outline" size={14} color={t.muted} /></View>
-              <T v="caption" style={{ flex: 1 }}>{broken === 1 ? "1 Nachrichtenquelle gestört" : `${broken} Nachrichtenquellen gestört`}</T>
-              <Ionicons name="chevron-forward" size={14} color={t.faint} />
-            </Pressable>
-          ) : null}
-        </View>
+  return (
+    <Screen hero={<SkyBand data={data} day={fmtDay(data.now)} stand={fmtTime(loadedAt || data.now)} lines={news} tiles={tiles} />}>
+      {data.owner && broken ? (
+        <Pressable onPress={() => { tap(); router.push("/sources"); }} accessibilityRole="button"
+          style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 8, minHeight: 36, opacity: pressed ? 0.6 : 1 })}>
+          <Ionicons name="alert-circle-outline" size={15} color={t.muted} />
+          <T v="caption" style={{ flex: 1 }}>{broken === 1 ? "1 Nachrichtenquelle gestört" : `${broken} Nachrichtenquellen gestört`}</T>
+          <Ionicons name="chevron-forward" size={14} color={t.faint} />
+        </Pressable>
       ) : null}
 
       {/* Auffällig: automatische Hinweise mit fester Schwelle, eine Zeile je Hinweis */}
       {data.alerts.length ? (
         <>
-          <Head title="Auffällig" />
-          <Group style={{ overflow: "hidden" }}>
-            {/* Warnstreifen links, gerade statt als Bogen an der runden Ecke */}
-            <View pointerEvents="none" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, backgroundColor: t.warn }} />
+          <Head title="Auffällig" first />
+          <Group>
             {data.alerts.map((a, i) => {
               const k = ALERT[a.kind];
               const src = a.source && !a.title.includes(a.source) ? ` · ${a.source}` : "";
@@ -127,18 +114,12 @@ export default function Lage() {
       ) : null}
 
       {/* Geschichten des Tages: zu Eritrea zuerst, dann nach Zahl der Medien. Keine redaktionelle Gewichtung. */}
-      <Head title="Meistberichtet, 24 Std." action="Alle Meldungen" onAction={() => router.navigate("/news")} />
+      <Head title="Meistberichtet, 24 Std." first={!data.alerts.length} action="Alle Meldungen" onAction={() => router.navigate("/news")} />
       {d.top.length ? d.top.map((s, i) => (
         <View key={s.key} style={i ? { borderTopWidth: StyleSheet.hairlineWidth, borderColor: t.rule } : undefined}>
           <StoryCard s={s} seenBefore={seenBefore} />
         </View>
       )) : <T v="small">In den letzten 24 Stunden keine Meldungen aus unseren Quellen.</T>}
-
-      {/* Messwerte: eine Zeile je Wert, Zahl rechts */}
-      <Head title="Messwerte" action="Karte" onAction={() => router.navigate("/map")} />
-      <Group>
-        {signals.map((x, i) => <ListRow key={x.label} first={i === 0} icon={x.icon} label={x.label} hint={x.hint} value={x.value} tone={x.tone} onPress={() => router.push(x.to as any)} />)}
-      </Group>
 
       {/* Weiter zu */}
       <Head title="Weiter zu" />

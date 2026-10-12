@@ -1,4 +1,5 @@
 // Farben und Schrift von Semay: ruhiger Nachrichten-Stil, Farbe nur mit Bedeutung (Quelle, Status, Warnung).
+import { createContext, useContext } from "react";
 import { Platform, useColorScheme } from "react-native";
 
 const light = {
@@ -60,9 +61,14 @@ const dark: Theme = {
   status: { confirmed: "#6FB37B", likely: "#A8C77A", unconfirmed: "#E3A23B", disputed: "#B9A0E6", false: "#E58A5E" },
 };
 
+/** Erzwingt für einen Bereich das dunkle Farbschema (z. B. das Himmelsband oben auf der Lage) */
+export const ForceDark = createContext(false);
+const DARK = { ...dark, dark: true }, LIGHT = { ...light, dark: false };
+
 export function useTheme(): Theme & { dark: boolean } {
   const scheme = useColorScheme();
-  return scheme === "dark" ? { ...dark, dark: true } : { ...light, dark: false };
+  const force = useContext(ForceDark);
+  return force || scheme === "dark" ? DARK : LIGHT;
 }
 
 /** Markenfarben (fest, unabhängig vom hellen oder dunklen Modus). Siehe brand/ und das Markenhandbuch. */

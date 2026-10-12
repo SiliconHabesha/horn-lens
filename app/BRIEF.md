@@ -118,3 +118,10 @@ Entscheidungen des Inhabers: Lesen ohne Anmeldung; alle Meldungen, Geschichten, 
 - Für Suchmaschinen freigeschaltet: kein noindex mehr, robots.txt mit Sitemap, Beschreibung und Vorschau für geteilte Links.
 - App-Name, Schema `semay://`, Expo-Slug `semay`. Bundle-ID bleibt `app.beles.hornlens` (unsichtbar; Wechsel erst, falls gewünscht, vor der ersten Einreichung).
 - Unverändert intern: GitHub-Repo und Vercel-Projekt heißen weiter horn-lens; Supabase-Organisation „Horn Lens“.
+
+## Runde 12 (12.10.2026): Oberfläche
+
+- Lage beginnt mit dem „Himmelsband“ (immer Tiefsee, auch im hellen Modus): Marke, Datum, Neues seit dem letzten Besuch, kleine Karte der Region (antippen → Karte) und vier Messwert-Kacheln. Die Messwerte-Liste darunter entfällt. Am Computer stehen Karte und Kacheln nebeneinander. Statusleiste dort hell.
+- Meldungszeilen: alle Schlagzeilen gleich kräftig, „Neu“ als Wort statt fetter Schrift; neben dem Medium steht die Seite in Kurzform (z. B. „Exil Eritrea“, „Regierung Äthiopien“, bei Geschichten „3 Quellenarten“).
+- Auffällig ohne Warnstreifen; Meldungen-Reiter ohne doppelte Suche.
+- Technik: `ForceDark` in theme.ts (erzwingt dunkles Schema für einen Bereich), `Screen hero`, `components/SkyBand.tsx`, `TYPE_SHORT` in de.ts.

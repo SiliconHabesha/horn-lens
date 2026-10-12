@@ -83,7 +83,7 @@ export default function News() {
     <View style={{ paddingTop: ins.top + space.m + (winW >= 900 ? space.xl : 0), gap: space.m, paddingBottom: space.s, maxWidth: 760, width: "100%", alignSelf: "center" }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
         <T v="display" accessibilityRole="header">{mode === "saved" ? "Gemerkt" : "Meldungen"}</T>
-        <TabTools>
+        <TabTools noSearch>
           <IconButton icon={mode === "saved" ? "close" : "bookmark-outline"} label={mode === "saved" ? "Gemerkt schließen" : `Gemerkt (${saved.length})`}
             onPress={() => setMode(mode === "saved" ? (grouped ? "stories" : "items") : "saved")} />
         </TabTools>

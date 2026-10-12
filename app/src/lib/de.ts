@@ -16,6 +16,12 @@ export const TYPES: Record<string, string> = {
   measurement: "Messung",
   maritime_authority: "Seefahrtsbehörde",
 };
+/** Kurzform für Listenzeilen (neben dem Farbpunkt) */
+export const TYPE_SHORT: Record<string, string> = {
+  government_er: "Regierung Eritrea", progov_er: "Eritrea, regierungsnah", exile: "Exil Eritrea",
+  government_et: "Regierung Äthiopien", progov_et: "Äthiopien, regierungsnah", ethiopian_independent: "Äthiopien, privat",
+  tigray: "Tigray", international: "International", un_ngo: "UN und NGO", aggregator: "nicht eingeordnet",
+};
 export const TYPE_NOTE: Record<string, string> = {
   government_er: "Amtliche Erklärungen aus Eritrea, einer Konfliktpartei. Sie zeigen die Haltung der Regierung, keine unabhängige Bestätigung.",
   progov_er: "Nah an Eritreas Regierung. Ihre Berichte zum Konflikt wie die Aussage einer Konfliktpartei lesen.",

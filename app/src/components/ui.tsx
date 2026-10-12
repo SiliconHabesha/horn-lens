@@ -140,8 +140,10 @@ export function Empty({ icon = "leaf-outline", text }: { icon?: keyof typeof Ion
 }
 
 /** Bildschirm mit großem Titel, Zieh-zum-Aktualisieren und Hinweis bei altem Stand */
-export function Screen({ title, sub, right, children, scroll = true, refresh = true, topInset = true }: {
+export function Screen({ title, sub, right, children, scroll = true, refresh = true, topInset = true, hero }: {
   title?: string; sub?: string; right?: React.ReactNode; children: React.ReactNode; scroll?: boolean; refresh?: boolean; topInset?: boolean;
+  /** Randlose Fläche ganz oben (übernimmt den Abstand zur Statusleiste selbst) */
+  hero?: React.ReactNode;
 }) {
   const t = useTheme();
   const ins = useSafeAreaInsets();
@@ -165,9 +167,10 @@ export function Screen({ title, sub, right, children, scroll = true, refresh = t
   const inner = <View style={{ maxWidth: 760, width: "100%", alignSelf: "center" }}>{head}{offlineBanner}{children}</View>;
   if (!scroll) return <View style={{ flex: 1, backgroundColor: t.bg, paddingTop: (topInset ? ins.top : 0) + space.m + (wide && topInset ? space.xl : 0), paddingHorizontal: space.l }}>{inner}</View>;
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: t.bg }} contentContainerStyle={{ paddingTop: (topInset ? ins.top : 0) + space.m + (wide && topInset ? space.xl : 0), paddingHorizontal: space.l, paddingBottom: space.xxl * 2 }}
+    <ScrollView style={{ flex: 1, backgroundColor: t.bg }} contentContainerStyle={{ paddingTop: hero ? 0 : (topInset ? ins.top : 0) + space.m + (wide && topInset ? space.xl : 0), paddingHorizontal: space.l, paddingBottom: space.xxl * 2 }}
       refreshControl={refresh ? <RefreshControl refreshing={refreshing} onRefresh={doRefresh} tintColor={t.muted} colors={[t.accent]} /> : undefined}
       keyboardShouldPersistTaps="handled">
+      {hero ? <View style={{ marginHorizontal: -space.l, marginBottom: space.l }}>{hero}</View> : null}
       {inner}
     </ScrollView>
   );
@@ -190,12 +193,12 @@ export function IconButton({ icon, onPress, label }: { icon: keyof typeof Ionico
 }
 
 /** Suchen und Mehr oben rechts auf jedem Reiter. Am Computer stehen beide in der Seitenleiste, dann nur, was extra übergeben wird. */
-export function TabTools({ children }: { children?: React.ReactNode }) {
+export function TabTools({ children, noSearch }: { children?: React.ReactNode; noSearch?: boolean }) {
   const wide = useWindowDimensions().width >= 900;
   return (
     <View style={{ flexDirection: "row", gap: 8 }}>
       {children}
-      {wide ? null : <IconButton icon="search" label="Suchen" onPress={() => router.push("/search")} />}
+      {wide || noSearch ? null : <IconButton icon="search" label="Suchen" onPress={() => router.push("/search")} />}
       {wide ? null : <IconButton icon="ellipsis-horizontal" label="Mehr" onPress={() => router.push("/more")} />}
     </View>
   );

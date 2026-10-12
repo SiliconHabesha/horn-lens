@@ -2,7 +2,7 @@
 import { router } from "expo-router";
 import React from "react";
 import { Platform, Pressable, Share, StyleSheet, View } from "react-native";
-import { fmtIsoDay, fmtWhen, plural, srcName, TYPE_ORDER, TYPES } from "../lib/de";
+import { fmtIsoDay, fmtWhen, plural, srcName, TYPE_ORDER, TYPE_SHORT, TYPES } from "../lib/de";
 import { font, useTheme } from "../lib/theme";
 import type { Story } from "../lib/stories";
 import type { Item } from "../lib/types";
@@ -50,6 +50,9 @@ export async function shareStory(s: Story) {
 }
 
 /** Farbpunkte der Quellenarten (höchstens vier), als ruhiges Zeichen dafür, wer berichtet */
+/** Welche Seite spricht: eine Quellenart ausgeschrieben, bei mehreren die Zahl der Seiten */
+const side = (types: string[]) => (types.length === 1 ? TYPE_SHORT[types[0]] || "" : types.length > 1 ? `${types.length} Quellenarten` : "");
+
 function Dots({ types }: { types: string[] }) {
   const t = useTheme();
   return (
@@ -66,10 +69,12 @@ function NewsRow({ title, types, who, when, isNew, onPress, a11y }: { title: str
     <Pressable onPress={() => { tap(); onPress(); }} accessibilityRole="button" accessibilityLabel={a11y} accessibilityHint="Öffnet Einzelheiten"
       style={({ pressed }) => ({ paddingVertical: 13, gap: 5, opacity: pressed ? 0.6 : 1 })}>
       {/* Neu seit dem letzten Besuch: Schlagzeile kräftig; Älteres normal */}
-      <T v={isNew ? "bodyStrong" : "body"} color={t.ink} style={titleStyle(title, isNew)} numberOfLines={3}>{title}</T>
+      <T v="bodyStrong" color={t.ink} style={titleStyle(title, true)} numberOfLines={3}>{title}</T>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        {/* Neu seit dem letzten Besuch: ein Wort statt fetter Schrift, damit die Liste ruhig bleibt */}
+        {isNew ? <T v="caption" color={t.accent} style={{ fontFamily: font.bold }}>Neu</T> : null}
         <Dots types={types} />
-        <T v="caption" color={t.ink} numberOfLines={1} style={{ flexShrink: 1 }}>{who}</T>
+        <T v="caption" numberOfLines={1} style={{ flexShrink: 1 }}><T v="caption" color={t.ink}>{who}</T>{side(types) ? ` · ${side(types)}` : ""}</T>
         <T v="caption" numberOfLines={1} style={{ flexShrink: 0 }}>{when}</T>
 
       </View>
