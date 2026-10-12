@@ -75,16 +75,16 @@ export default function More() {
 
       <Head title="Inhalte" />
       <Group>
-        <ListRow first icon="location-outline" label="Orte" sub="Was Horn Lens zu Asmara, Assab, Adigrat und mehr weiß" onPress={() => router.push("/places")} />
+        <ListRow first icon="location-outline" label="Orte" sub="Was Semay zu Asmara, Assab, Adigrat und mehr weiß" onPress={() => router.push("/places")} />
         <ListRow icon="planet-outline" label="Satellitenbilder" sub="Vorher und nachher vergleichen" onPress={() => router.push("/satellite")} />
         <ListRow icon="bookmark-outline" label="Gemerkte Meldungen" sub="Nur auf diesem Gerät gespeichert" onPress={() => router.navigate(`/news?mode=saved&k=${Date.now()}`)} />
         <ListRow icon="search-outline" label="Suchen" sub="Orte, Meldungen, Behauptungen und Quellen" onPress={() => router.push("/search")} />
       </Group>
 
-      <Head title="Über Horn Lens" />
+      <Head title="Über Semay" />
       <Group>
         <ListRow first icon="book-outline" label="Einführung und Legende" sub="Farben der Quellen, Stufen der Behauptungen" onPress={() => router.push("/welcome")} />
-        <ListRow icon="compass-outline" label="So arbeitet Horn Lens" sub="Regeln, Grenzen, Nachweise" onPress={() => router.push("/method")} />
+        <ListRow icon="compass-outline" label="So arbeitet Semay" sub="Regeln, Grenzen, Nachweise" onPress={() => router.push("/method")} />
         <ListRow icon="library-outline" label="Unsere Quellen" sub="Wer berichtet, wie wir sie einordnen, was noch fehlt" onPress={() => router.push("/sources")} />
         <ListRow icon="git-compare-outline" label="Korrekturen" sub="Jede Änderung an einer Behauptung" onPress={() => router.push("/corrections")} />
         <ListRow icon="people-outline" label="BELES" sub="Die App für Eritreerinnen und Eritreer weltweit" external onPress={() => openLink(BELES_URL)} />
@@ -98,7 +98,7 @@ export default function More() {
       </Group>
       <View style={{ alignItems: "center", marginTop: space.xxl, gap: 6 }}>
         <Mark size={26} color={t.muted} dot={t.accent} />
-        <T v="caption">Horn Lens {Constants.expoConfig?.version || ""}, powered by BELES</T>
+        <T v="caption">Semay {Constants.expoConfig?.version || ""}, powered by BELES</T>
         {!session ? (
           <Pressable onPress={() => { tap(); router.push("/login"); }} accessibilityRole="link" hitSlop={8} style={{ minHeight: 44, justifyContent: "center" }}>
             <T v="caption" color={t.muted} style={{ textDecorationLine: "underline" }}>Anmeldung für die Redaktion</T>

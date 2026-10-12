@@ -140,7 +140,7 @@ const RULES: Rule[] = [
   [/^Corrected: ([^."]+)\.(?: Previous wording: "([\s\S]*?)"\.)?(?: ([\s\S]*))?$/, (_, parts, old, rest) =>
     `Berichtigt: ${parts.split(", ").map((x) => CORR[x] || x).join(", ")}.${old ? ` Bisheriger Wortlaut: „${de(old)}“` : ""}${rest ? (de(rest) === rest && isEnglish(rest, rest) ? ` (englischer Wortlaut: „${rest}“)` : ` ${de(rest)}`) : ""}`],
   [/^unknown status (.*)$/, (_, x) => `unbekannter Status ${x}`],
-  [/^not allowed$/, () => "nur für den Betreiber von Horn Lens freigegeben"],
+  [/^not allowed$/, () => "nur für den Betreiber von Semay freigegeben"],
 ];
 export function de<T extends string | null | undefined>(t: T): T {
   if (t == null || t === "") return t;

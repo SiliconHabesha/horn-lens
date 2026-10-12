@@ -43,7 +43,7 @@ export default function Sources() {
         })}
       </Card>
       {VOICE_TYPES.some((k) => !sources.some((x) => x.source_type === k && !isErr(x))) ? (
-        <T v="small" style={{ marginTop: -space.s, marginBottom: space.l }}>Wo eine Seite fehlt, kann Horn Lens sie nicht zeigen. Fehlt sie in einer Geschichte, heißt das nicht, dass sie schweigt. Wir suchen nach frei abrufbaren Quellen und umgehen keine Sperren.</T>
+        <T v="small" style={{ marginTop: -space.s, marginBottom: space.l }}>Wo eine Seite fehlt, kann Semay sie nicht zeigen. Fehlt sie in einer Geschichte, heißt das nicht, dass sie schweigt. Wir suchen nach frei abrufbaren Quellen und umgehen keine Sperren.</T>
       ) : null}
       <T v="small" style={{ marginBottom: space.m }}>Jede Quelle ist nach Art eingeordnet, damit du Meldungen gewichten kannst. Die Farbe steht in allen Listen für diese Art.</T>
       {groups.map(([k, list]) => (

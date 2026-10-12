@@ -1,4 +1,4 @@
-# Horn Lens in den App Store und Play Store bringen
+# Semay in den App Store und Play Store bringen
 
 Diese Anleitung ist für dich, Schritt für Schritt. Wo ein Befehl steht, kannst du auch Claude Code auf deinem Mac bitten: „Führe Schritt X aus STORE.md im Ordner app aus.“ Passwörter tippst du immer selbst.
 
@@ -33,7 +33,7 @@ Diese Anleitung ist für dich, Schritt für Schritt. Wo ein Befehl steht, kannst
 
 ## Schritt 2: Benachrichtigungen auf Android (Firebase)
 
-1. Auf https://console.firebase.google.com ein Projekt „Horn Lens“ anlegen (Google Analytics: aus).
+1. Auf https://console.firebase.google.com ein Projekt „Semay“ anlegen (Google Analytics: aus).
 2. Android-App hinzufügen, Paketname: `app.beles.hornlens`.
 3. Die Datei `google-services.json` herunterladen und in den Ordner `app` legen.
 4. In `app.json` unter `android` ergänzen: `"googleServicesFile": "./google-services.json"`.
@@ -76,27 +76,27 @@ Für die Play-Einreichung braucht EAS einmal einen Google-Service-Account-Schlü
 ### Angaben für die Prüfung (App Review / Play Console)
 
 **Hinweis an Apple (Review Notes), auf Englisch:**
-> Horn Lens is a free, ad-free situation monitor for the Horn of Africa. Without signing in, the app shows its public edition: measured signals (NASA FIRMS heat detections, USGS earthquakes, UKMTO maritime incidents), Sentinel-2 satellite images with before/after comparison, and Red Sea shipping headlines that link to the original publishers. Signing in (Sign in with Apple, Google, or email) is optional; additional editorial tools are available only to the app's operator. Accounts can be deleted in the app under "Mehr" → "Konto löschen". No account is required to review the app.
+> Semay is a free, ad-free situation monitor for the Horn of Africa. Without signing in, the app shows its public edition: measured signals (NASA FIRMS heat detections, USGS earthquakes, UKMTO maritime incidents), Sentinel-2 satellite images with before/after comparison, and Red Sea shipping headlines that link to the original publishers. Signing in (Sign in with Apple, Google, or email) is optional; additional editorial tools are available only to the app's operator. Accounts can be deleted in the app under "Mehr" → "Konto löschen". No account is required to review the app.
 
 **Datenschutz-Angaben (App Store „App-Datenschutz“ / Play „Datensicherheit“):**
 - Kein Tracking, keine Werbung, keine Analyse.
 - Erhoben: E-Mail-Adresse und ggf. Name (nur bei freiwilliger Anmeldung, App-Funktion, nicht für Tracking); Geräte-Kennung für Benachrichtigungen (App-Funktion).
 - Konto-Löschung: in der App (Mehr → Konto löschen). Für Google Play zusätzlich eine Web-Adresse angeben: `https://horn-lens.vercel.app/datenschutz.html` (Abschnitt 4 beschreibt die Löschung).
-- Anmeldung mit Google/Apple einrichten: siehe die Anleitung „Horn Lens: Anmeldung mit Google und Apple einrichten“.
+- Anmeldung mit Google/Apple einrichten: siehe die Anleitung „Semay: Anmeldung mit Google und Apple einrichten“.
 - Play Console: News-App-Erklärung ausfüllen (Herausgeber und Kontakt wie im Impressum).
 
 **Altersfreigabe:** Fragebogen ehrlich ausfüllen; die App enthält Nachrichten zu bewaffneten Konflikten (Text, keine Bilder von Gewalt).
 
 ## Store-Texte
 
-**Name:** Horn Lens
+**Name:** Semay
 **Untertitel (iOS, max. 30 Zeichen):** Lagebild Eritrea & Rotes Meer
 **Kurzbeschreibung (Play, max. 80 Zeichen):** Messwerte, Satellitenbilder und Meldungen zu Eritrea und dem Roten Meer.
 **Kategorie:** Nachrichten
 **Schlüsselwörter (iOS):** Eritrea,Rotes Meer,Horn von Afrika,Äthiopien,Satellit,Lagebild,Nachrichten,Tigray,Afar
 
 **Beschreibung:**
-> Horn Lens zeigt die Lage am Horn von Afrika, mit Eritrea an erster Stelle: ruhig, nachprüfbar und ohne Lärm.
+> Semay zeigt die Lage am Horn von Afrika, mit Eritrea an erster Stelle: ruhig, nachprüfbar und ohne Lärm.
 >
 > • Messwerte statt Gerüchte: Hitzepunkte von NASA-Satelliten, Erdbeben (USGS) und Vorfälle auf See (UKMTO). Wo eine Quelle nicht antwortet, steht „keine Daten“, nie eine erfundene Zahl.
 > • Satellitenbilder mit Aufnahmedatum: Häfen, Flugplätze und Grenzübergänge, Vorher und Nachher mit dem Finger vergleichen.

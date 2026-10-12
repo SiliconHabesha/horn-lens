@@ -19,7 +19,7 @@ const KIND: Record<string, string> = { outage: "Internetverbindung", maritime: "
 // Klartext zum Teilen: Zusammenfassung mit Quellen, Messwerte, wichtigste Schlagzeilen
 function digest(rep: Report, regions: Record<string, Item[]>) {
   const p = rep.payload || {}, sg: any = p.signals || {};
-  const lines = [`Horn Lens – Tagesbericht ${fmtIsoDay(rep.report_date)}`, ""];
+  const lines = [`Semay – Tagesbericht ${fmtIsoDay(rep.report_date)}`, ""];
   for (const s of rep.summary?.sentences || []) lines.push(`${s.text}${(s.cites || []).length ? ` (${(s.cites || []).map((c: any) => c.outlet).join(", ")})` : ""}`);
   if ((rep.summary?.sentences || []).length) lines.push("");
   const m = [["Hitzepunkte (24 Std.)", sg.fires_24h], ["Auffälligkeiten Internet (48 Std.)", sg.outages_48h], ["Vorfälle auf See (30 Tage)", sg.maritime_30d], ["Erdbeben (7 Tage)", sg.quakes_7d]]

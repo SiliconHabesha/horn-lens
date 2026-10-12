@@ -1,4 +1,4 @@
-// Horn Lens – Satellitenbilder
+// Semay – Satellitenbilder
 // Holt wolkenfreie Sentinel-2-Ausschnitte (10 m) für feste Orte über den kostenlosen
 // Microsoft Planetary Computer (kein Konto nötig). Jedes Bild bekommt das echte
 // Aufnahmedatum des Satelliten. Bewölkung wird für genau den Ausschnitt gemessen

@@ -1,4 +1,4 @@
-// Push-Benachrichtigungen: Erlaubnis holen, Gerät bei Horn Lens anmelden, Antippen öffnet den passenden Bildschirm.
+// Push-Benachrichtigungen: Erlaubnis holen, Gerät bei Semay anmelden, Antippen öffnet den passenden Bildschirm.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import * as Device from "expo-device";
@@ -33,7 +33,7 @@ export async function enablePush(alerts: boolean, report: boolean): Promise<stri
   }
   let { status } = await Notifications.getPermissionsAsync();
   if (status !== "granted") status = (await Notifications.requestPermissionsAsync()).status;
-  if (status !== "granted") return "Benachrichtigungen sind für Horn Lens ausgeschaltet. Du kannst sie in den Einstellungen des Handys erlauben.";
+  if (status !== "granted") return "Benachrichtigungen sind für Semay ausgeschaltet. Du kannst sie in den Einstellungen des Handys erlauben.";
   const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
   const kinds = [alerts && "alerts", report && "report"].filter(Boolean) as string[];
   const { error } = await sb.rpc("app_push_register", { p_token: token, p_kinds: kinds });

@@ -1,13 +1,13 @@
 {
   "expo": {
-    "name": "Horn Lens",
-    "slug": "horn-lens",
+    "name": "Semay",
+    "slug": "semay",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "hornlens",
+    "scheme": "semay",
     "userInterfaceStyle": "automatic",
-    "description": "Lagebild zum Horn von Afrika mit Eritrea zuerst: Meldungen mit Quellenangabe, Messwerte, Satellitenbilder. Powered by BELES.",
+    "description": "Semay (ሰማይ, „Himmel“): Lagebild zum Horn von Afrika, Eritrea zuerst. Meldungen aller Seiten mit Quellenangabe, Behauptungen mit Belegen, Messwerte, Satellitenbilder. Powered by BELES.",
     "primaryColor": "#13262E",
     "ios": {
       "bundleIdentifier": "app.beles.hornlens",
@@ -37,8 +37,8 @@
       "bundler": "metro",
       "output": "single",
       "favicon": "./assets/favicon.png",
-      "name": "Horn Lens",
-      "shortName": "Horn Lens",
+      "name": "Semay",
+      "shortName": "Semay",
       "lang": "de",
       "themeColor": "#13262E",
       "backgroundColor": "#EDF0EE"

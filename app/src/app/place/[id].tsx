@@ -20,7 +20,7 @@ export default function PlaceScreen() {
   const p = placeById(String(id));
   const d = useMemo(() => (p && data ? dossier(p, data, dedupe(poolOf(data))) : null), [p, data]);
   const [w, setW] = useState(0);
-  if (!p) return <Screen topInset={false} refresh={false}><Stack.Screen options={{ title: "Ort" }} /><Empty text="Diesen Ort kennt Horn Lens nicht." /></Screen>;
+  if (!p) return <Screen topInset={false} refresh={false}><Stack.Screen options={{ title: "Ort" }} /><Empty text="Diesen Ort kennt Semay nicht." /></Screen>;
   if (!data || !d) return <Screen topInset={false} refresh={false}><Stack.Screen options={{ title: p.name }} /><Skeleton rows={5} /></Screen>;
 
   // Ausschnitt: etwa 150 km um den Ort

@@ -24,7 +24,7 @@ export default function SetPassword() {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: t.bg }} contentContainerStyle={{ padding: space.l, gap: space.m, maxWidth: 480, width: "100%", alignSelf: "center", paddingTop: 64 }}>
       <T v="display">Neues Passwort</T>
-      <T v="small">Wähle ein neues Passwort für Horn Lens. Mindestens 8 Zeichen, besser 12 oder mehr.</T>
+      <T v="small">Wähle ein neues Passwort für Semay. Mindestens 8 Zeichen, besser 12 oder mehr.</T>
       <TextInput value={pw} onChangeText={setPw} secureTextEntry autoComplete="new-password" textContentType="newPassword" placeholder="Neues Passwort" placeholderTextColor={t.faint}
         style={{ fontFamily: font.regular, fontSize: 16, color: t.ink, backgroundColor: t.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule, paddingHorizontal: 14, height: 48 }}
         onSubmitEditing={save} accessibilityLabel="Neues Passwort" />

@@ -1,4 +1,4 @@
-// Horn Lens – Messsignale
+// Semay – Messsignale
 // Holt Feuer-Hotspots (NASA FIRMS), Erdbeben (USGS), Internetausfälle (IODA) und
 // Seevorfälle (UKMTO) für das Kartengebiet. Speichert nur, was die Quelle liefert.
 // Zugang nur mit internem Schlüssel (Header x-ingest-key), daher verify_jwt=false.

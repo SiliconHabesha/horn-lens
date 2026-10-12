@@ -41,7 +41,7 @@ export async function shareStory(s: Story) {
     seen.add(who);
     lines.push(`– ${who} (${TYPES[it.source_type] || it.source_type}): ${it.url}`);
   }
-  lines.push("", "Zusammengestellt mit Horn Lens. Meldungen sind keine geprüften Tatsachen.");
+  lines.push("", "Zusammengestellt mit Semay. Meldungen sind keine geprüften Tatsachen.");
   const text = lines.join("\n");
   try {
     if (Platform.OS === "web") { await navigator.clipboard.writeText(text); toast("Geschichte als Text kopiert", "copy-outline"); }

@@ -1,4 +1,6 @@
-# Horn Lens
+# Semay (ሰማይ)
+
+> Neuer Name seit 12. Oktober 2026 (vorher „Horn Lens“, der Name war schon von einem YouTube-Kanal belegt). Semay heißt auf Tigrinya und Amharisch „Himmel“. Web: https://semay-lagebild.vercel.app
 
 Ein persönliches Lagebild zum Horn von Afrika, mit Eritrea an erster Stelle. Powered by BELES.
 

@@ -214,7 +214,7 @@ export function Button({ label, onPress, kind = "primary", icon, disabled }: { l
   );
 }
 
-/** Schalter in den Farben von Horn Lens (statt Systemgrün oder -türkis) */
+/** Schalter in den Farben von Semay (statt Systemgrün oder -türkis) */
 export function Toggle(props: SwitchProps) {
   const t = useTheme();
   return <Switch trackColor={{ false: t.dark ? "#5C7A84" : "#7F9396", true: t.accent }} thumbColor="#FFFFFF" {...({ activeThumbColor: "#FFFFFF" } as any)} ios_backgroundColor={t.dark ? "#5C7A84" : "#7F9396"} {...props} />;

@@ -35,9 +35,9 @@ export default function ItemDetail() {
   const c = t.type[it.source_type] || t.type.aggregator;
   const others = story ? story.items.filter((x) => x.id !== it.id) : [];
   const byType = TYPE_ORDER.map((k) => [k, others.filter((x) => x.source_type === k)] as const).filter(([, l]) => l.length);
-  // Welche Seiten haben (in unseren Quellen) noch nicht berichtet? Nur Quellenarten, die Horn Lens überhaupt abruft.
+  // Welche Seiten haben (in unseren Quellen) noch nicht berichtet? Nur Quellenarten, die Semay überhaupt abruft.
   // Vorsichtig: nur Quellenarten, deren Quellen gerade erreichbar sind und die lateinisch geschriebene Schlagzeilen liefern
-  // (Schlagzeilen in Tigrinya, Amharisch oder Arabisch kann Horn Lens nicht zuordnen)
+  // (Schlagzeilen in Tigrinya, Amharisch oder Arabisch kann Semay nicht zuordnen)
   const latin = (s: string) => /[a-z]{3}/i.test(s) && !/[\u1200-\u137f\u0600-\u06ff]/.test(s);
   const okTypes = new Set((data?.sources || []).filter((s) => s.last_ok_at && Date.now() - new Date(s.last_ok_at).getTime() < 24 * 3600e3).map((s) => s.source_type));
   const tracked = new Set(pool.filter((x) => latin(x.title) && okTypes.has(x.source_type)).map((x) => x.source_type));
@@ -112,7 +112,7 @@ export default function ItemDetail() {
           ))}
           {missing.length ? <View style={{ marginTop: space.m }}>
             <T v="small">Noch keine Meldung dazu in unseren Quellen von: {missing.map((k) => TYPES[k]).join(", ")}</T>
-            <T v="caption">Bezogen auf die Quellen, die Horn Lens abruft. Schweigen ist keine Aussage.</T>
+            <T v="caption">Bezogen auf die Quellen, die Semay abruft. Schweigen ist keine Aussage.</T>
           </View> : null}
           <Pressable onPress={() => { tap(); setHow(!how); }} accessibilityRole="button" accessibilityState={{ expanded: how }} style={{ marginTop: space.s, minHeight: 44, justifyContent: "center", alignSelf: "flex-start" }}>
             <T v="smallStrong" color={t.accent}>Wie wird zusammengefasst?</T>

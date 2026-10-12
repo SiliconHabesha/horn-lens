@@ -20,7 +20,7 @@ export default function TabsLayout() {
     <Tabs screenListeners={{ tabPress: () => tap() }}
       tabBar={(props: any) => side ? (
         <View style={{ width: 240, height: "100%", alignSelf: "stretch", flexGrow: 0, flexShrink: 0, backgroundColor: t.tab, borderRightWidth: 1, borderRightColor: t.rule }}>
-          <Pressable onPress={() => router.navigate("/")} accessibilityRole="link" accessibilityLabel="Horn Lens, zur Lage"
+          <Pressable onPress={() => router.navigate("/")} accessibilityRole="link" accessibilityLabel="Semay, zur Lage"
             style={{ paddingHorizontal: 22, paddingTop: 26, paddingBottom: 18 }}>
             <Logo size={19} sub="powered by BELES" />
           </Pressable>

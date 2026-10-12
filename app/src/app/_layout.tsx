@@ -35,7 +35,7 @@ export default function Root() {
   useEffect(() => { if (Platform.OS === "web") Font.loadAsync({ NotoSansEthiopic_400Regular, NotoSansEthiopic_600SemiBold }).catch(() => {}); }, []);
   useEffect(() => { SystemUI.setBackgroundColorAsync(t.bg).catch(() => {}); }, [t.bg]);
   useEffect(() => { if (loaded) SplashScreen.hideAsync().catch(() => {}); }, [loaded]);
-  useEffect(() => { if (Platform.OS === "web") { try { document.documentElement.lang = "de"; document.title = "Horn Lens"; } catch { /* egal */ } } }, []);
+  useEffect(() => { if (Platform.OS === "web") { try { document.documentElement.lang = "de"; document.title = "Semay – Lagebild Horn von Afrika"; } catch { /* egal */ } } }, []);
   if (!loaded) return null;
   return (
     <SafeAreaProvider>
@@ -49,7 +49,7 @@ export default function Root() {
           // Direkt geöffnet (Link, Benachrichtigung): trotzdem ein Weg zurück zur Lage
           ...(navigation.canGoBack() ? {} : { headerLeft: () => <HomeBack /> }),
         })}>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false, title: "Horn Lens" }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false, title: "Semay" }} />
           <Stack.Screen name="item/[id]" options={{ title: "Meldung" }} />
           <Stack.Screen name="place/[id]" options={{ title: "Ort" }} />
           <Stack.Screen name="places" options={{ title: "Orte" }} />
@@ -60,7 +60,7 @@ export default function Root() {
           <Stack.Screen name="report/[date]" options={{ title: "Tagesbericht" }} />
           <Stack.Screen name="more" options={{ title: "Mehr" }} />
           <Stack.Screen name="sources" options={{ title: "Quellen" }} />
-          <Stack.Screen name="method" options={{ title: "So arbeitet Horn Lens" }} />
+          <Stack.Screen name="method" options={{ title: "So arbeitet Semay" }} />
           <Stack.Screen name="satellite" options={{ title: "Satellit" }} />
           <Stack.Screen name="corrections" options={{ title: "Korrekturen" }} />
           <Stack.Screen name="login" options={{ title: "Redaktion", presentation: "modal" }} />

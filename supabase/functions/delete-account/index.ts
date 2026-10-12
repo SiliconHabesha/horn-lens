@@ -1,4 +1,4 @@
-// Horn Lens – Konto löschen (verlangen Apple und Google für Apps mit Anmeldung).
+// Semay – Konto löschen (verlangen Apple und Google für Apps mit Anmeldung).
 // Löscht nur das Konto, das die Anfrage stellt: die Kennung kommt aus dem geprüften Anmelde-Token, nie aus der Anfrage.
 import { createClient } from "npm:@supabase/supabase-js@2";
 

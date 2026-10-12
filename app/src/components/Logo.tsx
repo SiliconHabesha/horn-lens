@@ -1,5 +1,6 @@
-// Markenzeichen von Horn Lens: zwei Klammern um einen Punkt.
-// Bedeutung: Jede Angabe steht in ihrem Zusammenhang („in Klammern: wer sagt es“); die Linse sieht von außen auf das Geschehen.
+// Markenzeichen von Semay (ሰማይ, „Himmel“ auf Tigrinya und Amharisch): zwei Klammern um einen Punkt.
+// Bedeutung: Jede Angabe steht in ihrem Zusammenhang („in Klammern: wer sagt es“). Zwei gleiche Bögen: beide Seiten
+// mit gleichem Gewicht, unter demselben Himmel. Der Punkt ist das Ereignis.
 // Quelle der Geometrie: brand/src/build.py (gleiche Maße, damit App-Symbol und Zeichen in der App übereinstimmen).
 import React from "react";
 import { View } from "react-native";
@@ -35,10 +36,14 @@ export function Logo({ size = 22, color, sub }: { size?: number; color?: string;
   const t = useTheme();
   const c = color || t.ink;
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: size * 0.42 }} accessible accessibilityRole="header" accessibilityLabel={sub ? `Horn Lens, ${sub}` : "Horn Lens"}>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: size * 0.42 }} accessible accessibilityRole="header" accessibilityLabel={sub ? `Semay, ${sub}` : "Semay"}>
       <Mark size={size * 1.35} color={c} />
       <View>
-        <T style={{ fontFamily: font.black, fontSize: size, lineHeight: size * 1.15, letterSpacing: -size * 0.02, color: c }}>Horn Lens</T>
+        <View style={{ flexDirection: "row", alignItems: "baseline", gap: size * 0.32 }}>
+          <T style={{ fontFamily: font.black, fontSize: size, lineHeight: size * 1.15, letterSpacing: -size * 0.02, color: c }}>Semay</T>
+          {/* Der Name in Ge'ez-Schrift, leiser als die lateinische Wortmarke */}
+          <T style={{ fontFamily: font.ethiopicBold, fontSize: size * 0.68, lineHeight: size * 1.15, color: t.muted }}>ሰማይ</T>
+        </View>
         {sub ? <T v="caption" style={{ marginTop: 1 }}>{sub}</T> : null}
       </View>
     </View>

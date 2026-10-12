@@ -174,7 +174,7 @@ export function useStories() {
   const { data } = useData();
   return data ? storiesOf(data) : [];
 }
-/** Quellenarten, die in Horn Lens eine Konfliktseite oder Außensicht vertreten: wer hat noch nicht berichtet? */
+/** Quellenarten, die in Semay eine Konfliktseite oder Außensicht vertreten: wer hat noch nicht berichtet? */
 export const VOICE_TYPES = ["government_er", "progov_er", "exile", "government_et", "progov_et", "ethiopian_independent", "tigray", "international", "un_ngo"];
 /** Geschichten, bei denen die Frage „wer hat noch nicht berichtet?“ sinnvoll ist: es geht um Eritrea, Äthiopien oder Tigray */
 export const conflictStory = (items: Item[]) => items.some((i) => i.regions.some((r) => r === "eritrea" || r === "tigray" || r === "ethiopia" || r === "afar"));

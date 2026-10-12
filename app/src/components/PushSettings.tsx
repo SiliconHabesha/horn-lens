@@ -39,7 +39,7 @@ export function PushSettings() {
   const test = async () => {
     tap();
     try {
-      await Notifications.scheduleNotificationAsync({ content: { title: "Horn Lens", body: "So sieht eine Benachrichtigung aus.", data: { path: "/" } }, trigger: null });
+      await Notifications.scheduleNotificationAsync({ content: { title: "Semay", body: "So sieht eine Benachrichtigung aus.", data: { path: "/" } }, trigger: null });
     } catch { setMsg("Die Probe-Benachrichtigung konnte nicht angezeigt werden."); }
   };
   return (
@@ -66,7 +66,7 @@ export function PushSettings() {
         ) : null}
       </Card>
 
-      {denied ? <View style={{ marginTop: space.s }}><Banner icon="notifications-off-outline" tone="warn" text="Benachrichtigungen sind in den Einstellungen des Handys für Horn Lens ausgeschaltet." action="Einstellungen" onAction={() => Linking.openSettings().catch(() => {})} /></View> : null}
+      {denied ? <View style={{ marginTop: space.s }}><Banner icon="notifications-off-outline" tone="warn" text="Benachrichtigungen sind in den Einstellungen des Handys für Semay ausgeschaltet." action="Einstellungen" onAction={() => Linking.openSettings().catch(() => {})} /></View> : null}
       {msg ? <View style={{ marginTop: space.s }}><Banner icon="notifications-off-outline" tone="warn" text={msg} /></View> : null}
       {pushSupported && (alerts || report) && !denied ? (
         <Pressable onPress={test} accessibilityRole="button" hitSlop={6} style={{ alignSelf: "flex-start", paddingVertical: 10 }}>

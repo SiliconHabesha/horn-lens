@@ -109,3 +109,12 @@ Entscheidungen des Inhabers: Lesen ohne Anmeldung; alle Meldungen, Geschichten, 
 - Behauptungen: Links zu Methode und Korrekturen, „Korrektur melden“ per E-Mail, neue Seite `/corrections`.
 - Quellen: Übersicht „Welche Seiten wir hören“ mit Lücken.
 - Technik: ErrorBoundary, Zeitlimit 20 s für Anfragen, Bildspeicher begrenzt, Sicherheits-Header (Rahmen verboten, HSTS), allowBackup aus. Datenschutz angepasst.
+
+## Runde 11 (12.10.2026): neuer Name Semay, öffentlich auffindbar
+
+- „Horn Lens“ war als YouTube-Kanal belegt. Neuer Name nach Prüfung von gut 50 Kandidaten (YouTube, Web, Domains): **Semay (ሰማይ)**, „Himmel“ auf Tigrinya und Amharisch. Wahl des Inhabers.
+- Zeichen ( • ) bleibt; Wortmarke „Semay“ mit „ሰማይ“ daneben (brand/src/build.py, Logo.tsx). Vorschaubild: „Derselbe Himmel, alle Seiten.“
+- Web: https://semay-lagebild.vercel.app (semay.vercel.app war vergeben). horn-lens.vercel.app leitet dauerhaft weiter.
+- Für Suchmaschinen freigeschaltet: kein noindex mehr, robots.txt mit Sitemap, Beschreibung und Vorschau für geteilte Links.
+- App-Name, Schema `semay://`, Expo-Slug `semay`. Bundle-ID bleibt `app.beles.hornlens` (unsichtbar; Wechsel erst, falls gewünscht, vor der ersten Einreichung).
+- Unverändert intern: GitHub-Repo und Vercel-Projekt heißen weiter horn-lens; Supabase-Organisation „Horn Lens“.

@@ -1,4 +1,4 @@
-// Farben und Schrift von Horn Lens: ruhiger Nachrichten-Stil, Farbe nur mit Bedeutung (Quelle, Status, Warnung).
+// Farben und Schrift von Semay: ruhiger Nachrichten-Stil, Farbe nur mit Bedeutung (Quelle, Status, Warnung).
 import { Platform, useColorScheme } from "react-native";
 
 const light = {

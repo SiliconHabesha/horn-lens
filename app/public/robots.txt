@@ -1,2 +1,7 @@
 User-agent: *
-Disallow: /
+Allow: /
+Disallow: /login
+Disallow: /claim-form
+Disallow: /auth-callback
+
+Sitemap: https://semay-lagebild.vercel.app/sitemap.xml

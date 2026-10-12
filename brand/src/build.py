@@ -1,4 +1,4 @@
-# Horn Lens – Markenzeichen und alle abgeleiteten Dateien aus einer Quelle erzeugen.
+# Semay (ሰማይ) – Markenzeichen und alle abgeleiteten Dateien aus einer Quelle erzeugen.
 # Aufruf (aus brand/): python3 src/build.py
 import math, pathlib, sys, io
 from fontTools.ttLib import TTFont
@@ -52,29 +52,36 @@ def mark_svg(size=1024, fill=0.8, bg=None, fg=TIEFSEE, dot=LAGUNE, small=False, 
 
 # ---- Wortmarke aus Schibsted Grotesk ExtraBold als Pfade (keine Schrift nötig)
 SG = APP / "node_modules/@expo-google-fonts/schibsted-grotesk"
-FONTS = {800: TTFont(SG / "800ExtraBold/SchibstedGrotesk_800ExtraBold.ttf"), 500: TTFont(SG / "500Medium/SchibstedGrotesk_500Medium.ttf")}
+NE = APP / "node_modules/@expo-google-fonts/noto-sans-ethiopic"
+FONTS = {800: TTFont(SG / "800ExtraBold/SchibstedGrotesk_800ExtraBold.ttf"), 500: TTFont(SG / "500Medium/SchibstedGrotesk_500Medium.ttf"),
+         "eth": TTFont(NE / "600SemiBold/NotoSansEthiopic_600SemiBold.ttf")}
 FONT = FONTS[800]
 UPM = FONT["head"].unitsPerEm
 CAP = FONT["OS/2"].sCapHeight
 def text_path(txt, size, x=0, baseline=0, tracking=-0.02, weight=800):
     F = FONTS[weight]; GS = F.getGlyphSet(); CMAP = F.getBestCmap()
-    k = size / UPM; pen = SVGPathPen(GS); cur = 0
+    k = size / F["head"].unitsPerEm; UPMF = F["head"].unitsPerEm; pen = SVGPathPen(GS); cur = 0
     hmtx = F["hmtx"]
     for ch in txt:
         g = CMAP[ord(ch)]
         tp = TransformPen(pen, (k, 0, 0, -k, x + cur * k, baseline))
         GS[g].draw(tp)
-        cur += hmtx[g][0] + tracking * UPM
-    return pen.getCommands(), (cur - tracking * UPM) * k
+        cur += hmtx[g][0] + tracking * UPMF
+    return pen.getCommands(), (cur - tracking * UPMF) * k
 
 def lockup(fg=TIEFSEE, dot=LAGUNE, sub=None, subcol=None, pad=0):
     # Zeichen so hoch wie Versalhöhe × 1,9, Abstand 0,55 Zeichenbreiten
     size = 200; cap = CAP * size / UPM
     mh = cap * 1.9; s = mh / (2 * HALF_H); mw = 2 * HALF_W * s
     gapx = mw * 0.34
-    d, tw = text_path("Horn Lens", size, x=pad + mw + gapx, baseline=pad + mh / 2 + cap / 2)
-    body = mark_parts(pad + mw / 2, pad + mh / 2, s, False, fg, dot) + f'<path d="{d}" fill="{fg}"/>'
-    w = pad * 2 + mw + gapx + tw; h = pad * 2 + mh
+    base = pad + mh / 2 + cap / 2
+    d, tw = text_path("Semay", size, x=pad + mw + gapx, baseline=base)
+    # Der Name in Ge'ez-Schrift, kleiner und leiser daneben
+    gx = pad + mw + gapx + tw + size * 0.3
+    d3, tw3 = text_path("ሰማይ", size * 0.68, x=gx, baseline=base, tracking=0, weight="eth")
+    body = (mark_parts(pad + mw / 2, pad + mh / 2, s, False, fg, dot) + f'<path d="{d}" fill="{fg}"/>'
+            + f'<path d="{d3}" fill="{fg}" fill-opacity="0.55"/>')
+    w = pad * 2 + (gx - pad) + tw3; h = pad * 2 + mh
     if sub:
         ssz = 52; d2, tw2 = text_path(sub, ssz, x=pad + mw + gapx, baseline=pad + mh + ssz * 1.1, tracking=0, weight=500)
         body += f'<path d="{d2}" fill="{subcol or fg}" fill-opacity="0.72"/>'
@@ -119,10 +126,10 @@ lk = lockup(GISCHT, LAGUNE_HELL)
 import re
 vw, vh = map(float, re.search(r'viewBox="0 0 ([\d.]+) ([\d.]+)"', lk).groups())
 inner = re.sub(r"^<svg[^>]*>|</svg>$", "", lk)
-sc = 760 / vw
+sc = min(760 / vw, 300 / vh)
 og = svg(1200, 630, f'<g transform="translate({(1200 - vw * sc) / 2:.1f} {(630 - vh * sc) / 2 - 30:.1f}) scale({sc:.4f})">{inner}</g>'
 , TIEFSEE)
-sub_d, sub_w = text_path("Lagebild Horn von Afrika. Jede Angabe mit Herkunft.", 34, x=0, baseline=0, tracking=0, weight=500)
+sub_d, sub_w = text_path("Lagebild Horn von Afrika. Derselbe Himmel, alle Seiten.", 34, x=0, baseline=0, tracking=0, weight=500)
 og = og.replace("</svg>", f'<path d="{sub_d}" transform="translate({(1200 - sub_w) / 2:.1f} {630 / 2 + vh * sc / 2 + 40:.1f})" fill="{GISCHT}" fill-opacity="0.7"/></svg>')
 job(og, P / "og.png", 1200, 630)
 job(og, PNG / "teilen-1200x630.png", 1200, 630)

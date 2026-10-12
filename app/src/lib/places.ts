@@ -1,4 +1,4 @@
-// Orte rund um Eritrea: Lage, Schreibweisen (lateinisch und in Ge'ez-Schrift) und was Horn Lens zu jedem Ort weiß.
+// Orte rund um Eritrea: Lage, Schreibweisen (lateinisch und in Ge'ez-Schrift) und was Semay zu jedem Ort weiß.
 // Erwähnungen werden nur über den Ortsnamen in der Schlagzeile gefunden: erwähnt heißt nicht, dass dort etwas geschah.
 import { fmtFull, num } from "./de";
 import type { Claim, Data, Item } from "./types";
@@ -69,7 +69,7 @@ export function km(aLat: number, aLon: number, bLat: number, bLon: number) {
 
 export const RADIUS = { fire: 40, quake: 100, ship: 150, sat: 40 };
 
-/** Alles, was Horn Lens zu einem Ort hat. Nur vorhandene Daten, nichts geschätzt. */
+/** Alles, was Semay zu einem Ort hat. Nur vorhandene Daten, nichts geschätzt. */
 export function dossier(p: Place, data: Data, pool: Item[]) {
   const items = pool.filter((i) => mentions(p, i.title));
   // Grobe Vorauswahl über Breiten- und Längengrade, dann genaue Entfernung

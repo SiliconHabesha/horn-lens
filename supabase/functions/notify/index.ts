@@ -1,4 +1,4 @@
-// Horn Lens – Push-Benachrichtigungen
+// Semay – Push-Benachrichtigungen
 // Fragt die Datenbank, was neu zu melden ist (public.push_next), und verschickt es über den Expo-Push-Dienst.
 // Zugang nur mit internem Schlüssel (Header x-ingest-key), daher verify_jwt=false. Läuft per Zeitplan nach den Abholern.
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
   }
   if (data?.report) {
     const d = new Date(`${data.report.date}T12:00:00Z`).toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
-    for (const to of data.report.tokens || []) msgs.push({ to, title: "Tagesbericht ist da", body: `Horn Lens, ${d}: was in den letzten 24 Stunden gemeldet und gemessen wurde.`, sound: "default", data: { path: `/report/${data.report.date}` } });
+    for (const to of data.report.tokens || []) msgs.push({ to, title: "Tagesbericht ist da", body: `Semay, ${d}: was in den letzten 24 Stunden gemeldet und gemessen wurde.`, sound: "default", data: { path: `/report/${data.report.date}` } });
   }
   const r = msgs.length ? await send(msgs) : { sent: 0, dropped: 0 };
   return Response.json({ ran_at: new Date().toISOString(), alerts: (data?.alerts || []).length, report: !!data?.report, ...r });

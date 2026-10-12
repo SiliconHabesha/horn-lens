@@ -19,4 +19,4 @@ export const isStale = (s: { kind: string; newest_item_at?: string | null }) =>
 export const CLAUDE_PAGE = "https://claude.ai/artifact/GaVvLNTjhVbwh5pVPkEQ2p";
 export const BELES_URL = "https://beles.app";
 // Adresse der Web-Fassung (Vercel); Bestätigungs-Links aus E-Mails führen dorthin
-export const WEB_URL = "https://horn-lens.vercel.app";
+export const WEB_URL = "https://semay-lagebild.vercel.app";

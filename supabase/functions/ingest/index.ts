@@ -1,4 +1,4 @@
-// Horn Lens – Abholer für Nachrichten
+// Semay – Abholer für Nachrichten
 // Holt alle aktiven Quellen ab, ordnet Meldungen Regionen zu und speichert Titel, Link und Zeit.
 // Erfindet nichts: Was die Quelle nicht liefert, bleibt leer.
 // Zugang nur mit internem Schlüssel (Header x-ingest-key), daher verify_jwt=false.

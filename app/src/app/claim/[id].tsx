@@ -110,7 +110,7 @@ export default function ClaimDetail() {
         <T v="bodyStrong">Stimmt etwas nicht?</T>
         <T v="small">Stand dieser Seite: {fmtDate(c.events[0]?.at || c.updated_at)}. Wer die Stufe oder den Wortlaut für falsch hält, schreibt uns, am besten mit einem Beleg. Jede Meldung wird geprüft; Änderungen stehen im Verlauf.</T>
         <View style={{ flexDirection: "row", gap: space.l, flexWrap: "wrap" }}>
-          <Pressable onPress={() => { tap(); openLink(`mailto:info@beles.app?subject=${encodeURIComponent(`Horn Lens: Korrektur zu Behauptung ${c.id}`)}&body=${encodeURIComponent(`Behauptung ${c.id}: ${c.statement}\n\nWas stimmt nicht, und welcher Beleg zeigt es?\n`)}`); }}
+          <Pressable onPress={() => { tap(); openLink(`mailto:info@beles.app?subject=${encodeURIComponent(`Semay: Korrektur zu Behauptung ${c.id}`)}&body=${encodeURIComponent(`Behauptung ${c.id}: ${c.statement}\n\nWas stimmt nicht, und welcher Beleg zeigt es?\n`)}`); }}
             accessibilityRole="link" style={{ minHeight: 44, justifyContent: "center" }}>
             <T v="smallStrong" color={t.accent}>Korrektur melden</T>
           </Pressable>

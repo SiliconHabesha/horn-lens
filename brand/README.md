@@ -1,4 +1,4 @@
-# Marke Horn Lens
+# Marke Semay
 
 Zeichen: zwei Klammern um einen Punkt in einer hochkant stehenden Linse. Der Punkt ist die Angabe, die Klammern sind ihr Zusammenhang (wer sagt es, wann, mit welchem Beleg).
 

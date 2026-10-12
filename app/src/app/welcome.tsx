@@ -71,10 +71,10 @@ export default function Welcome() {
       <View style={{ flex: 1, alignItems: "center" }}>
         <ScrollView ref={ref} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={onScroll} onScrollEndDrag={onScroll}
           style={{ width: pageW, flexGrow: 0, flex: 1 }} scrollEventThrottle={32}>
-          <Page w={pageW} icon="mark" title="Willkommen bei Horn Lens"
-            lead="Was am Horn von Afrika geschieht, Eritrea zuerst. Jede Angabe mit Herkunft, damit du selbst einschätzen kannst, wie belastbar sie ist.">
+          <Page w={pageW} icon="mark" title="Willkommen bei Semay"
+            lead="Semay (ሰማይ) heißt auf Tigrinya und Amharisch „Himmel“: derselbe Himmel über allen Seiten. Hier siehst du, was am Horn von Afrika geschieht, Eritrea zuerst, und jede Angabe mit Herkunft.">
             <Row icon="newspaper-outline" color={t.ink} title="Meldungen aller Seiten" sub="Schlagzeilen aus Eritrea, Äthiopien, Tigray, der Diaspora und von außen, nebeneinander." />
-            <Row icon="layers-outline" color={t.ink} title="Geschichten" sub="Berichten mehrere Medien dasselbe, fasst Horn Lens sie zusammen und zeigt, welche Seiten darüber berichten." />
+            <Row icon="layers-outline" color={t.ink} title="Geschichten" sub="Berichten mehrere Medien dasselbe, fasst Semay sie zusammen und zeigt, welche Seiten darüber berichten." />
             <Row icon="map-outline" color={t.ink} title="Messwerte und Satellitenbilder" sub="Hitzepunkte, Erdbeben, Vorfälle auf See, Internetverbindung und Vorher-Nachher-Bilder." />
             <T v="caption" style={{ marginTop: space.s }}>Kostenlos, ohne Konto, ohne Werbung und ohne Tracking.</T>
           </Page>

@@ -61,7 +61,7 @@ export default function ClaimForm() {
   }, [claim]);
 
   if (!data) return <View style={{ flex: 1, backgroundColor: t.bg, padding: space.l }}><Skeleton rows={5} /></View>;
-  if (!data.owner) return <View style={{ flex: 1, backgroundColor: t.bg, padding: space.l }}><T>Nur für den Betreiber von Horn Lens.</T></View>;
+  if (!data.owner) return <View style={{ flex: 1, backgroundColor: t.bg, padding: space.l }}><T>Nur für den Betreiber von Semay.</T></View>;
   if (mode !== "add" && !claim) return <View style={{ flex: 1, backgroundColor: t.bg, padding: space.l }}><T>Diese Behauptung gibt es nicht mehr. Vielleicht wurde sie zusammengelegt oder entfernt.</T></View>;
 
   const input = { fontFamily: font.regular, fontSize: 15.5, color: t.ink, backgroundColor: t.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,

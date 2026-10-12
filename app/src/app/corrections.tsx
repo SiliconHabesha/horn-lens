@@ -1,5 +1,5 @@
 // Korrekturen: jede Änderung an einer Behauptung (neue Stufe, berichtigter Wortlaut), neueste zuerst.
-// Öffentlich, damit jeder sieht, was Horn Lens geändert hat und warum.
+// Öffentlich, damit jeder sieht, was Semay geändert hat und warum.
 import { router, Stack } from "expo-router";
 import React, { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";

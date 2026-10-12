@@ -67,7 +67,7 @@ export default function Signal() {
       {kind === "fires" ? (
         <>
           <Head title={sample ? `${num(data.fires.length)} von ${data.firesCapped ? "mindestens " : ""}${num(data.firesTotal)} Hitzepunkten, nach Ort` : `${num(data.firesTotal)} in 24 Stunden, nach Ort`} />
-          <T v="caption" style={{ marginBottom: space.s }}>{sample ? "Horn Lens lädt nur eine Auswahl, die Zahlen sind deshalb Mindestwerte; alle Punkte zeigt NASA FIRMS. " : ""}Ein Punkt kann zu zwei nahen Orten zählen.</T>
+          <T v="caption" style={{ marginBottom: space.s }}>{sample ? "Semay lädt nur eine Auswahl, die Zahlen sind deshalb Mindestwerte; alle Punkte zeigt NASA FIRMS. " : ""}Ein Punkt kann zu zwei nahen Orten zählen.</T>
           {areas.length ? (
             <Group>{areas.map((a, i) => <ListRow key={a.id} first={i === 0} label={a.id === "_far" ? a.name : `Umkreis ${a.name}`} hint={a.id === "_far" ? undefined : `bis ${RADIUS.fire} km`} value={num(a.n)}
               onPress={a.id !== "_far" ? () => router.push(`/place/${a.id}`) : undefined} align />)}</Group>
