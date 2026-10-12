@@ -9,7 +9,8 @@ import { useReduceMotion } from "../components/Skeleton";
 import { Button, StatusPill, T, tap } from "../components/ui";
 import { STATUS, STATUS_ORDER, TYPES } from "../lib/de";
 import { useData } from "../lib/data";
-import { radius, space, useTheme } from "../lib/theme";
+import { BRAND, radius, space, useTheme } from "../lib/theme";
+import { Mark } from "../components/Logo";
 
 export const WELCOME_KEY = "hl:welcome:v1";
 const VOICES: [string, string][] = [
@@ -17,13 +18,19 @@ const VOICES: [string, string][] = [
   ["tigray", "Aus Tigray, oft einer Konfliktseite nah"], ["international", "Agenturen und Sender von außen"], ["un_ngo", "Eigene Erhebungen, Berichte von außen"],
 ];
 
-function Page({ w, icon, title, lead, children }: { w: number; icon: keyof typeof Ionicons.glyphMap; title: string; lead: string; children?: React.ReactNode }) {
+function Page({ w, icon, title, lead, children }: { w: number; icon: keyof typeof Ionicons.glyphMap | "mark"; title: string; lead: string; children?: React.ReactNode }) {
   const t = useTheme();
   return (
     <ScrollView style={{ width: w }} contentContainerStyle={{ padding: space.xl, gap: space.m }}>
+      {icon === "mark" ? (
+        <View style={{ width: 56, height: 56, borderRadius: 14, backgroundColor: BRAND.ink, alignItems: "center", justifyContent: "center" }}>
+          <Mark size={32} color={BRAND.paper} dot={BRAND.lagoonLight} />
+        </View>
+      ) : (
       <View style={{ width: 56, height: 56, borderRadius: radius.l, backgroundColor: t.cardAlt, alignItems: "center", justifyContent: "center" }}>
         <Ionicons name={icon} size={28} color={t.accent} />
       </View>
+      )}
       <T v="title" accessibilityRole="header">{title}</T>
       <T v="body" color={t.muted}>{lead}</T>
       {children}
@@ -64,7 +71,7 @@ export default function Welcome() {
       <View style={{ flex: 1, alignItems: "center" }}>
         <ScrollView ref={ref} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={onScroll} onScrollEndDrag={onScroll}
           style={{ width: pageW, flexGrow: 0, flex: 1 }} scrollEventThrottle={32}>
-          <Page w={pageW} icon="pulse" title="Willkommen bei Horn Lens"
+          <Page w={pageW} icon="mark" title="Willkommen bei Horn Lens"
             lead="Was am Horn von Afrika geschieht, Eritrea zuerst. Jede Angabe mit Herkunft, damit du selbst einschätzen kannst, wie belastbar sie ist.">
             <Row icon="newspaper-outline" color={t.ink} title="Meldungen aller Seiten" sub="Schlagzeilen aus Eritrea, Äthiopien, Tigray, der Diaspora und von außen, nebeneinander." />
             <Row icon="layers-outline" color={t.ink} title="Geschichten" sub="Berichten mehrere Medien dasselbe, fasst Horn Lens sie zusammen und zeigt, welche Seiten darüber berichten." />

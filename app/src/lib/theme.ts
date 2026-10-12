@@ -65,6 +65,15 @@ export function useTheme(): Theme & { dark: boolean } {
   return scheme === "dark" ? { ...dark, dark: true } : { ...light, dark: false };
 }
 
+/** Markenfarben (fest, unabhängig vom hellen oder dunklen Modus). Siehe brand/ und das Markenhandbuch. */
+export const BRAND = {
+  ink: "#13262E",        // Tiefsee: App-Symbol, Text
+  paper: "#EDF0EE",      // Gischt: Papier
+  lagoon: "#0F6E74",     // Lagune: Akzent auf hellem Grund
+  lagoonLight: "#4FB3B5", // Lagune hell: Akzent auf dunklem Grund
+  night: "#0E1A1F",      // Nacht: Hintergrund im dunklen Modus
+};
+
 export const font = {
   // Schibsted Grotesk: Hausschrift eines skandinavischen Nachrichtenverlags, kräftig in Überschriften, ruhig im Text
   regular: "SG_400",

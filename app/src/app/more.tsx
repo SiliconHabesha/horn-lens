@@ -4,6 +4,7 @@ import Constants from "expo-constants";
 import { router } from "expo-router";
 import React from "react";
 import { Alert, Platform, Pressable, View } from "react-native";
+import { Mark } from "../components/Logo";
 import { PushSettings } from "../components/PushSettings";
 import { toast } from "../components/Toast";
 import { Button, Card, Group, Head, ListRow, Screen, T, openLink, tap } from "../components/ui";
@@ -95,7 +96,10 @@ export default function More() {
         <ListRow icon="lock-closed-outline" label="Datenschutz" external onPress={() => openLink(`${WEB_URL}/datenschutz.html`)} />
         <ListRow icon="mail-outline" label="Kontakt" sub="info@beles.app" external onPress={() => openLink("mailto:info@beles.app?subject=Horn%20Lens")} />
       </Group>
-      <T v="caption" style={{ textAlign: "center", marginTop: space.xl }}>Horn Lens {Constants.expoConfig?.version || ""} · powered by BELES</T>
+      <View style={{ alignItems: "center", marginTop: space.xxl, gap: 6 }}>
+        <Mark size={26} color={t.muted} dot={t.accent} />
+        <T v="caption">Horn Lens {Constants.expoConfig?.version || ""}, powered by BELES</T>
+      </View>
     </Screen>
   );
 }

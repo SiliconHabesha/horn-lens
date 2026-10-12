@@ -1,6 +1,5 @@
 // Anmelden: mit Apple, mit Google oder mit E-Mail und Passwort.
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
@@ -8,7 +7,8 @@ import { Banner, Button, Chip, openLink, T, tap } from "../components/ui";
 import { Provider, signInWith } from "../lib/auth";
 import { WEB_URL } from "../lib/feeds";
 import { sb } from "../lib/supabase";
-import { font, radius, space, useTheme } from "../lib/theme";
+import { BRAND, font, radius, space, useTheme } from "../lib/theme";
+import { Mark } from "../components/Logo";
 
 const MSG: [RegExp, string][] = [
   [/invalid login credentials/i, "E-Mail oder Passwort stimmt nicht."],
@@ -87,7 +87,11 @@ export default function Login({ gate }: { gate?: boolean } = {}) {
       <ScrollView contentContainerStyle={{ padding: space.xl, gap: space.m, maxWidth: 440, width: "100%", alignSelf: "center", paddingTop: gate ? 72 : space.xl }}
         keyboardShouldPersistTaps="handled">
         <View style={{ alignItems: "center", gap: 10, marginBottom: space.l }}>
-          <Image source={require("../../assets/icon.png")} style={{ width: 76, height: 76, borderRadius: 18 }} accessibilityIgnoresInvertColors />
+          {/* App-Symbol wie auf dem Startbildschirm des Handys */}
+          <View style={{ width: 76, height: 76, borderRadius: 18, backgroundColor: BRAND.ink, alignItems: "center", justifyContent: "center",
+            borderWidth: t.dark ? 1 : 0, borderColor: t.rule }}>
+            <Mark size={44} color={BRAND.paper} dot={BRAND.lagoonLight} />
+          </View>
           <T v="display" style={{ textAlign: "center" }}>Horn Lens</T>
           <T v="small" style={{ textAlign: "center" }}>Lagebild zum Horn von Afrika, Eritrea zuerst. Nachprüfbar, ruhig, ohne Werbung.</T>
           <T v="caption">powered by <T v="caption" color={t.ink} style={{ fontFamily: font.black, letterSpacing: 1 }}>BELES</T></T>
