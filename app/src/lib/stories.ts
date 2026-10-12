@@ -157,11 +157,11 @@ export function narrow(s: Story, keep: (it: Item) => boolean): Story | null {
 
 // ---------------------------------------------------------------- Für die Bildschirme
 
-/** Meldungen, die die App zeigt (alle der letzten 72 Stunden, für alle Leser gleich) */
+/** Meldungen, die die App zeigt (alle der letzten 7 Tage, für alle Leser gleich) */
 export const poolOf = (data: Data) => data.items;
 
 const memo = new WeakMap<Data, Story[]>();
-/** Alle Geschichten der letzten 72 Stunden. Einmal je Datenstand berechnet. */
+/** Alle Geschichten der letzten 7 Tage. Einmal je Datenstand berechnet. */
 export function storiesOf(data: Data): Story[] {
   let s = memo.get(data);
   if (!s) {

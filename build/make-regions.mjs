@@ -4,7 +4,7 @@ import { geoMercator, geoPath, geoCentroid } from "d3-geo";
 import { topology } from "topojson-server";
 import { mesh } from "topojson-client";
 
-const BOX = { west: 34.5, east: 46.0, south: 10.0, north: 20.5 };
+const BOX = { west: 31.0, east: 51.5, south: -2.0, north: 21.0 };
 const map = JSON.parse(fs.readFileSync("map.json", "utf8"));
 const proj = geoMercator().scale(map.scale).translate(map.translate).clipExtent([[0, 0], [map.width, map.height]]);
 const path = geoPath(proj);
@@ -12,7 +12,7 @@ const round = (d) => d.replace(/-?\d+\.\d+/g, (n) => (Math.round(Number(n) * 10)
 
 const all = JSON.parse(fs.readFileSync("ne/admin1.geojson", "utf8")).features;
 const out = {};
-for (const admin of ["Ethiopia", "Eritrea"]) {
+for (const admin of ["Ethiopia", "Eritrea", "Somalia", "Sudan"]) {
   const feats = all.filter((f) => f.properties.admin === admin).map((f) => ({ ...f, properties: { name: f.properties.name_en || f.properties.name } }));
   const topo = topology({ r: { type: "FeatureCollection", features: feats } }, 1e5);
   const inner = mesh(topo, topo.objects.r, (a, b) => a !== b);

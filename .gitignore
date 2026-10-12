@@ -11,3 +11,6 @@ app/dist/
 app/.expo/
 web/artifact.html
 **/__pycache__/
+tests/unit/node_modules/
+tests/unit/out/
+tests/unit/package-lock.json

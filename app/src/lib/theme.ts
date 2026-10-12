@@ -27,8 +27,10 @@ const light = {
     government_er: "#9B5D00", progov_er: "#B5852F", government_et: "#2E5C9E", progov_et: "#5A7FB8",
     exile: "#6A4C9C", tigray: "#8E3B5C", international: "#0F6E74", ethiopian_independent: "#2F6B3A",
     un_ngo: "#4F5D75", aggregator: "#636D70", measurement: "#3F6C8C", maritime_authority: "#1F4E79",
+    somali_media: "#7A5A2E", sudanese_media: "#5E6B2B",
   } as Record<string, string>,
-  status: { confirmed: "#2F6B3A", likely: "#4A7520", unconfirmed: "#8A5D00", disputed: "#6A4C9C", false: "#9A3A12" } as Record<string, string>,
+  // Prüfstufen: Grün = gestützt, Rot = widerlegt, Violett = widersprüchlich, Bernstein = offen, Grau = nicht prüfbar
+  status: { unverified: "#8A5D00", checking: "#6B5A1E", partly: "#4A7520", supported: "#2F6B3A", conflicting: "#6A4C9C", refuted: "#9A3A12", unverifiable: "#55666C" } as Record<string, string>,
 };
 export type Theme = typeof light;
 
@@ -57,8 +59,9 @@ const dark: Theme = {
     government_er: "#E3A23B", progov_er: "#D4B46A", government_et: "#7FA6E0", progov_et: "#A9C3EA",
     exile: "#A68BD6", tigray: "#D88AA9", international: "#4FB3B5", ethiopian_independent: "#6FB37B",
     un_ngo: "#A3B1C6", aggregator: "#8E9A9D", measurement: "#8DB6D4", maritime_authority: "#9CC1E8",
+    somali_media: "#D2B07A", sudanese_media: "#B8C47A",
   },
-  status: { confirmed: "#6FB37B", likely: "#A8C77A", unconfirmed: "#E3A23B", disputed: "#B9A0E6", false: "#E58A5E" },
+  status: { unverified: "#E3A23B", checking: "#D6C27A", partly: "#A8C77A", supported: "#6FB37B", conflicting: "#B9A0E6", refuted: "#E58A5E", unverifiable: "#9AAAAD" },
 };
 
 /** Erzwingt für einen Bereich das dunkle Farbschema (z. B. das Himmelsband oben auf der Lage) */

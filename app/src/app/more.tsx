@@ -61,7 +61,7 @@ export default function More() {
           <Head title={tr("Redaktion")} />
           <Card style={{ gap: space.m }}>
             <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
-              <Ionicons name={data?.owner ? "shield-checkmark" : "person-circle-outline"} size={26} color={data?.owner ? t.status.confirmed : t.ink} />
+              <Ionicons name={data?.owner ? "shield-checkmark" : "person-circle-outline"} size={26} color={data?.owner ? t.status.supported : t.ink} />
               <View style={{ flex: 1 }}>
                 <T v="bodyStrong">{email}</T>
                 <T v="caption">{data?.owner ? tr("Angemeldet: Behauptungen pflegen, Tagesbericht") : tr("Angemeldet, ohne Redaktionsrechte")}</T>

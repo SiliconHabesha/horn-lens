@@ -6,7 +6,11 @@ Ein persönliches Lagebild zum Horn von Afrika, mit Eritrea an erster Stelle. Po
 
 Die Seite sammelt jede Stunde Meldungen, Messwerte und Satellitenbilder. Bei jeder Meldung steht, **wer** etwas sagt und **wann**. Erfunden wird nichts: Was keine Quelle liefert, zeigt die Seite als „keine Daten“ an.
 
-Stand: 11. Oktober 2026 (mit App).
+Stand: 13. Oktober 2026.
+
+**Neu am 13. Oktober 2026:** ganzes Horn von Afrika, Lage für 24 Stunden bis 7 Tage, neue Prüfstufen, Karte mit Genauigkeit und Abspielen, Satellit nebeneinander, Abruf-Protokoll. Was umgesetzt ist und was offen bleibt: [`docs/ABNAHME.md`](docs/ABNAHME.md). Sicherheit: [`docs/SICHERHEIT.md`](docs/SICHERHEIT.md). Umgebungsvariablen: [`.env.example`](.env.example).
+
+**Tests:** `cd app && npm run web:build`, dann `python3 tests/features_test.py` (Ja/Nein-Prüfungen) und `python3 tests/app_test.py` (Bildschirmfotos); `cd tests/unit && npm install && npm test`; `cd tests/ingest && npm install && node prepare.mjs && node run.mjs`; `tests/sql/claim_rules.sql` im SQL-Editor.
 
 ---
 

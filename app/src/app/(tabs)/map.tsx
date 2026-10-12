@@ -9,18 +9,25 @@ import { boxOf, Box, fit, FULL, Layers, Mark, marksOf, proj, ZoomMap } from "../
 import { Bone } from "../../components/Skeleton";
 import { Banner, Button, Chip, ChipRow, Head, openLink, T, TabTools, tap } from "../../components/ui";
 import { ago, fmtCapDay, fmtWhen, num, plural } from "../../lib/de";
+import { lastDays } from "../../lib/timeline";
 import { useData } from "../../lib/data";
 import { feedState, noData } from "../../lib/feeds";
 import { t as tr } from "../../lib/i18n";
-import { nearest, placeById, RADIUS, seaMeta } from "../../lib/places";
+import { nearest, newsAreas, placeById, RADIUS, seaMeta, type Range } from "../../lib/places";
 import { radius, space, useTheme } from "../../lib/theme";
 
 type Icon = keyof typeof Ionicons.glyphMap;
 const VIEWS: Record<string, { label: string; box: Box }> = {
-  all: { label: "Gesamt", box: FULL },
+  er: { label: "Eritrea und Nachbarn", box: boxOf(20.5, 34.5, 10.0, 46.0) },
   north: { label: "Asmara und Tigray", box: boxOf(16.3, 36.3, 13.2, 40.2) },
   south: { label: "Assab und Bab el-Mandeb", box: boxOf(14.2, 41.3, 12.1, 43.9) },
+  ethiopia: { label: "Äthiopien", box: boxOf(15.0, 33.0, 3.4, 48.0) },
+  somalia: { label: "Somalia und Somaliland", box: boxOf(12.2, 40.5, -1.8, 51.5) },
+  sudan: { label: "Ost-Sudan", box: boxOf(20.8, 31.0, 12.0, 38.6) },
+  all: { label: "Horn von Afrika", box: FULL },
 };
+const HOME = VIEWS.er.box;
+
 const SPANS: [number, string][] = [[24, "24 Std."], [24 * 7, "7 Tage"], [24 * 30, "30 Tage"]];
 type Row = { key: string; icon: Icon; color: string; title: string; meta: string; at: number; lat: number; lon: number; kind?: string; sat?: string };
 
@@ -30,8 +37,11 @@ export default function MapScreen() {
   const { height: winH, width: winW } = useWindowDimensions();
   const wide = winW >= 900;
   const { data, offline, loadedAt, refresh } = useData();
-  const [view, setView] = useState("all");
-  const [layers, setLayers] = useState<Layers>({ fire: true, quake: true, ship: true, sat: true });
+  const [view, setView] = useState("er");
+  const [layers, setLayers] = useState<Layers>({ fire: true, quake: true, ship: true, sat: true, news: true });
+  // Abspielen: Tag für Tag durch die letzten 7 Tage (Index in days), null = Zeitraum-Ansicht
+  const [day, setDay] = useState<number | null>(null);
+  const [playing, setPlaying] = useState(false);
   const [sel, setSel] = useState<Mark | null>(null);
   const [span, setSpan] = useState(24 * 30);
   const [showLayers, setShowLayers] = useState(false);
@@ -41,10 +51,19 @@ export default function MapScreen() {
   const top = ins.top + space.m + (wide ? space.xl : 0);
   const h = mw ? Math.round(wide ? Math.max(420, winH - top - 190) : Math.min(mw * 1.05, winH * 0.52)) : 0;
   const [box, setBox] = useState<Box | null>(null);
-  const cur = box || (mw ? fit(FULL, h / mw) : FULL);
-  const since = Date.now() - span * 3600e3;
+  const cur = box || (mw ? fit(HOME, h / mw) : HOME);
+  // Zeitfenster: auf die Minute gerundet, damit die Karte nicht bei jedem Zeichnen neu rechnet
+  const nowMin = Math.floor(Date.now() / 60e3) * 60e3;
+  const days = useMemo(() => lastDays(nowMin), [Math.floor(nowMin / 3600e3)]);
+  const range: Range = useMemo(() => (day != null && days[day] ? [days[day].start, days[day].end] : [nowMin - span * 3600e3, nowMin]), [day, days, span, nowMin]);
+  const since = range[0];
+  useEffect(() => {
+    if (!playing) return;
+    const id = setInterval(() => setDay((d) => { const n = d == null ? 0 : d + 1; if (n >= days.length) { setPlaying(false); return days.length - 1; } return n; }), 1600);
+    return () => clearInterval(id);
+  }, [playing, days.length]);
 
-  const onLayout = (e: LayoutChangeEvent) => { const nw = Math.round(e.nativeEvent.layout.width); if (nw !== w) { setW(nw); setBox(null); setView("all"); } };
+  const onLayout = (e: LayoutChangeEvent) => { const nw = Math.round(e.nativeEvent.layout.width); if (nw !== w) { setW(nw); setBox(null); setView("er"); } };
   /** Auf einen Punkt zoomen (etwa km nach jeder Seite) und die passende Markierung auswählen */
   const focusOn = (lat: number, lon: number, km = 120, pick?: (m: Mark) => boolean) => {
     if (!mw || !h) return;
@@ -64,14 +83,16 @@ export default function MapScreen() {
     router.setParams({ focus: undefined });
   }, [focus, mw, h]);
   const pickView = (key: string) => { setView(key); setSel(null); setBox(mw ? fit(VIEWS[key].box, h / mw) : null); };
-  const marks = useMemo(() => (data ? marksOf(data, layers) : []), [data, layers]);
+  const marks = useMemo(() => (data ? marksOf(data, layers, range) : []), [data, layers, range]);
+  const news = useMemo(() => (data ? newsAreas(data, range) : { areas: [], unplaced: 0 }), [data, range]);
 
   // Was die Karte zeigt, als Liste: neueste Ereignisse zuerst, dann wo die Hitzepunkte liegen, dann die Satelliten-Orte
   const rows = useMemo(() => {
-    if (!data) return { events: [] as Row[], fires: [] as Row[], sats: [] as Row[] };
+    if (!data) return { events: [] as Row[], fires: [] as Row[], sats: [] as Row[], places: [] as Row[] };
     const events: Row[] = [];
-    if (layers.ship) for (const m of data.maritime) if (+new Date(m.t) >= since) events.push({ key: `s${m.t}${m.lat}`, icon: "boat-outline", color: t.ship, title: m.title, meta: seaMeta(m), at: +new Date(m.t), lat: m.lat, lon: m.lon, kind: "ship" });
-    if (layers.quake) for (const q of data.quakes) if (+new Date(q.t) >= since) events.push({ key: `q${q.t}${q.lat}`, icon: "pulse-outline", color: t.quake, title: q.title, meta: `${fmtWhen(q.t)} · USGS`, at: +new Date(q.t), lat: q.lat, lon: q.lon, kind: "quake" });
+    const within = (x: string) => +new Date(x) >= range[0] && +new Date(x) <= range[1];
+    if (layers.ship) for (const m of data.maritime) if (within(m.t)) events.push({ key: `s${m.t}${m.lat}`, icon: "boat-outline", color: t.ship, title: m.title, meta: seaMeta(m), at: +new Date(m.t), lat: m.lat, lon: m.lon, kind: "ship" });
+    if (layers.quake) for (const q of data.quakes) if (within(q.t)) events.push({ key: `q${q.t}${q.lat}`, icon: "pulse-outline", color: t.quake, title: q.title, meta: `${fmtWhen(q.t)} · USGS`, at: +new Date(q.t), lat: q.lat, lon: q.lon, kind: "quake" });
     events.sort((a, b) => b.at - a.at);
     const fires: Row[] = [];
     if (layers.fire && !data.firesError) {
@@ -82,8 +103,12 @@ export default function MapScreen() {
     }
     const sats: Row[] = data.sat.filter((p) => p.images.length).map((p) => ({ key: `p${p.id}`, icon: "planet-outline" as Icon, color: t.accent, title: p.name,
       meta: tr("Neuestes Bild {date}", { date: fmtCapDay(p.images[0].t) }), at: 0, lat: p.lat, lon: p.lon, sat: p.id }));
-    return { events, fires, sats };
-  }, [data, layers, span, t]);
+    const places: Row[] = layers.news ? news.areas.slice(0, 6).map((a) => ({ key: `n${a.p.id}`, icon: "chatbubbles-outline" as Icon, color: t.accent,
+      title: tr("{place}: {count}", { place: a.p.name, count: a.items.length === 1 ? tr("1 Meldung") : tr("{n} Meldungen", { n: num(a.items.length) }) }),
+      meta: `${tr("erwähnt, nicht verortet")} · ${tr("zuletzt {when}", { when: fmtWhen(Math.max(...a.items.map((i) => +new Date(i.published_at || i.fetched_at)))) })}`,
+      at: 0, lat: a.p.lat, lon: a.p.lon })) : [];
+    return { events, fires, sats, places };
+  }, [data, layers, range, news, t]);
 
   const head = (
     <View style={{ paddingHorizontal: space.l, gap: space.m }}>
@@ -127,14 +152,29 @@ export default function MapScreen() {
           ["quake", t.quake, tr("Erdbeben"), usgs.ok ? num(span < 24 * 7 ? quakesIn : data.quakes.length) : "–"],
           ["ship", t.ship, tr("Vorfälle auf See"), ukmto.ok ? num(shipsIn) : "–"],
           ["sat", t.accent, tr("Satellitenbilder"), num(data.sat.filter((p) => p.images.length).length)],
+          ["news", t.accent, tr("Erwähnte Orte"), num(news.areas.length)],
         ] as [keyof Layers, string, string, string][]).map(([key, c, label, n]) => (
           <Chip key={key} label={label} count={n as any} color={c} active={layers[key]} onPress={() => { setLayers({ ...layers, [key]: !layers[key] }); setSel(null); }} />
         ))}
       </View>
-      <T v="label" color={t.muted} style={{ marginTop: 4 }}>{tr("Zeitraum für Erdbeben und Vorfälle auf See")}</T>
+      <T v="label" color={t.muted} style={{ marginTop: 4 }}>{tr("Zeitraum für Meldungen, Erdbeben und Vorfälle auf See")}</T>
       <View style={{ flexDirection: "row", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-        {SPANS.map(([hrs, label]) => <Chip key={hrs} label={tr(label)} active={span === hrs} onPress={() => setSpan(hrs)} />)}
+        {SPANS.map(([hrs, label]) => <Chip key={hrs} label={tr(label)} active={day == null && span === hrs} onPress={() => { setPlaying(false); setDay(null); setSpan(hrs); }} />)}
       </View>
+      {/* Abspielen: die letzten 7 Tage Tag für Tag */}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 }}>
+        {([["play-skip-back-outline", tr("Früherer Tag"), () => { setPlaying(false); setDay((d) => Math.max(0, (d ?? days.length) - 1)); }],
+          [playing ? "pause" : "play", playing ? tr("Anhalten") : tr("Die letzten 7 Tage abspielen"), () => { if (playing) setPlaying(false); else { if (day == null || day >= days.length - 1) setDay(0); setPlaying(true); } }],
+          ["play-skip-forward-outline", tr("Späterer Tag"), () => { setPlaying(false); setDay((d) => (d == null ? null : d + 1 >= days.length ? null : d + 1)); }]] as [Icon, string, () => void][]).map(([icon, label, fn]) => (
+          <Pressable key={label} onPress={() => { tap(); fn(); }} accessibilityRole="button" accessibilityLabel={label} hitSlop={4}
+            style={({ pressed }) => ({ width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", backgroundColor: t.cardAlt, opacity: pressed ? 0.6 : 1 })}>
+            <Ionicons name={icon} size={18} color={t.ink} />
+          </Pressable>
+        ))}
+        <T v="small" color={t.ink} style={{ flex: 1 }} accessibilityLiveRegion="polite">{day != null ? tr("Tag {i} von 7: {date}", { i: day + 1, date: days[day]?.label }) : tr("Abspielen zeigt jeden der letzten 7 Tage einzeln.")}</T>
+        {day != null ? <Pressable onPress={() => { tap(); setPlaying(false); setDay(null); }} accessibilityRole="button" hitSlop={8}><T v="smallStrong" color={t.accent}>{tr("Ende")}</T></Pressable> : null}
+      </View>
+      {day != null ? <T v="caption">{tr("Hitzepunkte gibt es nur für die letzten 24 Stunden; sie bleiben beim Abspielen gleich.")}</T> : null}
     </View>
   );
 
@@ -159,6 +199,13 @@ export default function MapScreen() {
       <Head title={tr("Was die Karte zeigt")} first />
       {rows.events.length ? rows.events.map((r, i) => line(r, i, () => focusOn(r.lat, r.lon, 90, (m) => near(r.lat, r.lon)(m) && !m.pid)))
         : <T v="small">{tr("Keine Erdbeben oder Vorfälle auf See in diesem Zeitraum.")}</T>}
+      {rows.places.length ? (
+        <>
+          <T v="label" color={t.muted} style={{ marginTop: space.l, marginBottom: 4 }}>{tr("Orte, die Meldungen nennen")}</T>
+          {rows.places.map((r, i) => line(r, i, () => focusOn(r.lat, r.lon, 120, (m) => !!m.news && near(r.lat, r.lon)(m))))}
+          <T v="caption" style={{ marginTop: 4 }}>{news.unplaced ? tr("{n} weitere Meldungen nennen keinen Ort, den Semay kennt, und stehen nicht auf der Karte.", { n: num(news.unplaced) }) : ""}</T>
+        </>
+      ) : null}
       {rows.fires.length ? (
         <>
           <T v="label" color={t.muted} style={{ marginTop: space.l, marginBottom: 4 }}>{tr("Wo die Hitzepunkte liegen")}</T>
@@ -173,7 +220,23 @@ export default function MapScreen() {
           {rows.sats.map((r, i) => line(r, i, () => router.push(`/satellite?place=${r.sat}`)))}
         </>
       ) : null}
-      <T v="caption" style={{ marginTop: space.l }}>{layers.fire ? `${fireNote.replace(/\.$/, "")}. ` : ""}{tr("Gestrichelt: Regionsgrenzen. Umstritten: West-Tigray/Welkait, Raya, Badme. Grenzen nach Natural Earth.")}</T>
+      {/* Wie genau die Orte sind: nie ein erfundener Punkt */}
+      <Head title={tr("Wie genau die Orte sind")} />
+      <View style={{ gap: 6 }}>
+        {([["dot", t.fire, tr("Genau: gemessen von Satelliten oder Sensoren (Hitzepunkte etwa 375 m, Erdbeben-Epizentrum)")],
+          ["diamond", t.ship, tr("Ungefähr: Vorfälle auf See, so wie UKMTO sie angibt")],
+          ["area", t.accent, tr("Fläche: Eine Meldung nennt den Ort. Erwähnt, nicht verortet; wo genau etwas geschah, wissen wir nicht.")],
+          ["none", t.faint, tr("Unklar: Meldungen ohne bekannten Ortsnamen stehen nicht auf der Karte.")]] as [string, string, string][]).map(([shape, c, label]) => (
+          <View key={label} style={{ flexDirection: "row", gap: 10, alignItems: "flex-start" }}>
+            <View style={{ width: 16, alignItems: "center", paddingTop: 4 }}>
+              <View style={shape === "dot" ? { width: 8, height: 8, borderRadius: 4, backgroundColor: c } : shape === "diamond" ? { width: 8, height: 8, backgroundColor: c, transform: [{ rotate: "45deg" }] }
+                : shape === "area" ? { width: 14, height: 14, borderRadius: 7, borderWidth: 1.2, borderStyle: "dashed", borderColor: c, backgroundColor: "rgba(15,110,116,0.14)" } : { width: 10, height: 2, backgroundColor: c }} />
+            </View>
+            <T v="small" style={{ flex: 1 }}>{label}</T>
+          </View>
+        ))}
+      </View>
+      <T v="caption" style={{ marginTop: space.l }}>{layers.fire ? `${fireNote.replace(/\.$/, "")}. ` : ""}{tr("Gestrichelt: Regionsgrenzen. Umstritten: West-Tigray/Welkait, Raya, Badme, Las Anod. Grenzen nach Natural Earth. Darfur liegt westlich des Kartenausschnitts.")}</T>
       <Pressable onPress={() => { tap(); router.push("/places"); }} accessibilityRole="link" style={{ minHeight: 44, justifyContent: "center", alignSelf: "flex-start", marginTop: space.s }}>
         <T v="smallStrong" color={t.accent}>{tr("Alle Orte")}</T>
       </Pressable>
@@ -183,16 +246,16 @@ export default function MapScreen() {
   const mapView = (
     <View onLayout={onLayout} style={{ flex: wide ? 1 : undefined, marginHorizontal: wide ? 0 : space.l, borderRadius: radius.l, overflow: "hidden", borderWidth: 1, borderColor: t.rule }}>
       {mw ? (
-        <ZoomMap data={data} layers={layers} w={mw} h={h} box={cur} onBox={(b) => { setBox(b); setView(""); }} sel={sel} onSelect={setSel} since={since} />
+        <ZoomMap data={data} layers={layers} w={mw} h={h} box={cur} onBox={(b) => { setBox(b); setView(""); }} sel={sel} onSelect={setSel} range={range} home={FULL} />
       ) : <View style={{ height: 300 }} />}
       {/* Legende auf der Karte */}
       {!sel ? (
         <View pointerEvents="none" style={{ position: "absolute", left: 8, bottom: 8, flexDirection: "row", flexWrap: "wrap", gap: 10, maxWidth: mw - 16,
           backgroundColor: t.card, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 5, borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule }}>
-          {([[tr("Hitze"), t.fire, "dot"], [tr("See"), t.ship, "diamond"], [tr("Beben"), t.quake, "ring"], [tr("Satellit"), t.accent, "square"]] as [string, string, string][]).map(([label, c, shape]) => (
+          {([[tr("Hitze"), t.fire, "dot"], [tr("See"), t.ship, "diamond"], [tr("Beben"), t.quake, "ring"], [tr("Satellit"), t.accent, "square"], [tr("Erwähnt"), t.accent, "area"]] as [string, string, string][]).map(([label, c, shape]) => (
             <View key={label} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
               <View style={shape === "dot" ? { width: 7, height: 7, borderRadius: 4, backgroundColor: c } : shape === "diamond" ? { width: 7, height: 7, backgroundColor: c, transform: [{ rotate: "45deg" }] }
-                : shape === "ring" ? { width: 9, height: 9, borderRadius: 5, borderWidth: 1.6, borderColor: c } : { width: 8, height: 8, borderWidth: 1.5, borderColor: c }} />
+                : shape === "ring" ? { width: 9, height: 9, borderRadius: 5, borderWidth: 1.6, borderColor: c } : shape === "area" ? { width: 11, height: 11, borderRadius: 6, borderWidth: 1.2, borderStyle: "dashed", borderColor: c } : { width: 8, height: 8, borderWidth: 1.5, borderColor: c }} />
               <T v="caption" color={t.ink}>{label}</T>
             </View>
           ))}
@@ -203,13 +266,14 @@ export default function MapScreen() {
           borderWidth: StyleSheet.hairlineWidth, borderColor: t.rule, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 10, shadowOffset: { width: 0, height: 2 }, elevation: 4 }}
           accessibilityLiveRegion="polite">
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <T v="label" color={t.accent}>{sel.pid ? sel.name : sel.kind}{sel.src ? ` · ${sel.src}` : ""}</T>
+            <T v="label" color={t.accent}>{sel.pid && !sel.news ? sel.name : sel.kind}{sel.src ? ` · ${sel.src}` : ""}</T>
             <Pressable onPress={() => setSel(null)} hitSlop={12} accessibilityRole="button" accessibilityLabel={tr("Schließen")}><Ionicons name="close" size={20} color={t.faint} /></Pressable>
           </View>
           <T v="caption" style={{ marginTop: 2 }}>{sel.when}{sel.place ? ` · ${sel.place}` : ""}</T>
           {sel.text ? <T v="small" color={t.ink} style={{ marginTop: 4 }} numberOfLines={4}>{sel.text}</T> : null}
           <View style={{ flexDirection: "row", gap: space.s, marginTop: space.s }}>
-            {sel.pid ? <Button label={tr("Mehr zu {place}", { place: sel.name })} icon="location-outline" onPress={() => router.push(`/place/${sel.pid}`)} />
+            {sel.news ? <Button label={tr("Meldungen zu {place}", { place: sel.name })} icon="newspaper-outline" onPress={() => router.push(`/place/${sel.pid}`)} />
+              : sel.pid ? <Button label={tr("Mehr zu {place}", { place: sel.name })} icon="location-outline" onPress={() => router.push(`/place/${sel.pid}`)} />
               : sel.sat ? <Button label={tr("Bilder vergleichen")} icon="images-outline" onPress={() => router.push(`/satellite?place=${sel.sat}`)} />
               : sel.url ? <Button label={tr("Bei {source} öffnen", { source: sel.src })} icon="open-outline" kind="secondary" onPress={() => openLink(sel.url)} /> : null}
           </View>

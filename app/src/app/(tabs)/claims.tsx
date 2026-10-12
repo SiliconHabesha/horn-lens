@@ -19,7 +19,7 @@ export default function Claims() {
   const [q, setQ] = useState("");
   const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
   const [sort, setSort] = useState<"changed" | "stale">("changed");
-  const lastAt = (c: typeof claims[0]) => c.events[0]?.at || c.updated_at;
+  const lastAt = (c: typeof claims[0]) => c.checked_at || c.events[0]?.at || c.updated_at;
   const list = claims.filter((c) => (!st || c.status === st)
     && words.every((w) => `${c.statement} ${c.raw?.statement || ""} ${c.claimant} ${c.disputed_by || ""} ${REGIONS[c.region] || ""}`.toLowerCase().includes(w))).sort((x, y) => (sort === "changed" ? (lastAt(x) < lastAt(y) ? 1 : -1) : (lastAt(x) < lastAt(y) ? -1 : 1)));
   if (!data) return <Screen title={tr("Behauptungen")} right={<TabTools />}><Skeleton rows={5} /></Screen>;

@@ -12,6 +12,8 @@ import { ago, REGION_ORDER, REGIONS, TYPE_ORDER, TYPES } from "../../lib/de";
 import { useData } from "../../lib/data";
 import { t as tr } from "../../lib/i18n";
 import { narrow, storiesOf, type Story } from "../../lib/stories";
+import { multiSided } from "../../lib/brief";
+import { EVENT_ORDER, eventLabel, eventTypes } from "../../lib/events";
 import { noOutline, font, radius, space, useTheme } from "../../lib/theme";
 import type { Item } from "../../lib/types";
 
@@ -20,7 +22,7 @@ export default function News() {
   const t = useTheme();
   const ins = useSafeAreaInsets();
   const winW = useWindowDimensions().width;
-  const p = useLocalSearchParams<{ region?: string; new?: string; mode?: string; k?: string }>();
+  const p = useLocalSearchParams<{ region?: string; new?: string; mode?: string; k?: string; hours?: string }>();
   const { data, refreshing, refresh, seenBefore, offline, loadedAt, loading, saved, session } = useData();
   const uid = session?.user?.id ?? null;
   const [mode, setMode] = useState<Mode>(p.mode === "saved" ? "saved" : "stories");
@@ -29,6 +31,10 @@ export default function News() {
   const [onlyNew, setOnlyNew] = useState(p.new === "1");
   const [most, setMost] = useState(false);
   const [type, setType] = useState<string | null>(null);
+  const [evt, setEvt] = useState<string | null>(null);
+  const [lng, setLng] = useState<string | null>(null);
+  const [src, setSrc] = useState<string | null>(null);
+  const [multi, setMulti] = useState(false);
   const [q, setQ] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const grouped = mode !== "items";
@@ -36,20 +42,22 @@ export default function News() {
   useEffect(() => { if (p.region && REGIONS[p.region]) { setRegion(p.region); setMode((m) => (m === "saved" ? "stories" : m)); } }, [p.region, p.k]);
   useEffect(() => { if (p.new === "1") { setOnlyNew(true); setHours(72); } }, [p.new, p.k]);
   useEffect(() => { if (p.mode === "saved") setMode("saved"); }, [p.mode, p.k]);
+  useEffect(() => { const h = Number(p.hours); if ([24, 72, 168].includes(h)) setHours(h); }, [p.hours, p.k]);
   // Filter bleiben gemerkt (je Konto, beim Abmelden gelöscht); Sprünge aus anderen Bildschirmen haben Vorrang
   const FKEY = `hl:cache:newsfilter:${uid || "public"}`;
   const [restored, setRestored] = useState(false);
   useEffect(() => {
     AsyncStorage.getItem(FKEY).then((v) => {
       if (v && !p.region && !p.mode && !p.new) {
-        try { const f = JSON.parse(v); if (REGIONS[f.region] || f.region === "all") setRegion(f.region); if (f.hours === 72) setHours(72); if (f.type) setType(f.type); if (f.most) setMost(true); if (["stories", "items"].includes(f.mode)) setMode(f.mode); } catch { /* egal */ }
+        try { const f = JSON.parse(v); if (REGIONS[f.region] || f.region === "all") setRegion(f.region); if ([72, 168].includes(f.hours)) setHours(f.hours); if (f.type) setType(f.type); if (f.most) setMost(true); if (["stories", "items"].includes(f.mode)) setMode(f.mode);
+          if (f.evt) setEvt(f.evt); if (f.lng) setLng(f.lng); if (f.src) setSrc(f.src); if (f.multi) setMulti(true); } catch { /* egal */ }
       }
       setRestored(true);
     }).catch(() => setRestored(true));
   }, [FKEY]);
   // Nach einem Sprung (z. B. „Alle zu Eritrea“) die gemerkten Filter nicht überschreiben
-  const jumped = !!(p.region || p.mode || p.new);
-  useEffect(() => { if (restored && !jumped) AsyncStorage.setItem(FKEY, JSON.stringify({ region, hours, type, most, mode })).catch(() => {}); }, [restored, region, hours, type, most, mode]);
+  const jumped = !!(p.region || p.mode || p.new || p.hours);
+  useEffect(() => { if (restored && !jumped) AsyncStorage.setItem(FKEY, JSON.stringify({ region, hours, type, most, mode, evt, lng, src, multi })).catch(() => {}); }, [restored, region, hours, type, most, mode, evt, lng, src, multi]);
 
   const base = useMemo(() => {
     if (!data) return [];
@@ -65,10 +73,16 @@ export default function News() {
   }, [data, base, mode]);
   const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
   const match = (i: Item) => words.every((w) => `${i.title} ${i.title_de || ""} ${i.origin_domain || ""} ${i.source_name}`.toLowerCase().includes(w));
-  const list = useMemo(() => dedupe(base.filter((i) => (region === "all" || i.regions.includes(region))
+  // Meldungen in Geschichten, über die Medien verschiedener Art berichten
+  const multiIds = useMemo(() => new Set(data && multi ? storiesOf(data).filter(multiSided).flatMap((x) => x.items.map((i) => i.id)) : []), [data, multi]);
+  const inRegion = (i: Item) => region === "all" || i.regions.includes(region);
+  const evtOf = (i: Item) => { const k = eventTypes(i); return k.length ? k : ["other"]; };
+  const langOf = (i: Item) => (["en", "ti", "am", "ar"].includes(i.language || "") ? i.language! : "other");
+  const list = useMemo(() => dedupe(base.filter((i) => inRegion(i)
       && (!onlyNew || new Date(i.fetched_at).getTime() > seenBefore)
-      && (!type || i.source_type === type) && match(i)))
-      .sort((a, b) => (itemTime(a) < itemTime(b) ? 1 : -1)), [base, region, onlyNew, type, q, seenBefore]);
+      && (!type || i.source_type === type) && (!src || i.source_id === src) && (!lng || langOf(i) === lng)
+      && (!evt || evtOf(i).includes(evt)) && (!multi || multiIds.has(i.id)) && match(i)))
+      .sort((a, b) => (itemTime(a) < itemTime(b) ? 1 : -1)), [base, region, onlyNew, type, src, lng, evt, multi, multiIds, q, seenBefore]);
   // Eine Geschichte erscheint mit den Meldungen, die zu den Filtern passen; Kopf und Zahlen beziehen sich auf diese
   const stories = useMemo(() => {
     if (!data) return [] as Story[];
@@ -77,8 +91,21 @@ export default function News() {
     return most ? [...s].sort((a, b) => b.sources - a.sources || (a.last < b.last ? 1 : -1)) : s;
   }, [data, list, most]);
   const savedList = useMemo(() => saved.filter(match), [saved, q]);
-  const typesPresent = useMemo(() => TYPE_ORDER.filter((k) => base.some((i) => i.source_type === k && (region === "all" || i.regions.includes(region)))), [base, region]);
-  const active = (hours !== 24 ? 1 : 0) + (type ? 1 : 0) + (onlyNew ? 1 : 0) + (most && mode === "stories" ? 1 : 0) + (mode === "items" ? 1 : 0);
+  const typesPresent = useMemo(() => TYPE_ORDER.filter((k) => base.some((i) => i.source_type === k && inRegion(i))), [base, region]);
+  // Zahlen an den Filtern: Meldungen im Zeitraum und in der Region
+  const facets = useMemo(() => {
+    const ev: Record<string, number> = {}, lg: Record<string, number> = {}, sr = new Map<string, { name: string; n: number }>();
+    for (const i of dedupe(base.filter(inRegion))) {
+      for (const k of evtOf(i)) ev[k] = (ev[k] || 0) + 1;
+      lg[langOf(i)] = (lg[langOf(i)] || 0) + 1;
+      const x = sr.get(i.source_id) || { name: i.source_name, n: 0 }; x.n++; sr.set(i.source_id, x);
+    }
+    return { ev, lg, sources: [...sr.entries()].sort((a, b) => b[1].n - a[1].n) };
+  }, [base, region]);
+  const LANG_NAME: Record<string, string> = { en: tr("Englisch"), ti: tr("Tigrinya"), am: tr("Amharisch"), ar: tr("Arabisch"), other: tr("Andere") };
+  const active = (hours !== 24 ? 1 : 0) + (type ? 1 : 0) + (onlyNew ? 1 : 0) + (most && mode === "stories" ? 1 : 0) + (mode === "items" ? 1 : 0)
+    + (evt ? 1 : 0) + (lng ? 1 : 0) + (src ? 1 : 0) + (multi ? 1 : 0);
+  const reset = () => { setHours(24); setType(null); setOnlyNew(false); setMost(false); setMode("stories"); setEvt(null); setLng(null); setSrc(null); setMulti(false); };
 
   const header = (
     <View style={{ paddingTop: ins.top + space.m + (winW >= 900 ? space.xl : 0), gap: space.m, paddingBottom: space.s, maxWidth: 760, width: "100%", alignSelf: "center" }}>
@@ -115,6 +142,16 @@ export default function News() {
           <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
             <Chip label={tr("24 Stunden")} active={hours === 24} onPress={() => setHours(24)} />
             <Chip label={tr("3 Tage")} active={hours === 72} onPress={() => setHours(72)} />
+            <Chip label={tr("7 Tage")} active={hours === 168} onPress={() => setHours(168)} />
+          </View>
+          <T v="label" color={t.muted} style={{ marginTop: 4 }}>{tr("Art des Ereignisses (automatisch nach Stichwörtern)")}</T>
+          <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+            <Chip label={tr("Alle")} active={!evt} onPress={() => setEvt(null)} />
+            {[...EVENT_ORDER, "other"].filter((k) => facets.ev[k] || evt === k).map((k) => <Chip key={k} label={eventLabel(k)} count={facets.ev[k] || 0} active={evt === k} onPress={() => setEvt(evt === k ? null : k)} />)}
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.m, minHeight: 44 }}>
+            <T v="body" style={{ flex: 1 }}>{tr("Nur Geschichten, über die Medien verschiedener Art berichten")}</T>
+            <Toggle value={multi} onValueChange={(v) => { tap(); setMulti(v); }} accessibilityLabel={tr("Nur Geschichten, über die Medien verschiedener Art berichten")} />
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.m, minHeight: 44 }}>
             <T v="body" style={{ flex: 1 }}>{tr("Nur neue seit dem letzten Besuch")}</T>
@@ -129,7 +166,7 @@ export default function News() {
               <T v="label" color={t.muted} style={{ marginTop: 4 }}>{tr("Reihenfolge")}</T>
               <View style={{ flexDirection: "row", gap: 8 }}>
                 <Chip label={tr("Neueste zuerst")} active={!most} onPress={() => setMost(false)} />
-                <Chip label={tr("Meistberichtet zuerst")} active={most} onPress={() => setMost(true)} />
+                <Chip label={tr("Wichtigste zuerst (meistberichtet)")} active={most} onPress={() => setMost(true)} />
               </View>
             </>
           ) : null}
@@ -142,9 +179,27 @@ export default function News() {
               </View>
             </>
           ) : null}
+          {facets.sources.length > 1 ? (
+            <>
+              <T v="label" color={t.muted} style={{ marginTop: 4 }}>{tr("Quelle")}</T>
+              <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+                <Chip label={tr("Alle")} active={!src} onPress={() => setSrc(null)} />
+                {facets.sources.filter(([id], i) => i < 12 || id === src).map(([id, x]) => <Chip key={id} label={x.name} count={x.n} active={src === id} onPress={() => setSrc(src === id ? null : id)} />)}
+              </View>
+            </>
+          ) : null}
+          {Object.keys(facets.lg).length > 1 ? (
+            <>
+              <T v="label" color={t.muted} style={{ marginTop: 4 }}>{tr("Sprache der Originalmeldung")}</T>
+              <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+                <Chip label={tr("Alle")} active={!lng} onPress={() => setLng(null)} />
+                {["en", "ti", "am", "ar", "other"].filter((k) => facets.lg[k] || lng === k).map((k) => <Chip key={k} label={LANG_NAME[k]} count={facets.lg[k] || 0} active={lng === k} onPress={() => setLng(lng === k ? null : k)} />)}
+              </View>
+            </>
+          ) : null}
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
             {active ? (
-              <Pressable onPress={() => { tap(); setHours(24); setType(null); setOnlyNew(false); setMost(false); setMode("stories"); }} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center" }}>
+              <Pressable onPress={() => { tap(); reset(); }} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center" }}>
                 <T v="smallStrong" color={t.accent}>{tr("Zurücksetzen")}</T>
               </Pressable>
             ) : <View />}
@@ -161,14 +216,15 @@ export default function News() {
         </ChipRow>
       ) : null}
       {mode !== "saved" && active && !showFilters ? (
-        <T v="caption">{tr("Filter: {list}", { list: [hours === 72 ? tr("3 Tage") : null, onlyNew ? tr("nur neue") : null, most && mode === "stories" ? tr("meistberichtet zuerst") : null, mode === "items" ? tr("einzeln") : null, type ? TYPES[type] : null].filter(Boolean).join(", ") })}</T>
+        <T v="caption">{tr("Filter: {list}", { list: [hours === 72 ? tr("3 Tage") : hours === 168 ? tr("7 Tage") : null, onlyNew ? tr("nur neue") : null, most && mode === "stories" ? tr("meistberichtet zuerst") : null, mode === "items" ? tr("einzeln") : null, type ? TYPES[type] : null,
+          evt ? eventLabel(evt) : null, multi ? tr("verschiedene Seiten") : null, src ? facets.sources.find(([id]) => id === src)?.[1].name : null, lng ? LANG_NAME[lng] : null].filter(Boolean).join(", ") })}</T>
       ) : null}
     </View>
   );
 
   const rows: (Item | Story)[] = mode === "stories" ? stories : mode === "items" ? list : savedList;
   const emptyText = mode === "saved" ? (q ? tr("Nichts Gemerktes passt zur Suche.") : tr("Noch nichts gemerkt. In einer Meldung auf das Lesezeichen tippen."))
-    : q || onlyNew || type ? tr("Keine Meldung passt zu diesen Filtern.")
+    : q || onlyNew || type || evt || lng || src || multi ? tr("Keine Meldung passt zu diesen Filtern.")
     : region === "eritrea" ? tr("Keine Meldungen zu Eritrea in diesem Zeitraum. Aus dem Land dringen kaum unabhängige Nachrichten.") : tr("Keine Meldungen in diesem Zeitraum aus unseren Quellen.");
 
   return (

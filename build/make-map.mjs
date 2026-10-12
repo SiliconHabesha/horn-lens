@@ -4,8 +4,9 @@ import fs from "node:fs";
 import { geoMercator, geoPath, geoBounds } from "d3-geo";
 import { feature } from "topojson-client";
 
-const BOX = { west: 34.5, east: 46.0, south: 10.0, north: 20.5 };
-const W = 720;
+// Ganzes Horn von Afrika: Sudan (Khartum) bis zur Spitze Somalias. Breite so, dass der Maßstab gleich bleibt wie beim alten Eritrea-Ausschnitt (720 px für 34,5–46° O).
+const BOX = { west: 31.0, east: 51.5, south: -2.0, north: 21.0 };
+const W = Math.round(720 * (BOX.east - BOX.west) / (46.0 - 34.5));
 
 const topo = JSON.parse(fs.readFileSync("node_modules/world-atlas/countries-10m.json", "utf8"));
 const countries = feature(topo, topo.objects.countries).features;

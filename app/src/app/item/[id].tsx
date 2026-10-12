@@ -6,7 +6,8 @@ import { Platform, Pressable, StyleSheet, View } from "react-native";
 import { ItemRow, shareItem, shareStory, titleStyle, whenOf } from "../../components/items";
 import { toast } from "../../components/Toast";
 import { Button, Empty, openLink, Screen, T, tap } from "../../components/ui";
-import { fmtWhen, headline, plural, srcName, translated, TYPE_NOTE, TYPE_ORDER, TYPES } from "../../lib/de";
+import { fmtFull, fmtWhen, headline, plural, REGION_ORDER, REGIONS, srcName, translated, TYPE_NOTE, TYPE_ORDER, TYPES } from "../../lib/de";
+import { eventLabel, eventTypes } from "../../lib/events";
 import { lang, t as tr } from "../../lib/i18n";
 
 // Sprachnamen auf Deutsch; übersetzt wird beim Zeichnen mit tr()
@@ -32,7 +33,7 @@ export default function ItemDetail() {
       <Screen topInset={false} refresh={false}>
         <Stack.Screen options={{ title: tr("Meldung") }} />
         {!data ? <Skeleton rows={4} />
-          : <Empty icon="newspaper-outline" text={tr("Diese Meldung ist älter als 72 Stunden und nicht mehr abrufbar. Gemerkte Meldungen bleiben unter „Gemerkt“.")} />}
+          : <Empty icon="newspaper-outline" text={tr("Diese Meldung ist älter als 7 Tage und nicht mehr abrufbar. Gemerkte Meldungen bleiben unter „Gemerkt“.")} />}
       </Screen>
     );
   }
@@ -66,6 +67,15 @@ export default function ItemDetail() {
         <T v="smallStrong" color={t.ink}>{srcName(it.origin_domain || it.source_name)}</T>
         <T v="small">{" · "}{TYPES[it.source_type] || it.source_type} · {it.published_at ? whenOf(it) : tr("ohne Zeitangabe der Quelle, {when}", { when: whenOf(it) })}</T>
       </View>
+      {/* Einordnung durch Semay: Regionen und Art, beides automatisch nach Stichwörtern */}
+      <T v="caption" style={{ marginTop: 4 }}>
+        {[REGION_ORDER.filter((r) => it.regions.includes(r)).map((r) => REGIONS[r]).join(", "),
+          eventTypes(it).length ? tr("Art: {list}", { list: eventTypes(it).map(eventLabel).join(", ") }) : null].filter(Boolean).join(" · ")}
+        {` · ${tr("automatisch eingeordnet")}`}
+      </T>
+      {/* Zeiten getrennt: wann die Quelle veröffentlicht hat (laut Feed) und wann Semay die Meldung abgerufen hat */}
+      <T v="caption" style={{ marginTop: 2 }}>{it.published_at ? tr("Veröffentlicht {pub} (laut Quelle) · abgerufen {got}", { pub: fmtFull(it.published_at), got: fmtFull(it.fetched_at) })
+        : tr("Die Quelle nennt keine Zeit · abgerufen {got}", { got: fmtFull(it.fetched_at) })}</T>
       {placesIn(it.title).length ? (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: space.s, alignItems: "center" }}>
           <Ionicons name="location-outline" size={15} color={t.muted} />
@@ -128,7 +138,7 @@ export default function ItemDetail() {
             <T v="smallStrong" color={t.accent}>{tr("Wie wird zusammengefasst?")}</T>
           </Pressable>
           {how ? (
-            <T v="caption">{tr("Schlagzeilen gehören zusammen, wenn sie seltene Wörter teilen{shared} und höchstens 48 Stunden auseinanderliegen. Das geschieht automatisch und kann irren. „Noch keine Meldung“ bezieht sich auf die erreichbaren Quellen der letzten 72 Stunden; Schlagzeilen in Tigrinya, Amharisch oder Arabisch werden nicht zugeordnet.", { shared: story.shared.length ? ` ${tr("(hier: {words})", { words: story.shared.join(", ") })}` : "" })}</T>
+            <T v="caption">{tr("Schlagzeilen gehören zusammen, wenn sie seltene Wörter teilen{shared} und höchstens 48 Stunden auseinanderliegen. Das geschieht automatisch und kann irren. „Noch keine Meldung“ bezieht sich auf die erreichbaren Quellen der letzten 7 Tage; Schlagzeilen in Tigrinya, Amharisch oder Arabisch werden nicht zugeordnet.", { shared: story.shared.length ? ` ${tr("(hier: {words})", { words: story.shared.join(", ") })}` : "" })}</T>
           ) : null}
         </>
       ) : null}

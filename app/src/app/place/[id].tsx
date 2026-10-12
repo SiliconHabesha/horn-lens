@@ -67,7 +67,7 @@ export default function PlaceScreen() {
             <View key={it.id} style={i ? { borderTopWidth: StyleSheet.hairlineWidth, borderColor: t.rule } : undefined}>
               <ItemRow it={it} isNew={new Date(it.fetched_at).getTime() > seenBefore} />
             </View>
-          )) : <T v="small">{tr("Keine in den letzten 72 Stunden.")}</T>}
+          )) : <T v="small">{tr("Keine in den letzten 7 Tagen.")}</T>}
           {d.items.length > items.length ? <T v="caption" style={{ paddingVertical: 10 }}>{tr("Die neuesten 10 von {total}.", { total: num(d.items.length) })}</T> : null}
         </>
       )}

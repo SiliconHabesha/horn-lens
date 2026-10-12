@@ -16,12 +16,15 @@ const TYPES_DE: Record<string, string> = {
   aggregator: "Nachrichtenindex, noch nicht eingeordnet",
   measurement: "Messung",
   maritime_authority: "Seefahrtsbehörde",
+  somali_media: "Medien aus Somalia und Somaliland",
+  sudanese_media: "Sudanesische Medien",
 };
 /** Kurzform für Listenzeilen (neben dem Farbpunkt) */
 const TYPE_SHORT_DE: Record<string, string> = {
   government_er: "Regierung Eritrea", progov_er: "Eritrea, regierungsnah", exile: "Exil Eritrea",
   government_et: "Regierung Äthiopien", progov_et: "Äthiopien, regierungsnah", ethiopian_independent: "Äthiopien, privat",
   tigray: "Tigray", international: "International", un_ngo: "UN und NGO", aggregator: "nicht eingeordnet",
+  somali_media: "Somalia", sudanese_media: "Sudan",
 };
 const TYPE_NOTE_DE: Record<string, string> = {
   government_er: "Amtliche Erklärungen aus Eritrea, einer Konfliktpartei. Sie zeigen die Haltung der Regierung, keine unabhängige Bestätigung.",
@@ -36,19 +39,35 @@ const TYPE_NOTE_DE: Record<string, string> = {
   aggregator: "Von einer automatischen Nachrichtensuche gefunden. Das Medium ist genannt, aber noch nicht eingeordnet.",
   measurement: "Satelliten und Sensoren. Sie zeigen, dass an einem Ort zu einer Zeit etwas geschah, nicht warum.",
   maritime_authority: "UKMTO, die Schifffahrtsstelle der britischen Marine. Bestätigt Vorfälle auf See, nennt aber keine Verantwortlichen.",
+  somali_media: "Medien aus Somalia und Somaliland. Wie jede einzelne Quelle allein keine Bestätigung.",
+  sudanese_media: "Sudanesische Medien, auch aus dem Exil. Keine Partei des Krieges; wie jede einzelne Quelle allein keine Bestätigung.",
 };
 export const TYPE_ORDER = ["government_er", "progov_er", "exile", "international", "un_ngo", "ethiopian_independent",
-  "government_et", "progov_et", "tigray", "aggregator", "measurement", "maritime_authority"];
+  "government_et", "progov_et", "tigray", "somali_media", "sudanese_media", "aggregator", "measurement", "maritime_authority"];
 const REGIONS_DE: Record<string, string> = {
-  eritrea: "Eritrea", tigray: "Tigray", afar: "Afar", red_sea: "Rotes Meer", ethiopia: "Äthiopien", horn: "Horn von Afrika",
+  eritrea: "Eritrea", tigray: "Tigray", afar: "Afar", amhara: "Amhara", oromia: "Oromia", ethiopia: "Äthiopien", red_sea: "Rotes Meer",
+  djibouti: "Dschibuti", somalia: "Somalia und Somaliland", sudan: "Sudan", horn: "Horn von Afrika",
 };
-export const REGION_ORDER = ["eritrea", "tigray", "afar", "red_sea", "ethiopia", "horn"];
+/** Regionen in fester Reihenfolge: Eritrea und Nachbarn zuerst, dann das weitere Horn von Afrika */
+export const REGION_ORDER = ["eritrea", "tigray", "afar", "amhara", "oromia", "ethiopia", "red_sea", "djibouti", "somalia", "sudan", "horn"];
+/** Kernregionen (Eritrea, Äthiopien mit Tigray, Afar, Amhara, Oromia): für „Meistberichtet“ und Zählungen auf der Lage */
+export const CORE_REGIONS = ["eritrea", "tigray", "afar", "amhara", "oromia", "ethiopia"];
 const STATUS_DE: Record<string, [string, string]> = {
-  confirmed: ["Bestätigt", "Mindestens zwei unabhängige Quellen berichten es als Tatsache, oder die betroffene Seite räumt es ein."],
-  likely: ["Wahrscheinlich", "Mehrere Hinweise sprechen dafür, aber noch keine zwei unabhängigen Quellen berichten es als Tatsache."],
-  unconfirmed: ["Unbestätigt", "Berichtet, aber noch nicht unabhängig überprüft."],
-  disputed: ["Umstritten", "Eine Seite behauptet es, eine andere bestreitet es."],
-  false: ["Falsch", "Durch Belege widerlegt."],
+  unverified: ["Ungeprüft", "Gemeldet, aber noch nicht anhand von Belegen geprüft."],
+  checking: ["In Prüfung", "Wird gerade anhand von Belegen geprüft. Noch kein Ergebnis."],
+  partly: ["Teilweise gestützt", "Belege stützen einen Teil der Aussage, oder bisher stützt sie nur eine unabhängige Quelle."],
+  supported: ["Durch unabhängige Quellen gestützt", "Mindestens zwei voneinander unabhängige Quellen stützen es, oder die betroffene Seite räumt es ein."],
+  conflicting: ["Widersprüchliche Beweislage", "Es gibt Belege dafür und Belege dagegen; keine Seite überwiegt klar."],
+  refuted: ["Widerlegt", "Belege zeigen, dass es nicht stimmt."],
+  unverifiable: ["Nicht verifizierbar", "Mit frei zugänglichen Belegen nicht zu prüfen, etwa weil niemand unabhängig Zugang hat."],
+};
+/** Bis 12.10.2026 hießen die Stufen anders. Alte Tagesberichte und Verläufe nutzen noch die alten Schlüssel. */
+const LEGACY: Record<string, string> = { confirmed: "supported", likely: "partly", unconfirmed: "unverified", disputed: "conflicting", false: "refuted" };
+export const normStatus = (k: string | null | undefined) => (k ? LEGACY[k] || k : "unverified");
+/** Kurzform für Listen und Knöpfe */
+const STATUS_SHORT_DE: Record<string, string> = {
+  unverified: "Ungeprüft", checking: "In Prüfung", partly: "Teilweise gestützt", supported: "Gestützt",
+  conflicting: "Widersprüchlich", refuted: "Widerlegt", unverifiable: "Nicht verifizierbar",
 };
 /** Bezeichnungen in der gewählten Sprache (Schlüssel bleiben gleich) */
 const localized = <V,>(o: Record<string, V>, f: (v: V) => V) => new Proxy(o, { get: (x, k: string) => (k in x ? f((x as any)[k]) : undefined) }) as Record<string, V>;
@@ -57,7 +76,11 @@ export const TYPE_SHORT = localized(TYPE_SHORT_DE, (v) => tr(v));
 export const TYPE_NOTE = localized(TYPE_NOTE_DE, (v) => tr(v));
 export const REGIONS = localized(REGIONS_DE, (v) => tr(v));
 export const STATUS = localized(STATUS_DE, (v) => [tr(v[0]), tr(v[1])] as [string, string]);
-export const STATUS_ORDER = ["confirmed", "likely", "unconfirmed", "disputed", "false"];
+export const STATUS_SHORT = localized(STATUS_SHORT_DE, (v) => tr(v));
+export const STATUS_ORDER = ["unverified", "checking", "partly", "supported", "conflicting", "refuted", "unverifiable"];
+/** Richtung eines Belegs */
+const DIRECTION_DE: Record<string, string> = { supports: "stützt", contradicts: "widerspricht", context: "ordnet ein" };
+export const DIRECTION = localized(DIRECTION_DE, (v) => tr(v));
 
 // ---------------------------------------------------------------- Formate
 const TZ = "Europe/Berlin";
@@ -164,7 +187,8 @@ const INCIDENT: Record<string, string> = { Attack: "Angriff", "Suspicious Activi
   "Missile Strike": "Raketenangriff", "Drone Attack": "Drohnenangriff", "GNSS Interference": "Störung der Satellitennavigation",
   "Communications Interference": "Störung der Kommunikation", Unknown: "Unklarer Vorfall", Warning: "Warnung", Information: "Information",
   Missile: "Rakete", "Suspicious Vessel": "Verdächtiges Schiff", "Vessel Attacked": "Schiff angegriffen" };
-const CORR: Record<string, string> = { wording: "Wortlaut", "who says it": "wer es sagt", "who denies it": "wer es bestreitet", "first reported date": "Datum der ersten Meldung", "party label": "Kennzeichnung als Konfliktpartei" };
+const CORR: Record<string, string> = { wording: "Wortlaut", "who says it": "wer es sagt", "who denies it": "wer es bestreitet", "first reported date": "Datum der ersten Meldung", "party label": "Kennzeichnung als Konfliktpartei",
+  "claimed event time": "behaupteter Zeitpunkt", "open questions": "offene Fragen", rationale: "Begründung", "source dependencies": "Abhängigkeit der Quellen" };
 const fmtN = (x: string) => { const n = Number(x); return Number.isFinite(n) ? num(n) : x; };
 
 type Rule = [RegExp, (...m: string[]) => string];

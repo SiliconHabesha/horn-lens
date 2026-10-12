@@ -2,12 +2,13 @@
 // Alles Weitere steht auf eigenen Seiten; hier nur das, was man in wenigen Sekunden erfassen kann.
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
-import React, { useMemo } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { itemTime, StoryCard } from "../../components/items";
 import { LageSkeleton } from "../../components/Skeleton";
 import { SkyBand } from "../../components/SkyBand";
-import { briefOf } from "../../lib/brief";
+import { briefOf, periodIn, PERIODS } from "../../lib/brief";
 import { Button, Empty, Group, Head, ListRow, Screen, T, TabTools, tap } from "../../components/ui";
 import { fmtDay, fmtIsoDay, fmtShort, fmtTime, fmtWhen, num, plural, todayBerlin } from "../../lib/de";
 import { useData } from "../../lib/data";
@@ -28,19 +29,24 @@ const DAY = 24 * 3600e3;
 export default function Lage() {
   const t = useTheme();
   const { data, loading, seenBefore, firstVisit, loadedAt, refresh } = useData();
+  // Zeitraum der Zusammenfassung: 24 Stunden, 72 Stunden oder 7 Tage (auf dem Gerät gemerkt)
+  const [hours, setHoursState] = useState(24);
+  useEffect(() => { AsyncStorage.getItem("hl:lage:hours").then((v) => { const n = Number(v); if ((PERIODS as readonly number[]).includes(n)) setHoursState(n); }).catch(() => {}); }, []);
+  const setHours = (h: number) => { setHoursState(h); AsyncStorage.setItem("hl:lage:hours", String(h)).catch(() => {}); };
+  const WIN = hours * 3600e3;
 
   const d = useMemo(() => {
     if (!data) return null;
     const pool = dedupe(poolOf(data));
     const fresh = pool.filter((i) => new Date(i.fetched_at).getTime() > seenBefore).length;
     const changed = data.claims.filter((c) => c.events.some((e) => new Date(e.at).getTime() > seenBefore)).length;
-    // Geschichten der letzten 24 Stunden: erst Eritrea (meistberichtet zuerst), dann was sonst die meisten Medien aufgreifen
-    const recent = storiesOf(data).filter((s) => Date.now() - new Date(s.last).getTime() < DAY);
+    // Geschichten im Zeitraum: erst Eritrea (meistberichtet zuerst), dann was sonst die meisten Medien aufgreifen
+    const recent = storiesOf(data).filter((s) => Date.now() - new Date(s.last).getTime() < WIN);
     const bySize = (a: typeof recent[0], b: typeof recent[0]) => b.sources - a.sources || (a.last < b.last ? 1 : -1);
     const mine = recent.filter((s) => s.items.some((i) => i.regions.includes("eritrea"))).sort(bySize);
     const rest = recent.filter((s) => !mine.includes(s)).sort(bySize);
     const top = [...mine.slice(0, 3), ...rest.slice(0, 2), ...mine.slice(3)].slice(0, 5);
-    const items = recent.flatMap((s) => s.items.filter((i) => Date.now() - new Date(itemTime(i)).getTime() < DAY));
+    const items = recent.flatMap((s) => s.items.filter((i) => Date.now() - new Date(itemTime(i)).getTime() < WIN));
     const media = new Map<string, string>();
     for (const i of items) media.set(i.origin_domain || i.source_name, i.source_type);
     const types: Record<string, number> = {};
@@ -50,7 +56,7 @@ export default function Lage() {
     const sea = data.maritime.filter((m) => after(m.t)).length;
     const quakes = data.quakes.filter((q) => after(q.t) && (q.mag ?? 0) >= 4.5).length;
     return { fresh, changed, sea, quakes, top, count: recent.length, media: media.size, types, newest };
-  }, [data, seenBefore]);
+  }, [data, seenBefore, WIN]);
 
   if (!data || !d) {
     return (
@@ -86,13 +92,11 @@ export default function Lage() {
   if (d.sea) news.push({ text: tr("{count} auf See {since}", { count: plural(d.sea, "neuer Vorfall", "neue Vorfälle"), since }), to: "/signal/sea" });
   if (d.quakes) news.push({ text: tr("{count} {since}", { count: plural(d.quakes, "spürbares Erdbeben", "spürbare Erdbeben"), since }), to: "/signal/quakes" });
 
-  // Auf einen Blick: wenige Sätze, Wichtigstes zuerst
-  const brief = briefOf(data, storiesOf(data), d.fresh, since);
-  if (d.changed) brief.splice(Math.min(brief.length, data.alerts.length + 2), 0, { icon: "checkmark-done-circle-outline", head: tr("Behauptungen"),
-    text: tr("{count} sich {since} geändert.", { count: plural(d.changed, "Behauptung hat", "Behauptungen haben"), since }), src: tr("Redaktion Semay, mit Belegen"), to: "/claims" });
+  // Auf einen Blick: wenige Sätze, Wichtigstes zuerst; dazu, was wir gerade nicht sehen
+  const brief = briefOf(data, storiesOf(data), { hours, fresh: d.fresh, since });
 
   return (
-    <Screen hero={<SkyBand data={data} day={fmtDay(data.now)} stand={fmtTime(loadedAt || data.now)} brief={brief} />}>
+    <Screen hero={<SkyBand data={data} day={fmtDay(data.now)} stand={fmtTime(loadedAt || data.now)} brief={brief} hours={hours} onHours={setHours} />}>
       {data.owner && broken ? (
         <Pressable onPress={() => { tap(); router.push("/sources"); }} accessibilityRole="button"
           style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 8, minHeight: 36, opacity: pressed ? 0.6 : 1 })}>
@@ -103,12 +107,29 @@ export default function Lage() {
       ) : null}
 
       {/* Geschichten des Tages: zu Eritrea zuerst, dann nach Zahl der Medien. Keine redaktionelle Gewichtung. */}
-      <Head title={tr("Die Themen heute")} first action={tr("Alle Meldungen")} onAction={() => router.navigate("/news")} />
+      <Head title={hours === 24 ? tr("Die Themen heute") : tr("Die Themen {period}", { period: periodIn(hours) })} first action={tr("Alle Meldungen")} onAction={() => router.navigate(`/news?hours=${hours}`)} />
       {d.top.length ? d.top.map((s, i) => (
         <View key={s.key} style={i ? { borderTopWidth: StyleSheet.hairlineWidth, borderColor: t.rule } : undefined}>
           <StoryCard s={s} seenBefore={seenBefore} />
         </View>
-      )) : <T v="small">{tr("In den letzten 24 Stunden keine Meldungen aus unseren Quellen.")}</T>}
+      )) : <T v="small">{tr("{period} keine Meldungen aus unseren Quellen.", { period: periodIn(hours) })}</T>}
+
+      {/* Informationslücken: was Semay gerade nicht sehen kann. Gehört zur Lage wie das, was wir sehen. */}
+      {brief.gaps.length ? (
+        <>
+          <Head title={tr("Was wir nicht sehen")} />
+          <View>
+            {brief.gaps.map((g, i) => (
+              <Pressable key={i} onPress={() => { tap(); router.push(g.to as any); }} accessibilityRole="button"
+                style={({ pressed }) => ({ flexDirection: "row", gap: 10, paddingVertical: 10, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: t.rule, opacity: pressed ? 0.6 : 1 })}>
+                <Ionicons name={g.icon} size={17} color={t.muted} style={{ marginTop: 2 }} />
+                <T v="small" color={t.ink} style={{ flex: 1 }}>{g.text}</T>
+                <Ionicons name="chevron-forward" size={14} color={t.faint} style={{ marginTop: 3 }} />
+              </Pressable>
+            ))}
+          </View>
+        </>
+      ) : null}
 
       {/* Weiter zu */}
       <Head title={tr("Weiter zu")} />

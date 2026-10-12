@@ -21,6 +21,9 @@ export default function Method() {
         <B>{tr("Meldungen: die Schlagzeile, ein Link zum Original und wer sie veröffentlicht hat. Wir kopieren keine Artikel. Eine Meldung ist keine geprüfte Tatsache.")}</B>
         <B>{tr("Schlagzeilen in Englisch, Amharisch, Tigrinya oder Arabisch übersetzt Semay maschinell ins Deutsche (MyMemory). Das Original steht in der Meldung immer dabei; die Übersetzung kann Fehler enthalten.")}</B>
         <B>{tr("„Auf einen Blick“ auf der Lage entsteht nach festen Regeln aus Zahlen und Meldungen, ohne KI und ohne Wertung. Jeder Satz nennt seine Quelle.")}</B>
+        <B>{tr("Ist die Datenlage zu dünn (weniger als drei Meldungen im Zeitraum oder viele gestörte Quellen), sagt „Auf einen Blick“ das ausdrücklich, statt eine Lage zu behaupten. Darunter steht, was wir gerade nicht sehen können.")}</B>
+        <B>{tr("Die Art eines Ereignisses (Militär, Gefechte, Grenze, Politik, Diplomatie, Seefahrt, Humanitäre Lage, Desinformation, Infrastruktur) erkennt Semay automatisch an Stichwörtern in der Schlagzeile. Das kann irren und ist überall als automatisch gekennzeichnet.")}</B>
+        <B>{tr("Orte: Messwerte (Hitzepunkte, Erdbeben) haben genaue Koordinaten. Vorfälle auf See sind ungefähr verortet, wie UKMTO sie angibt. Meldungen werden nie auf einen Punkt gesetzt: Nennt eine Schlagzeile einen Ort, zeigt die Karte eine Fläche um ihn mit dem Hinweis „erwähnt, nicht verortet“. Ohne Ortsnamen erscheint eine Meldung nicht auf der Karte.")}</B>
         <B>{tr("Geschichten: Nennen mehrere Medien in ähnlichen Worten dasselbe, fasst Semay ihre Meldungen automatisch zusammen. Das sagt nichts darüber, ob es stimmt, nur wer darüber berichtet.")}</B>
         <B>{tr("Messwerte: Messungen von Satelliten und Sensoren. Sie zeigen, dass an einem Ort zu einer Zeit etwas geschah, nie wer es war oder warum.")}</B>
         <B>{tr("Satellitenbilder: Sentinel-2-Ausschnitte mit genauer Aufnahmezeit, nur mit höchstens 3 % Wolken.")}</B>
@@ -33,6 +36,9 @@ export default function Method() {
           <View style={{ gap: 6 }}>
             {STATUS_ORDER.map((k) => <B key={k}>{`${STATUS[k][0]}: ${STATUS[k][1]}`}</B>)}
             <B>{tr("Zwei Quellen gelten nur als unabhängig, wenn es verschiedene Organisationen sind. Eine Reuters-Meldung, die ein anderes Medium übernimmt, zählt einmal.")}</B>
+            <B>{tr("Jeder Beleg ist gekennzeichnet: Er stützt die Behauptung, widerspricht ihr oder ordnet sie nur ein. Wo Quellen voneinander abhängen (etwa dieselbe Regierungserklärung), steht das bei der Behauptung.")}</B>
+            <B>{tr("Zu jeder Behauptung stehen, soweit bekannt: wer sie aufgestellt hat, wann sie zuerst gemeldet wurde, wann das Ereignis gewesen sein soll, die Begründung der Stufe, offene Fragen und das Datum der letzten Prüfung.")}</B>
+            <B>{tr("Bis zum 12. Oktober 2026 hießen die Stufen „Bestätigt“, „Wahrscheinlich“, „Unbestätigt“, „Umstritten“ und „Falsch“. Sie wurden umbenannt in „Durch unabhängige Quellen gestützt“, „Teilweise gestützt“, „Ungeprüft“, „Widersprüchliche Beweislage“ und „Widerlegt“; der Verlauf nennt die alte Bezeichnung.")}</B>
             <B>{tr("Jede Änderung bleibt mit Datum, Notiz und Quellen im Verlauf. Ein berichtigter Wortlaut ist mit „Berichtigt“ markiert.")}</B>
           </View>
         </>

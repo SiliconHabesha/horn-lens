@@ -105,7 +105,7 @@ export default function Search() {
         ) : total === 0 ? (
           <View style={{ alignItems: "center", paddingVertical: space.xxl, gap: 8 }}>
             <Ionicons name="search-outline" size={28} color={t.faint} />
-            <T v="small" style={{ textAlign: "center" }}>{tr("Nichts gefunden zu „{query}“. Andere Schreibweise versuchen, z. B. Aseb statt Assab, oder auf Englisch. Gesucht wird in den Schlagzeilen der letzten 72 Stunden.", { query: q.trim() })}</T>
+            <T v="small" style={{ textAlign: "center" }}>{tr("Nichts gefunden zu „{query}“. Andere Schreibweise versuchen, z. B. Aseb statt Assab, oder auf Englisch. Gesucht wird in den Schlagzeilen der letzten 7 Tage.", { query: q.trim() })}</T>
           </View>
         ) : (
           <>
@@ -134,7 +134,7 @@ export default function Search() {
               </Section>
             ) : null}
             {res.items.length ? (
-              <Section title={tr("Meldungen, 72 Std.")} count={res.items.length}>
+              <Section title={tr("Meldungen, 7 Tage")} count={res.items.length}>
                 {res.items.slice(0, 30).map((it, i) => (
                   <View key={it.id} style={i ? { borderTopWidth: StyleSheet.hairlineWidth, borderColor: t.rule } : undefined}>
                     <ItemRow it={it} isNew={new Date(it.fetched_at).getTime() > seenBefore} onOpen={() => remember(q)} />

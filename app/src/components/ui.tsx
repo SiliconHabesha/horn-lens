@@ -6,7 +6,7 @@ import * as WebBrowser from "expo-web-browser";
 import React from "react";
 import { Linking, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextProps, View, ViewStyle, Switch, SwitchProps, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ago, num, STATUS } from "../lib/de";
+import { ago, normStatus, num, STATUS, STATUS_SHORT } from "../lib/de";
 import { useData } from "../lib/data";
 import { font, radius, space, useTheme } from "../lib/theme";
 import { lang, t as tr } from "../lib/i18n";
@@ -91,15 +91,17 @@ export function ChipRow({ children, wrap }: { children: React.ReactNode; wrap?: 
 
 // Jede Stufe hat eine eigene Form, nicht nur eine Farbe (auch für Menschen mit Farbsehschwäche)
 const STATUS_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
-  confirmed: "checkmark-circle", likely: "checkmark-circle-outline", unconfirmed: "help-circle", disputed: "swap-horizontal", false: "close-circle",
+  unverified: "help-circle-outline", checking: "hourglass-outline", partly: "checkmark-circle-outline", supported: "checkmark-circle",
+  conflicting: "swap-horizontal", refuted: "close-circle", unverifiable: "eye-off-outline",
 };
-export function StatusPill({ status, small }: { status: string; small?: boolean }) {
+export function StatusPill({ status: raw, small }: { status: string; small?: boolean }) {
   const t = useTheme();
+  const status = normStatus(raw);
   const c = t.status[status] || t.muted;
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start" }}>
       <Ionicons name={STATUS_ICON[status] || "ellipse"} size={small ? 13 : 15} color={c} accessibilityElementsHidden importantForAccessibility="no" />
-      <T v="label" color={c}>{STATUS[status]?.[0] || tr("Stufe unbekannt")}</T>
+      <T v="label" color={c}>{(small ? STATUS_SHORT[status] : STATUS[status]?.[0]) || tr("Stufe unbekannt")}</T>
     </View>
   );
 }

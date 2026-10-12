@@ -5,12 +5,13 @@ import * as Haptics from "expo-haptics";
 import type { Session } from "@supabase/supabase-js";
 import { AppState, Platform } from "react-native";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { addTexts, de, deDates, resetTexts, srcName } from "./de";
+import { addTexts, de, deDates, normStatus, resetTexts, srcName } from "./de";
 import { t } from "./i18n";
 import { useLang } from "./lang";
 import { refreshPushOwner } from "./push";
 import { sb } from "./supabase";
 import type { Alert, Claim, Data, Item, Report } from "./types";
+import { processedOf } from "./sat";
 
 const firmsUrl = (lat: number, lon: number) => `https://firms.modaps.eosdis.nasa.gov/map/#d:24hrs;@${lon},${lat},10z`;
 const platformOf = (item: string) => (/^S2([A-D])_/.test(item || "") ? `Sentinel-2${item[2]}` : "Sentinel-2");
@@ -40,15 +41,17 @@ function toData(raw: Raw): Data {
   const fires = (s.fires || []).map(([lat, lon, t, sat, frp]: any[]) => ({ lat: Number(lat), lon: Number(lon), t: new Date(Number(t) * 1000).toISOString(), sat, frp: frp == null ? null : Number(frp), url: firmsUrl(lat, lon) }));
   const claims: Claim[] = (d.claims || []).map((c: Claim) => ({
     ...c,
+    status: normStatus(c.status),
     raw: { statement: c.statement, claimant: c.claimant, disputed_by: c.disputed_by },
     statement: de(c.statement), claimant: de(c.claimant), disputed_by: de(c.disputed_by),
-    events: (c.events || []).map((e) => ({ ...e, note: de(e.note), source_title: deDates(e.source_title) ?? null,
+    events: (c.events || []).map((e) => ({ ...e, status: normStatus(e.status), note: de(e.note), source_title: deDates(e.source_title) ?? null,
       extra: (e.extra || []).filter(Boolean).map((x) => ({ ...x, title: deDates(x.title) ?? null })) })),
   }));
   return {
     now: d.now || new Date().toISOString(),
     owner: raw.owner,
-    sources: (d.sources || []).map((x: any) => ({ ...x, name: de(x.name), stance_note: de(x.stance_note) })),
+    sources: (d.sources || []).map((x: any) => ({ ...x, name: de(x.name), stance_note: de(x.stance_note), limitations: de(x.limitations), focus: x.focus || [] })),
+    sourcesOff: (d.sources_off || []).map((x: any) => ({ ...x, name: de(x.name), stance_note: de(x.stance_note) })),
     reports: d.reports || [],
     items: (d.items || []).map((i: any) => ({ ...i, source_name: srcName(de(i.source_name)) })),
     fires, firesTotal: Number(s.fires_total ?? fires.length), firesCapped: !!s.fires_capped,
@@ -58,7 +61,8 @@ function toData(raw: Raw): Data {
     alerts: localizeAlerts(d.alerts || []),
     claims,
     sat: (d.sat || []).map((p: any) => ({ ...p, country_raw: p.country, name: de(p.name), country: de(p.country), why: de(p.why),
-      images: (p.images || []).map(([id, t, cloud, item, b]: any[]) => ({ id, t: new Date(Number(t) * 1000).toISOString(), cloud, item, b, platform: platformOf(item) })) })),
+      images: (p.images || []).map(([id, t, cloud, item, b, got]: any[]) => ({ id, t: new Date(Number(t) * 1000).toISOString(), cloud, item, b, platform: platformOf(item),
+        fetched: got ? new Date(Number(got) * 1000).toISOString() : null, processed: processedOf(item) })) })),
   };
 }
 
@@ -96,7 +100,8 @@ export async function loadReport(date: string): Promise<Report | null> {
   const r = data as Report;
   const p = r.payload || {};
   for (const reg of p.regions || []) { for (const it of reg.items || []) it.source_name = srcName(de(it.source_name)); rememberItems(reg.items || []); }
-  for (const c of p.changes || []) { c.statement = de(c.statement); c.note = de(c.note); c.source_title = deDates(c.source_title); }
+  for (const c of p.changes || []) { c.statement = de(c.statement); c.note = de(c.note); c.source_title = deDates(c.source_title); c.status = normStatus(c.status); }
+  for (const c of (p as any).claims || []) c.status = normStatus(c.status);
   if (p.alerts) p.alerts = localizeAlerts(p.alerts);
   return r;
 }

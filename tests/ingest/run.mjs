@@ -1,6 +1,7 @@
 // Prüft Regionen-Zuordnung, Feed-Auswertung und Aufräumen der Funktion ingest.
 // Vorbereitung: node tests/ingest/prepare.mjs  (holt die reinen Funktionen aus supabase/functions/ingest/index.ts)
-import { tagRegions, tagItem, relevant, stripHtml, detectLanguage, cleanUrl, parseRss } from "./t.mjs";
+import { tagRegions, tagItem, relevant, stripHtml, detectLanguage, cleanUrl, parseRss as parseRssFull, parseGdelt, toIso, gdeltDate, backoff } from "./out/t.js";
+const parseRss = (x, s) => parseRssFull(x, s).items;
 const src = (o = {}) => ({ id: "x", name: "x", feed_url: "", kind: "rss", source_type: "international", language: "en", default_regions: [], region_filter: true, strict: false, ...o });
 let fails = 0;
 const eq = (name, got, want) => { const g = JSON.stringify(got), w = JSON.stringify(want); if (g !== w) { fails++; console.log("FAIL", name, "got", g, "want", w); } else console.log("ok  ", name); };
@@ -16,9 +17,11 @@ has("Houthi airports", tagItem("Yemen's Houthis claim drone attacks on two Saudi
 has("Houthi ship", tagItem("Houthis claim attack on a ship off Yemen", null, src()), "red_sea");
 has("Houthi tanker", tagItem("Tanker hit after Houthi threat", null, src()), "red_sea");
 has("Bab al-Mandeb", tagItem("Traffic through Bab al-Mandeb falls", null, src()), "red_sea");
-has("South Sudan", tagItem("South Sudan votes", null, src()), "horn", false);
-has("South-Sudan", tagItem("South-Sudan votes", null, src()), "horn", false);
-has("Sudan", tagItem("Sudan army retakes town", null, src()), "horn");
+has("South Sudan", tagItem("South Sudan votes", null, src()), "sudan", false);
+has("South-Sudan", tagItem("South-Sudan votes", null, src()), "sudan", false);
+has("South Sudanese", tagItem("South Sudanese refugees return", null, src()), "sudan", false);
+has("Sudan", tagItem("Sudan army retakes town", null, src()), "sudan");
+has("Sudan not horn", tagItem("Sudan army retakes town", null, src()), "horn", false);
 has("Shire River", tagItem("Shire River floods in Malawi", null, src()), "tigray", false);
 has("Shire town", tagItem("Displaced families arrive in Shire", null, src()), "tigray");
 eq("bulletin", tagItem("Africa joins the data centre backlash", "In tonight’s edition: Eritrea and Ethiopia trade accusations, Sudan...", src()), []);
@@ -55,6 +58,46 @@ const a = parseRss(atom, src());
 eq("atom alternate", a[0]?.url, "https://e.com/a");
 eq("atom title attr", a[0]?.title, "Eritrea news");
 eq("atom no-rel", a[1]?.url, "https://e.com/b");
+
+// ---- Neue Regionen (13.10.2026)
+const reg = (t) => tagItem(t, null, src());
+eq("amhara + ethiopia", ["amhara", "ethiopia"].every((r) => reg("Fano fighters clash with army in Amhara").includes(r)), true);
+eq("gondar amhara", reg("Curfew imposed in Gondar").includes("amhara"), true);
+eq("oromia", reg("OLA attack reported in Oromia").includes("oromia"), true);
+eq("spanish ola", reg("La ola de calor en España").includes("oromia"), false);
+eq("somalia", reg("Al-Shabaab attack near Mogadishu").includes("somalia"), true);
+eq("somaliland", reg("Somaliland election in Hargeisa").includes("somalia"), true);
+eq("djibouti", reg("Djibouti port traffic rises").includes("djibouti"), true);
+eq("darfur sudan", reg("RSF shelling in El Fasher, Darfur").includes("sudan"), true);
+eq("rsf alone not sudan", reg("RSF press freedom index published").includes("sudan"), false);
+eq("igad horn", reg("IGAD summit opens").includes("horn"), true);
+// ---- Fehlerhafte Antworten der Quellen
+const throws = (name, fn, rx) => { try { fn(); eq(name, "no error", rx.source); } catch (e) { eq(name, rx.test(String(e.message)), true); } };
+throws("html instead of rss", () => parseRssFull("<!DOCTYPE html><html><body>Not found</body></html>", src()), /not an RSS or Atom feed/);
+throws("empty body", () => parseRssFull("", src()), /not an RSS or Atom feed/);
+throws("gdelt rate limit text", () => parseGdelt("Please limit requests to one every 5 seconds", src({ kind: "gdelt" })), /GDELT/);
+throws("gdelt no list", () => parseGdelt("{}", src({ kind: "gdelt" })), /no article list/);
+eq("gdelt ok", parseGdelt(JSON.stringify({ articles: [{ url: "https://x.org/a", title: "Eritrea talks", seendate: "20261009T120000Z", domain: "x.org" }] }), src({ kind: "gdelt" })).items[0]?.published_at, "2026-10-09T12:00:00Z");
+eq("gdelt found count", parseGdelt(JSON.stringify({ articles: [{ url: "https://x.org/a", title: "Football results" }, { url: "https://x.org/b", title: "Eritrea" }] }), src({ kind: "gdelt" })).found, 2);
+// ---- Zeitangaben
+eq("missing pubDate -> null", parseRss(`<rss><channel><item><title>Eritrea</title><link>https://e.com/n</link></item></channel></rss>`, src())[0]?.published_at, null);
+eq("garbage date -> null", toIso("not a date"), null);
+eq("future date -> null", toIso(new Date(Date.now() + 3 * 3600e3).toUTCString()), null);
+eq("timezone offset to UTC", toIso("Thu, 09 Oct 2026 12:00:00 +0300"), "2026-10-09T09:00:00.000Z");
+eq("gdelt bad date", gdeltDate("2026-10-09"), null);
+// ---- Zählwerte und Doppelte
+const fr = parseRssFull(`<rss><channel>
+<item><title>Eritrea one</title><link>https://e.com/1?utm_source=a</link></item>
+<item><title>Eritrea one again</title><link>https://e.com/1?utm_source=b</link></item>
+<item><title>Football</title><link>https://e.com/3</link></item></channel></rss>`, src());
+eq("found counts all entries", fr.found, 3);
+eq("region filter drops off-topic", fr.items.length, 2);
+eq("tracking params unify duplicates", new Set(fr.items.map((i) => i.url)).size, 1);
+// ---- Höflichkeit bei gestörten Quellen
+const old = new Date(Date.now() - 30 * 3600e3).toISOString();
+eq("backoff after a day of errors", backoff(src({ failing_since: old, last_fetch_at: new Date(Date.now() - 3600e3).toISOString() })), true);
+eq("no backoff when healthy", backoff(src({ failing_since: null, last_fetch_at: old })), false);
+console.log(fails ? `${fails} FAILED (incl. new)` : "NEW PASSED");
 console.log(fails ? `${fails} FAILED` : "ALL PASSED");
 const extra = () => {
   let f = 0; const chk = (n, g, w) => { if (JSON.stringify(g) !== JSON.stringify(w)) { f++; console.log("FAIL", n, JSON.stringify(g)); } else console.log("ok  ", n); };

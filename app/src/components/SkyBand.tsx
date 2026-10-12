@@ -6,18 +6,19 @@ import { setStatusBarStyle } from "expo-status-bar";
 import React, { useCallback, useState } from "react";
 import { Pressable, StyleSheet, useColorScheme, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import type { BriefLine } from "../lib/brief";
+import { PERIODS, periodLabel, type Brief } from "../lib/brief";
 import { lang, t as tr } from "../lib/i18n";
 import { BRAND, ForceDark, radius, space, useTheme } from "../lib/theme";
 import type { Data } from "../lib/types";
 import { Logo } from "./Logo";
 import { boxOf, fit, MapSvg } from "./MapCanvas";
-import { T, TabTools, tap } from "./ui";
+import { Chip, T, TabTools, tap } from "./ui";
 
 // Ausschnitt: Eritrea mit Grenzgebiet zu Tigray, Afar und dem Roten Meer bis Bab el-Mandeb
 const REGION = boxOf(18.4, 36.1, 12.0, 43.7);
 
-export function SkyBand(props: { data: Data; day: string; stand: string; brief: BriefLine[] }) {
+type Props = { data: Data; day: string; stand: string; brief: Brief; hours: number; onHours: (h: number) => void };
+export function SkyBand(props: Props) {
   // Helle Statusleiste über dem dunklen Band; beim Verlassen zurück zum Schema der App
   const scheme = useColorScheme();
   useFocusEffect(useCallback(() => {
@@ -29,7 +30,7 @@ export function SkyBand(props: { data: Data; day: string; stand: string; brief: 
 
 const go = (to: string) => { tap(); router.navigate(`${to}${to.includes("?") ? "&" : "?"}k=${Date.now()}` as any); };
 
-function Inner({ data, day, stand, brief }: { data: Data; day: string; stand: string; brief: BriefLine[] }) {
+function Inner({ data, day, stand, brief, hours, onHours }: Props) {
   const t = useTheme();
   const ins = useSafeAreaInsets();
   const wide = useWindowDimensions().width >= 900;
@@ -47,13 +48,28 @@ function Inner({ data, day, stand, brief }: { data: Data; day: string; stand: st
         )}
         <T v="display" accessibilityRole="header">{tr("Lage")}</T>
         <T v="small" style={{ marginTop: 2 }}>{tr("{day}, Stand {stand} Uhr", { day, stand })}</T>
+        {/* Zeitraum der Zusammenfassung */}
+        <View style={{ flexDirection: "row", gap: 8, marginTop: space.m, flexWrap: "wrap" }} accessibilityRole="radiogroup" accessibilityLabel={tr("Zeitraum der Zusammenfassung")}>
+          {PERIODS.map((h) => <Chip key={h} label={periodLabel(h)} active={hours === h} onPress={() => onHours(h)} />)}
+        </View>
 
         <View style={{ flexDirection: wide ? "row" : "column", gap: wide ? space.xl : 0, marginTop: space.l, alignItems: wide ? "flex-start" : "stretch" }}>
           {/* Auf einen Blick: ein Satz je Thema, Wichtigstes zuerst */}
           <View style={{ flex: wide ? 5 : undefined }} accessibilityRole="list">
-            {brief.map((b, i) => (
+            {!brief.reliable ? (
+              <View style={{ flexDirection: "row", gap: 12, paddingVertical: 11 }} accessibilityLiveRegion="polite">
+                <View style={{ width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center", marginTop: 1, backgroundColor: "rgba(237,240,238,0.08)" }}>
+                  <Ionicons name="help-buoy-outline" size={16} color={t.warn} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <T v="bodyStrong" color={t.warn}>{tr("Keine verlässliche Zusammenfassung möglich")}</T>
+                  <T v="body" color={t.ink}>{brief.reason} {tr("Was wir trotzdem wissen, steht darunter; jede Zeile nennt ihre Quelle.")}</T>
+                </View>
+              </View>
+            ) : null}
+            {brief.lines.map((b, i) => (
               <Pressable key={`${b.head}${i}`} onPress={() => go(b.to)} accessibilityRole="button" accessibilityLabel={tr("{head}: {text} Quelle: {src}", { head: b.head, text: b.text, src: b.src })}
-                style={({ pressed }) => ({ flexDirection: "row", gap: 12, paddingVertical: 11, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: t.rule, opacity: pressed ? 0.6 : 1 })}>
+                style={({ pressed }) => ({ flexDirection: "row", gap: 12, paddingVertical: 11, borderTopWidth: i || !brief.reliable ? StyleSheet.hairlineWidth : 0, borderColor: t.rule, opacity: pressed ? 0.6 : 1 })}>
                 <View style={{ width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center", marginTop: 1,
                   backgroundColor: b.alert ? t.warn : "rgba(237,240,238,0.08)" }}>
                   <Ionicons name={b.icon} size={16} color={b.alert ? BRAND.ink : t.ink} />

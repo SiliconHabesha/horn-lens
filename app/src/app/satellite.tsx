@@ -5,7 +5,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, LayoutChangeEvent, PanResponder, Pressable, useWindowDimensions, View } from "react-native";
 import { Card, Chip, ChipRow, Empty, openLink, Screen, T, tap } from "../components/ui";
-import { fmtCap, fmtCapDay, isEnglish, num } from "../lib/de";
+import { fmtCap, fmtCapDay, fmtFull, isEnglish, num } from "../lib/de";
 import { nearest as nearestPlace } from "../lib/places";
 import { Bone } from "../components/Skeleton";
 import { satImageUri, useData } from "../lib/data";
@@ -13,6 +13,7 @@ import { toast } from "../components/Toast";
 import { radius, space, useTheme } from "../lib/theme";
 import { t as tr } from "../lib/i18n";
 import type { SatImage, SatPlace } from "../lib/types";
+import { copernicusUrl, stacUrl } from "../lib/sat";
 
 const group = (p: SatPlace) => p.country_raw.startsWith("Eritrea /") ? "Grenze" : p.country_raw.startsWith("Eritrea") ? "Eritrea"
   : p.country_raw.startsWith("Ethiopia") ? "Äthiopien" : "Rotes Meer";
@@ -74,6 +75,8 @@ export default function Satellite() {
   const nearest = (target: number) => place.images.reduce((best, i) => (Math.abs(new Date(i.t).getTime() - target) < Math.abs(new Date(best.t).getTime() - target) ? i : best), place.images[0]);
   const [afterId, setAfterId] = useState<number | null>(null);
   const [split, setSplit] = useState(0.5);
+  // Vergleich mit Schieberegler (übereinander) oder nebeneinander
+  const [side, setSide] = useState(false);
   const [allDates, setAllDates] = useState(false);
   const [beforeId, setBeforeId] = useState<number | null>(null);
   useEffect(() => {
@@ -135,13 +138,34 @@ export default function Satellite() {
   const scalePct = place.half_km > 0 ? 100 / (2 * place.half_km) : 0;
 
   const why = isEnglish(place.why, place.why) ? null : place.why;
+  // Zu jedem Bild: Aufnahme (UTC), Verarbeitung durch ESA (aus dem Produktnamen), Abruf durch Semay, Wolken, Links zum Produkt
   const info = (label: string, i: SatImage) => (
-    <View key={label} style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: 8 }}>
-      <T v="caption" color={t.ink}>{label}</T>
-      <T v="caption">{tr("{date} · {platform} · Wolken {cloud} %", { date: fmtCap(i.t), platform: i.platform, cloud: num(Number(i.cloud)) })}</T>
-      <Pressable onPress={() => { tap(); openLink(`https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/${encodeURIComponent(i.item)}`); }} accessibilityRole="link" hitSlop={8}>
-        <T v="caption" color={t.accent}>{tr("Datensatz ↗")}</T>
-      </Pressable>
+    <View key={label} style={{ gap: 1, paddingVertical: 4 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: 8 }}>
+        <T v="caption" color={t.ink}>{label}</T>
+        <T v="caption">{tr("Aufnahme {date} · {platform} · Wolken {cloud} %", { date: fmtCap(i.t), platform: i.platform, cloud: num(Number(i.cloud)) })}</T>
+      </View>
+      <T v="caption">{[i.processed ? tr("verarbeitet {date}", { date: fmtCap(i.processed) }) : tr("Verarbeitungszeit nicht angegeben"),
+        i.fetched ? tr("von Semay geholt {date}", { date: fmtFull(i.fetched) }) : null].filter(Boolean).join(" · ")}</T>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: space.m }}>
+        <Pressable onPress={() => { tap(); openLink(stacUrl(i.item)); }} accessibilityRole="link" hitSlop={8} accessibilityLabel={tr("Produkt {id} bei Microsoft Planetary Computer", { id: i.item })}>
+          <T v="caption" color={t.accent}>{tr("Datensatz ↗")}</T>
+        </Pressable>
+        <Pressable onPress={() => { tap(); openLink(copernicusUrl(place.lat, place.lon, i.t)); }} accessibilityRole="link" hitSlop={8}>
+          <T v="caption" color={t.accent}>{tr("Im Copernicus Browser ↗")}</T>
+        </Pressable>
+      </View>
+    </View>
+  );
+  // Nebeneinander: zwei gleich große Bilder mit Datum darüber
+  const half = Math.floor((Math.min(w || 0, 560) - space.s) / 2);
+  const Pane = ({ uri, label, img }: { uri: string | null; label: string; img: SatImage }) => (
+    <View style={{ width: half }}>
+      <T v="caption" color={t.ink} style={{ marginBottom: 4 }}>{label} · {fmtCapDay(img.t)}</T>
+      <View style={{ width: half, height: half, borderRadius: radius.m, overflow: "hidden", backgroundColor: t.cardAlt }}>
+        {uri ? <Image source={{ uri }} style={{ width: half, height: half }} contentFit="cover" transition={150} accessibilityLabel={tr("{label}: Satellitenbild {place} vom {date}", { label, place: place.name, date: fmtCapDay(img.t) })} />
+          : <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}><ActivityIndicator color={t.muted} /></View>}
+      </View>
     </View>
   );
 
@@ -162,8 +186,19 @@ export default function Satellite() {
 
       <View style={{ flexDirection: wide ? "row" : "column", gap: wide ? space.xl : 0, alignItems: "flex-start" }}>
       <View style={{ flex: wide ? 3 : undefined, width: wide ? undefined : "100%" }}>
+      {!single ? (
+        <View style={{ flexDirection: "row", gap: 8, marginTop: space.m }} accessibilityRole="radiogroup" accessibilityLabel={tr("Darstellung des Vergleichs")}>
+          <Chip label={tr("Schieberegler")} active={!side} onPress={() => setSide(false)} />
+          <Chip label={tr("Nebeneinander")} active={side} onPress={() => setSide(true)} />
+        </View>
+      ) : null}
+      {side && !single ? (
+        <View style={{ flexDirection: "row", gap: space.s, marginTop: space.m, maxWidth: 560, alignSelf: "center", width: "100%" }}>
+          {half > 0 ? <><Pane uri={B.uri} label={tr("Vorher")} img={before!} /><Pane uri={A.uri} label={tr("Nachher")} img={after!} /></> : null}
+        </View>
+      ) : null}
       <View onLayout={(e: LayoutChangeEvent) => setW(e.nativeEvent.layout.width)}
-        style={{ marginTop: space.m, aspectRatio: 1, width: "100%", maxWidth: 560, alignSelf: "center", borderRadius: radius.l, overflow: "hidden", backgroundColor: t.cardAlt }}
+        style={side && !single ? { width: "100%", maxWidth: 560, alignSelf: "center", height: 0, overflow: "hidden" } : { marginTop: space.m, aspectRatio: 1, width: "100%", maxWidth: 560, alignSelf: "center", borderRadius: radius.l, overflow: "hidden", backgroundColor: t.cardAlt }}
         {...(single ? {} : pan.panHandlers)} accessible accessibilityLabel={single ? tr("Satellitenbild {place}", { place: place.name }) : tr("Vergleich {place}: links Vorher, rechts Nachher. Wischen verschiebt die Trennlinie.", { place: place.name })}
         accessibilityRole={single ? "image" : "adjustable"} accessibilityValue={single ? undefined : { text: tr("Trennlinie bei {pct} Prozent", { pct: Math.round(split * 100) }) }}
         accessibilityActions={single ? undefined : [{ name: "increment" }, { name: "decrement" }]}

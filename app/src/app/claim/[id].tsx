@@ -3,7 +3,7 @@ import { router, Stack, useLocalSearchParams } from "expo-router";
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Button, Card, Empty, ListRow, openLink, Screen, StatusPill, T, tap } from "../../components/ui";
-import { endDot, fmtDate, fmtFull, isEnglish, fmtIsoDay, REGIONS, STATUS } from "../../lib/de";
+import { de, DIRECTION, endDot, fmtDate, fmtFull, isEnglish, fmtIsoDay, REGIONS, STATUS } from "../../lib/de";
 import { t as tr } from "../../lib/i18n";
 import { ItemRow } from "../../components/items";
 import { useData } from "../../lib/data";
@@ -12,6 +12,8 @@ import { space, useTheme } from "../../lib/theme";
 import type { Claim, ClaimEvent, Ref } from "../../lib/types";
 import { Skeleton } from "../../components/Skeleton";
 
+// Bezeichnungen der Stufen bis 12.10.2026 (für den Verlauf)
+const LEGACY_NAME: Record<string, string> = { confirmed: "Bestätigt", likely: "Wahrscheinlich", unconfirmed: "Unbestätigt", disputed: "Umstritten", false: "Falsch" };
 const sourcesOf = (e: ClaimEvent): Ref[] => [
   ...(e.source_url ? [{ title: e.source_title, url: e.source_url }] : []),
   ...(e.extra || []).filter((x) => x && x.url),
@@ -41,6 +43,10 @@ export default function ClaimDetail() {
   const earlier = evidence ? null : c.events.find((e) => sourcesOf(e).length);
   let since: string | null = null;
   for (const e of c.events) { if (e.status === c.status) since = e.at; else break; }
+  // Belege nach Richtung (wo bei der Eintragung angegeben): stützen, widersprechen, ordnen ein
+  const byDir = (d: string) => c.events.filter((e) => e.direction === d).flatMap(sourcesOf);
+  const pro = byDir("supports"), contra = byDir("contradicts"), ctx = byDir("context");
+  const checked = c.checked_at || c.events[0]?.at || c.updated_at;
   return (
     <Screen refresh topInset={false}>
       <Stack.Screen options={{ title: tr("Behauptung") }} />
@@ -51,6 +57,13 @@ export default function ClaimDetail() {
       <T v="title" style={{ marginTop: space.s }}>{c.statement}</T>
       {isEnglish(c.raw?.statement, c.statement) ? <T v="caption" style={{ marginTop: 4 }}>{tr("Originalwortlaut (Englisch), noch nicht übersetzt")}</T> : null}
       <T v="small" style={{ marginTop: space.s }}>{STATUS[c.status]?.[1]}</T>
+      <T v="caption" style={{ marginTop: 4 }}>{tr("Nr. {id} · zuletzt geprüft {date}", { id: c.id, date: fmtDate(checked) })}</T>
+      {c.rationale ? (
+        <View style={{ marginTop: space.m, paddingLeft: 10, borderLeftWidth: 2, borderColor: t.status[c.status] || t.rule }}>
+          <T v="label" color={t.muted}>{tr("Begründung der Stufe")}</T>
+          <T v="body">{de(c.rationale)}</T>
+        </View>
+      ) : null}
 
       <Card style={{ marginTop: space.l, gap: 10 }}>
         <View><T v="label" color={t.muted}>{tr("Wer sagt es")}</T><T v="body">{endDot(c.claimant)}</T></View>
@@ -59,7 +72,17 @@ export default function ClaimDetail() {
           <View><T v="label" color={t.muted}>{tr("Region")}</T><T v="body">{REGIONS[c.region] || c.region}</T></View>
           <View><T v="label" color={t.muted}>{tr("Zuerst gemeldet")}</T><T v="body">{fmtIsoDay(c.first_reported, { day: "numeric", month: "short", year: "numeric" })}</T></View>
           {since ? <View><T v="label" color={t.muted}>{tr("Stufe seit")}</T><T v="body">{fmtDate(since)}</T></View> : null}
+          {c.event_time ? <View><T v="label" color={t.muted}>{tr("Behaupteter Zeitpunkt")}</T><T v="body">{de(c.event_time)}</T></View> : null}
         </View>
+        {pro.length || contra.length ? (
+          <View style={{ gap: 6 }}>
+            {pro.length ? <View><T v="label" color={t.muted}>{tr("Belege, die es stützen ({n})", { n: pro.length })}</T><SourceLinks list={pro} /></View> : null}
+            {contra.length ? <View><T v="label" color={t.muted}>{tr("Belege, die widersprechen ({n})", { n: contra.length })}</T><SourceLinks list={contra} /></View> : null}
+            {ctx.length ? <View><T v="label" color={t.muted}>{tr("Belege zur Einordnung ({n})", { n: ctx.length })}</T><SourceLinks list={ctx} /></View> : null}
+          </View>
+        ) : null}
+        {c.dependencies ? <View><T v="label" color={t.muted}>{tr("Abhängigkeit der Quellen")}</T><T v="body">{endDot(de(c.dependencies))}</T></View> : null}
+        {c.open_questions ? <View><T v="label" color={t.muted}>{tr("Offene Fragen")}</T><T v="body">{endDot(de(c.open_questions))}</T></View> : null}
         {evidence ? (
           <View><T v="label" color={t.muted}>{tr("Neueste Belege")}{evidence.admission ? ` · ${tr("von der betroffenen Seite eingeräumt")}` : ""}</T>
             {sourcesOf(evidence).map((r, i) => <ListRow key={i} first={i === 0} label={r.title || tr("Quelle")} external onPress={() => openLink(r.url)} />)}</View>
@@ -77,6 +100,9 @@ export default function ClaimDetail() {
         <View style={{ flexDirection: "row", justifyContent: "center", gap: space.xl, marginTop: space.s }}>
           <Pressable onPress={() => { tap(); router.push(`/claim-form?mode=status&intent=evidence&id=${c.id}`); }} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center" }}>
             <T v="smallStrong" color={t.accent}>{tr("Neuer Beleg")}</T>
+          </Pressable>
+          <Pressable onPress={() => { tap(); router.push(`/claim-form?mode=status&intent=contra&id=${c.id}`); }} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center" }}>
+            <T v="smallStrong" color={t.accent}>{tr("Gegenbeleg")}</T>
           </Pressable>
           <Pressable onPress={() => { tap(); router.push(`/claim-form?mode=edit&id=${c.id}`); }} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center" }}>
             <T v="smallStrong" color={t.accent}>{tr("Angaben berichtigen")}</T>
@@ -100,7 +126,9 @@ export default function ClaimDetail() {
                 {c.events[i + 1]?.status === e.status ? <T v="caption">{tr("Stufe unverändert")}</T> : <StatusPill status={e.status} small />}
               </View>
               <T v="body" style={{ marginTop: 4 }}>{e.note}</T>
+              {sourcesOf(e).length && e.direction ? <T v="caption" style={{ marginTop: 4 }}>{tr("Beleg {direction}", { direction: DIRECTION[e.direction] })}</T> : null}
               {sourcesOf(e).length ? <SourceLinks list={sourcesOf(e)} /> : null}
+              {e.legacy ? <T v="caption" style={{ marginTop: 4 }}>{tr("Damals eingetragen als „{old}“ (Stufen vor dem 13. Oktober 2026)", { old: tr(LEGACY_NAME[e.legacy] || e.legacy) })}</T> : null}
             </View>
           </View>
         ))}
@@ -133,7 +161,7 @@ function Related({ c, owner }: { c: Claim; owner: boolean }) {
   if (!list.length) return null;
   return (
     <>
-      <T v="h2" style={{ marginTop: space.xl }}>{tr("Ähnliche Meldungen, 72 Std.")}</T>
+      <T v="h2" style={{ marginTop: space.xl }}>{tr("Ähnliche Meldungen, 7 Tage")}</T>
       <T v="small" style={{ marginTop: 2, marginBottom: space.s }}>{owner ? tr("Automatisch über gemeinsame Wörter gefunden. Prüfen, ob sie die Behauptung stützen, widerlegen oder nur erwähnen.") : tr("Automatisch über gemeinsame Wörter gefunden. Sie können die Behauptung stützen, widerlegen oder nur erwähnen; in die Stufe fließen sie erst nach Prüfung ein.")}</T>
       <Card style={{ paddingVertical: space.s }}>
         {list.map(({ it, shared }, i) => (

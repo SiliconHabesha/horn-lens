@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
 import { toast } from "../components/Toast";
 import { Banner, Button, Chip, T, tap, Toggle } from "../components/ui";
-import { de, REGION_ORDER, REGIONS, STATUS, STATUS_ORDER, todayBerlin } from "../lib/de";
+import { de, DIRECTION, REGION_ORDER, REGIONS, STATUS, STATUS_ORDER, todayBerlin } from "../lib/de";
 import { useData } from "../lib/data";
 import { t as tr } from "../lib/i18n";
 import { sb } from "../lib/supabase";
@@ -42,7 +42,13 @@ export default function ClaimForm() {
   const [firstText, setFirstText] = useState(() => isoToDe(claim?.first_reported || todayBerlin()));
   const pickFirst = (iso: string) => { setFirst(iso); setFirstText(isoToDe(iso)); };
   const [party, setParty] = useState(!!claim?.party_claim);
-  const [status, setStatus] = useState(claim?.status || "unconfirmed");
+  const [status, setStatus] = useState(claim?.status || "unverified");
+  // Prüfangaben: behaupteter Zeitpunkt, offene Fragen, Begründung der Stufe, Abhängigkeit der Quellen
+  const [eventTime, setEventTime] = useState(claim?.event_time || "");
+  const [openQ, setOpenQ] = useState(claim?.open_questions || "");
+  const [rationale, setRationale] = useState(claim?.rationale || "");
+  const [deps, setDeps] = useState(claim?.dependencies || "");
+  const [direction, setDirection] = useState<"supports" | "contradicts" | "context">(p.intent === "contra" ? "contradicts" : "supports");
   const [note, setNote] = useState("");
   // Aus einer Meldung angelegt: die Meldung ist schon als erste Quelle eingetragen
   const [sources, setSources] = useState<Src[]>([{ title: p.src_title || "", url: p.src_url || "" }, { title: "", url: "" }]);
@@ -52,13 +58,14 @@ export default function ClaimForm() {
   const [busy, setBusy] = useState(false);
   // Wird die Seite direkt geöffnet, kommen die Daten erst nach dem ersten Zeichnen: dann einmal vorausfüllen
   const filled = useRef(!!claim);
-  // Eingeständnis gilt nur für „Bestätigt“
-  useEffect(() => { if (status !== "confirmed") setAdmission(false); }, [status]);
+  // Eingeständnis gilt nur für „Durch unabhängige Quellen gestützt“
+  useEffect(() => { if (status !== "supported") setAdmission(false); }, [status]);
   useEffect(() => {
     if (filled.current || !claim) return;
     filled.current = true;
     setStatement(claim.statement); setClaimant(claim.claimant); setDisputed(claim.disputed_by || "");
     setRegion(claim.region); pickFirst(claim.first_reported); setParty(!!claim.party_claim); setStatus(claim.status);
+    setEventTime(claim.event_time || ""); setOpenQ(claim.open_questions || ""); setRationale(claim.rationale || ""); setDeps(claim.dependencies || "");
   }, [claim]);
 
   if (!data) return <View style={{ flex: 1, backgroundColor: t.bg, padding: space.l }}><Skeleton rows={5} /></View>;
@@ -77,23 +84,24 @@ export default function ClaimForm() {
     if (src.some((s) => !/^https?:\/\/[^/\s?#]+\.[^/\s?#]+/.test(s.url))) return setErr(tr("Jede Quelle braucht einen vollständigen Link, der mit https:// beginnt."));
     if (note.trim().length < 3) return setErr(tr("Bitte eine kurze Notiz schreiben."));
     const hosts = new Set(src.map((s) => hostOf(s.url)));
-    if (mode !== "edit" && status === "confirmed" && !admission && hosts.size < 2)
-      return setErr(tr("„Bestätigt“ braucht zwei unabhängige Quellen auf zwei verschiedenen Websites oder ein Eingeständnis der betroffenen Seite."));
-    if (mode !== "edit" && status === "confirmed" && admission && !src.length) return setErr(tr("Bitte verlinken, wo die betroffene Seite es eingeräumt hat."));
+    if (mode !== "edit" && status === "supported" && !admission && hosts.size < 2)
+      return setErr(tr("„Durch unabhängige Quellen gestützt“ braucht zwei unabhängige Quellen auf zwei verschiedenen Websites oder ein Eingeständnis der betroffenen Seite."));
+    if (mode !== "edit" && status === "supported" && admission && !src.length) return setErr(tr("Bitte verlinken, wo die betroffene Seite es eingeräumt hat."));
+    if (mode !== "edit" && status === "refuted" && claim?.status !== "refuted" && !src.length) return setErr(tr("„Widerlegt“ braucht mindestens einen Beleg, der es zeigt."));
     if (mode === "add" && !src.length) return setErr(tr("Eine neue Behauptung braucht mindestens eine Quelle."));
     if (mode !== "status" && (!statement.trim() || !claimant.trim())) return setErr(tr("Bitte Aussage und „Wer sagt es“ ausfüllen."));
     // Was du nicht änderst, geht im Original zurück und gilt nicht als geändert
     const val = (v: string, key: "statement" | "claimant" | "disputed_by") => (v.trim() === init[key].trim() ? (init.raw?.[key] ?? init[key]) ?? "" : v.trim());
     let fn: string, payload: any;
-    if (mode === "status") { fn = "app_claim_update"; payload = { id: claim!.id, status, note: note.trim(), sources: src, admission }; }
+    if (mode === "status") { fn = "app_claim_update"; payload = { id: claim!.id, status, note: note.trim(), sources: src, admission, direction, rationale: rationale.trim(), open_questions: openQ.trim() }; }
     else if (mode === "edit") {
       fn = "app_claim_edit";
       payload = { id: claim!.id, statement: val(statement, "statement"), claimant: val(claimant, "claimant"), disputed_by: val(disputed, "disputed_by"),
-        first_reported: day, party, note: note.trim() };
+        first_reported: day, party, note: note.trim(), event_time: eventTime.trim(), open_questions: openQ.trim(), rationale: rationale.trim(), dependencies: deps.trim() };
     } else {
       fn = "app_claim_add";
       payload = { statement: statement.trim(), claimant: claimant.trim(), disputed_by: disputed.trim(), region, status, party, first_reported: day,
-        note: note.trim(), sources: src, admission };
+        note: note.trim(), sources: src, admission, direction, event_time: eventTime.trim(), open_questions: openQ.trim(), rationale: rationale.trim(), dependencies: deps.trim() };
     }
     setBusy(true);
     try {
@@ -115,7 +123,8 @@ export default function ClaimForm() {
   };
 
   const dirty = !!note.trim() || sources.some((x) => (x.url.trim() && x.url !== (p.src_url || "")) || (x.title.trim() && x.title !== (p.src_title || "")))
-    || (mode !== "status" && (statement !== init.statement || claimant !== init.claimant || disputed !== init.disputed_by));
+    || (mode !== "status" && (statement !== init.statement || claimant !== init.claimant || disputed !== init.disputed_by))
+    || eventTime !== (claim?.event_time || "") || openQ !== (claim?.open_questions || "") || rationale !== (claim?.rationale || "") || deps !== (claim?.dependencies || "");
   const cancel = () => {
     if (!dirty || busy) return close();
     const text = tr("Deine Eingaben gehen verloren.");
@@ -152,6 +161,12 @@ export default function ClaimForm() {
               {first && !validDay(first) ? <T v="caption" color={t.warn}>{tr("Bitte als Tag.Monat.Jahr schreiben, z. B. {example}.", { example: todayBerlin().split("-").reverse().join(".") })}</T>
                 : validDay(first) && first > todayBerlin() ? <T v="caption" color={t.warn}>{tr("Dieses Datum liegt in der Zukunft.")}</T> : null}
             </Field>
+            <Field label={tr("Behaupteter Zeitpunkt des Ereignisses (optional)")}>
+              <TextInput style={input} value={eventTime} onChangeText={setEventTime} placeholder={tr("So, wie die Quelle ihn nennt, z. B. „in der Nacht zum 9. Oktober“")} placeholderTextColor={t.faint} />
+            </Field>
+            <Field label={tr("Hängen die Quellen voneinander ab? (optional)")}>
+              <TextInput style={[input, { minHeight: 64, textAlignVertical: "top" }]} multiline value={deps} onChangeText={setDeps} placeholder={tr("z. B. beide Berichte stützen sich auf dieselbe Regierungserklärung")} placeholderTextColor={t.faint} />
+            </Field>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.m }}>
               <T v="body" style={{ flex: 1 }}>{tr("Von einer Konfliktpartei behauptet")}</T>
               <Toggle value={party} onValueChange={(v) => { tap(); setParty(v); }} accessibilityLabel={tr("Von einer Konfliktpartei behauptet")} />
@@ -166,6 +181,12 @@ export default function ClaimForm() {
             <T v="caption">{same ? tr("Gleiche Stufe wie bisher: Es wird nur ein neuer Beleg eingetragen.") : STATUS[status]?.[1]}</T>
           </Field>
         ) : null}
+        <Field label={tr("Begründung der Stufe (optional, öffentlich)")}>
+          <TextInput style={[input, { minHeight: 64, textAlignVertical: "top" }]} multiline value={rationale} onChangeText={setRationale} placeholder={tr("Warum diese Stufe, in ein bis zwei Sätzen")} placeholderTextColor={t.faint} />
+        </Field>
+        <Field label={tr("Offene Fragen (optional, öffentlich)")}>
+          <TextInput style={[input, { minHeight: 64, textAlignVertical: "top" }]} multiline value={openQ} onChangeText={setOpenQ} placeholder={tr("Was fehlt, um weiter zu prüfen?")} placeholderTextColor={t.faint} />
+        </Field>
         <Field label={tr("Notiz")}>
           <TextInput style={[input, { minHeight: 80, textAlignVertical: "top" }]} multiline value={note} onChangeText={setNote}
             placeholder={mode === "edit" ? tr("Was war falsch, und woher stammt die richtige Fassung?") : same ? tr("Was belegt dieser neue Beleg?") : tr("Was hat sich geändert, und warum diese Stufe?")} placeholderTextColor={t.faint} />
@@ -184,13 +205,19 @@ export default function ClaimForm() {
             <Pressable onPress={() => { tap(); setSources([...sources, { title: "", url: "" }]); }} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center", alignSelf: "flex-start" }}>
               <T v="smallStrong" color={t.accent}>{tr("+ Weitere Quelle")}</T>
             </Pressable>
-            {status === "confirmed" ? (
+            <Field label={tr("Diese Quellen …")}>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {(["supports", "contradicts", "context"] as const).map((k) => <Chip key={k} label={DIRECTION[k]} active={direction === k} onPress={() => setDirection(k)} />)}
+              </View>
+              <T v="caption">{tr("… die Behauptung stützen, ihr widersprechen oder sie nur einordnen. Steht im Verlauf bei den Belegen.")}</T>
+            </Field>
+            {status === "supported" ? (
               <>
                 <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.m }}>
                   <T v="body" style={{ flex: 1 }}>{tr("Die betroffene Seite hat es eingeräumt")}</T>
                   <Toggle value={admission} onValueChange={(v) => { tap(); setAdmission(v); }} accessibilityLabel={tr("Die betroffene Seite hat es eingeräumt")} />
                 </View>
-                <T v="caption">{tr("„Bestätigt“ braucht zwei unabhängige Quellen (eine übernommene Agenturmeldung zählt einmal) oder ein Eingeständnis der betroffenen Seite.")}</T>
+                <T v="caption">{tr("„Durch unabhängige Quellen gestützt“ braucht zwei unabhängige Quellen (eine übernommene Agenturmeldung zählt einmal) oder ein Eingeständnis der betroffenen Seite.")}</T>
               </>
             ) : null}
           </>

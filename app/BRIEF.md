@@ -142,3 +142,6 @@ Entscheidungen des Inhabers: Lesen ohne Anmeldung; alle Meldungen, Geschichten, 
 - Tigrinya-Texte der Oberfläche: von Claude geschrieben, von einer Muttersprachlerin oder einem Muttersprachler gegenzulesen.
 - Karte: am Computer groß mit Liste rechts, am Handy Karte oben, Liste darunter. Liste „Was die Karte zeigt“ (Seevorfälle, Erdbeben, wo die Hitzepunkte liegen, Satelliten-Orte), Antippen zoomt hin. Legende auf der Karte.
 - Satellit: erst Ort und Zusammenhang, dann der Vergleich; Aufnahmedaten kurz unter dem Bild; am Computer Bild und Auswahl nebeneinander.
+
+## Runde 15 (13.10.2026): Master-Prompt als Ergänzung
+Name Semay, öffentliche Lese-Ausgabe und Markenfarben bleiben. Neu: ganzes Horn von Afrika (Amhara, Oromia, Somalia/Somaliland, Dschibuti, Sudan); Lage für 24 Std./72 Std./7 Tage mit Lücken und „keine verlässliche Zusammenfassung“; Meldungsfilter nach Ereignisart, Quelle, Sprache, Mehrseitigkeit; neue Prüfstufen mit Belegrichtung, offenen Fragen, Begründung, Prüfdatum; Karte mit erwähnten Orten als Flächen, Genauigkeitslegende, Abspielen der letzten 7 Tage; Satellit nebeneinander mit Aufnahme-, Verarbeitungs- und Abrufzeit und Copernicus-Link; Abruf-Protokoll und Quellen-Zustände; Quellenregister. Einzelheiten und offene Punkte: `docs/ABNAHME.md`, Sicherheit: `docs/SICHERHEIT.md`.
