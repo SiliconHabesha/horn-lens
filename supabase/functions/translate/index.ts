@@ -14,8 +14,8 @@ const FIX: [RegExp, string][] = [
 ];
 
 async function translate(text: string, from: string, to = "de"): Promise<{ ok: boolean; out?: string; stop?: boolean }> {
-  // Mit Kontakt-Adresse (falls hinterlegt) erlaubt MyMemory mehr Zeichen am Tag
-  const email = Deno.env.get("MYMEMORY_EMAIL");
+  // Mit Kontakt-Adresse erlaubt MyMemory 50.000 statt 5.000 Zeichen am Tag (öffentliche Kontaktadresse aus dem Impressum)
+  const email = Deno.env.get("MYMEMORY_EMAIL") || "info@beles.app";
   const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${from}|${to}${email ? `&de=${encodeURIComponent(email)}` : ""}`;
   const r = await fetch(url, { headers: { "User-Agent": "Semay/1.0 (Lagebild Horn von Afrika; powered by BELES; beles.app)" } });
   if (!r.ok) return { ok: false, stop: true }; // Dienst gestört oder Kontingent erschöpft: beim nächsten Lauf weiter
