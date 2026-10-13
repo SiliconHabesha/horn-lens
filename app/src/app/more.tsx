@@ -53,10 +53,10 @@ export default function More() {
       {/* Sprache: Überschrift immer in allen drei Sprachen, damit jede sie findet */}
       <Head title="Sprache · Language · ቋንቋ" first />
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-        {LANGS.map((l) => <Chip key={l.id} label={l.id === "ti" ? `${l.label} · ${tr("Vorschau")}` : l.label} active={lang === l.id} onPress={() => setLang(l.id)} />)}
+        {LANGS.map((l) => <Chip key={l.id} label={l.label} active={lang === l.id} onPress={() => setLang(l.id)} />)}
       </View>
-      {/* Tigrinya: Bedienung maschinell vorbereitet, noch nicht von Muttersprachlern geprüft. Schlagzeilen bleiben im Original. */}
-      <T v="caption" style={{ marginTop: 6 }}>{tr("Tigrinya ist eine Vorschau: maschinell vorbereitet, wird von Muttersprachlern geprüft. Schlagzeilen erscheinen dort im Original und lassen sich auf Wunsch übersetzen.")}</T>
+      {/* Tigrinya: die 79 Schlüsseltexte hat der Inhaber am 13.10.2026 geprüft und freigegeben; Schlagzeilen bleiben im Original. */}
+      <T v="caption" style={{ marginTop: 6 }}>{tr("Schlagzeilen erscheinen auf Tigrinya im Original und lassen sich auf Wunsch übersetzen.")}</T>
 
       {session ? (
         <>

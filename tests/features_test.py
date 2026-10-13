@@ -139,10 +139,10 @@ with sync_playwright() as p:
     check("Englisch: Karte „mentioned, not located“", "mentioned, not located" in text(pg))
     check("Keine Fehler im Browser (Englisch, breit)", not errs, errs[:3])
     ctx.close()
-    # Tigrinya: Vorschau, Schlagzeilen im Original
+    # Tigrinya: freigegeben, Schlagzeilen im Original
     ctx, pg, errs = page(b, lang="ti")
     go(pg, "/more", 1800)
-    check("Tigrinya: als Vorschau gekennzeichnet", "ቅድመ-ርእይቶ" in text(pg))
+    check("Tigrinya: ohne Vorschau-Kennzeichen, Hinweis zu Schlagzeilen", "ቅድመ-ርእይቶ" not in text(pg) and "ኣርእስትታት" in text(pg))
     go(pg, "/news", 1800)
     check("Tigrinya: Schlagzeilen im Original", "Eritrean troops reported near Adigrat" in text(pg) or "At least 139" in text(pg))
     check("Keine Fehler im Browser (Tigrinya)", not errs, errs[:3])
