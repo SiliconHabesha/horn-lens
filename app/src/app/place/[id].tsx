@@ -74,7 +74,7 @@ export default function PlaceScreen() {
 
       {d.claims.length ? (
         <>
-          <Head title={tr("Behauptungen")} />
+          <Head title={tr("Archiv")} />
           {d.claims.map((c, i) => (
             <Pressable key={c.id} onPress={() => { tap(); router.push(`/claim/${c.id}`); }} accessibilityRole="button" accessibilityLabel={c.statement}
               style={({ pressed }) => ({ paddingVertical: 12, gap: 4, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: t.rule, opacity: pressed ? 0.6 : 1 })}>

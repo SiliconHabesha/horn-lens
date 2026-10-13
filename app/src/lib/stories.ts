@@ -52,6 +52,7 @@ export type Story = {
   first: string; last: string;
   total?: number;         // gesetzt, wenn gefiltert: so viele Meldungen hat die ganze Geschichte
   totalSources?: number;  // und so viele Medien
+  all?: Item[];           // alle Meldungen der ganzen Geschichte (für die Einordnung, auch wenn gefiltert)
 };
 
 // Zeitpunkt der Meldung; unlesbare Angaben fallen auf den Abrufzeitpunkt zurück
@@ -152,7 +153,7 @@ export function narrow(s: Story, keep: (it: Item) => boolean): Story | null {
   if (its.length === s.items.length) return s;
   const shared = new Set(s.shared);
   const r = build(its.map((it) => ({ it, w: words(it.title), t: time(it) })), (x) => (shared.has(x) ? 1 : 0));
-  return { ...r, key: s.key, shared: s.shared, total: s.items.length, totalSources: s.sources };
+  return { ...r, key: s.key, shared: s.shared, total: s.items.length, totalSources: s.sources, all: s.items };
 }
 
 // ---------------------------------------------------------------- Für die Bildschirme

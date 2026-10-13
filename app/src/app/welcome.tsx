@@ -1,6 +1,7 @@
 // Einführung beim ersten Start (drei Seiten, jederzeit überspringbar). Später unter „Mehr“ als Legende wieder aufrufbar.
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { KIND_ORDER, kindColor, kindLabel } from "../lib/assess";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useRef, useState } from "react";
 import { NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
@@ -48,6 +49,14 @@ function Row({ color, title, sub, icon }: { color: string; title: string; sub: s
   );
 }
 
+const KIND_HINT: Record<string, string> = {
+  contested: "Mindestens eine Meldung berichtet, dass etwas bestritten oder zurückgewiesen wird.",
+  single: "Bisher berichtet nur ein Medium darüber. Grund zur Vorsicht.",
+  oneSide: "Alle Medien gehören zu einer Konfliktseite, etwa nur Eritreas Regierung oder nur Exilmedien.",
+  outside: "Nur Medien von außerhalb berichten; keine Konfliktseite hat sich in unseren Quellen geäußert.",
+  multi: "Medien verschiedener Seiten berichten. Das bestätigt es nicht, oft stützen sich alle auf dieselbe Erklärung.",
+};
+
 export default function Welcome() {
   const t = useTheme();
   const ins = useSafeAreaInsets();
@@ -85,15 +94,14 @@ export default function Welcome() {
             {VOICES().map(([k, sub]) => <Row key={k} color={t.type[k]} title={TYPES[k]} sub={sub} />)}
             <T v="caption" style={{ marginTop: space.s }}>{tr("Eine Meldung ist keine geprüfte Tatsache.")}</T>
           </Page>
-          <Page w={pageW} icon="checkmark-done-circle-outline" title={tr("Wie sicher ist das?")}
-            lead={tr("Behauptungen aus dem Konflikt bekommen eine Stufe. Sie ändert sich nur mit Belegen, und der Verlauf bleibt sichtbar.")}>
-            {STATUS_ORDER.map((k) => (
+          <Page w={pageW} icon="chatbubbles-outline" title={tr("Wie sicher ist das?")}
+            lead={tr("Semay prüft nichts selbst. Jede Geschichte bekommt automatisch einen Hinweis, wer darüber berichtet.")}>
+            {KIND_ORDER.map((k) => (
               <View key={k} style={{ gap: 2 }}>
-                <StatusPill status={k} />
-                <T v="small">{STATUS[k][1]}</T>
+                <T v="smallStrong" color={kindColor(k, t)}>{kindLabel(k)}</T>
+                <T v="small">{tr(KIND_HINT[k])}</T>
               </View>
             ))}
-            <Row icon="flame-outline" color={t.fire} title={tr("Messwerte zeigen, was geschah, nicht warum")} sub={tr("Ein Hitzepunkt zeigt Hitze, nicht die Ursache: oft Feldbrände, manchmal Kämpfe. Ein Rückgang der Internetverbindung sagt nicht, warum.")} />
           </Page>
         </ScrollView>
       </View>

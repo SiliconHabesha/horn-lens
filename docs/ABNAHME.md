@@ -1,5 +1,7 @@
 # Semay – Abgleich mit dem Master-Prompt (13. Oktober 2026)
 
+> **Nachtrag, 13.10.2026 (Befragung des Inhabers):** Semay prüft nichts selbst. Statt der Prüfstufen aus Abschnitt 4 bekommt jede Geschichte eine automatische Einordnung (bestritten, nur eine Quelle, nur eine Seite, nur von außen, verschiedene Seiten). Der Reiter heißt „Was kursiert“; die von Hand geprüften Behauptungen stehen als Archiv weiter zur Verfügung. Semay zeigt nur, was Medien berichten, nicht soziale Netzwerke. Tigrinya ist als Vorschau gekennzeichnet. Einzelheiten: `app/BRIEF.md`, Runde 16.
+
 Der Master-Prompt wurde als Ergänzung umgesetzt. Was bereits besser gelöst war, bleibt (Entscheidung des Inhabers):
 
 - **Name:** Semay (ሰማይ), nicht der Name aus dem Prompt.

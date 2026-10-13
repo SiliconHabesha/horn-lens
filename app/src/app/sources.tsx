@@ -10,6 +10,7 @@ import { useData } from "../lib/data";
 import { Skeleton } from "../components/Skeleton";
 import { NOT_SET_UP, sourceState, STATE_LABEL, STATE_NOTE, type SourceStateKey } from "../lib/feeds";
 import { VOICE_TYPES } from "../lib/stories";
+import { sideLabel, sideOf } from "../lib/assess";
 import { space, useTheme } from "../lib/theme";
 import type { Source } from "../lib/types";
 
@@ -139,6 +140,7 @@ function Register({ s }: { s: Source }) {
     <View style={{ gap: 6, paddingBottom: space.m }}>
       {s.stance_note ? <T v="small">{s.stance_note}</T> : null}
       {s.publisher ? row(tr("Herausgeber"), s.publisher) : null}
+      {s.kind === "rss" ? row(tr("Seite im Konflikt"), sideLabel(sideOf(s.source_type))) : null}
       {s.origin ? row(tr("Art der Berichte"), tr(ORIGIN[s.origin] || s.origin)) : null}
       {s.language ? row(tr("Sprache"), tr(LANG[s.language] || s.language)) : null}
       {row(tr("Schwerpunkt"), s.focus?.length ? s.focus.map((f) => REGIONS[f] || f).join(", ") : tr("ganze Region, gefiltert nach Stichwörtern"))}

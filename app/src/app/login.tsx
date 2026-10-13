@@ -59,7 +59,7 @@ export default function Login() {
             <Mark size={36} color={BRAND.paper} dot={BRAND.lagoonLight} />
           </View>
           <T v="title" style={{ textAlign: "center" }}>{tr("Anmeldung für die Redaktion")}</T>
-          <T v="small" style={{ textAlign: "center" }}>{tr("Lesen geht ohne Konto. Die Anmeldung braucht nur, wer Behauptungen pflegt und den Tagesbericht liest.")}</T>
+          <T v="small" style={{ textAlign: "center" }}>{tr("Lesen geht ohne Konto. Die Anmeldung braucht nur der Betreiber für den Tagesbericht.")}</T>
         </View>
 
         <View style={{ flexDirection: "row", gap: 8 }}>

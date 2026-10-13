@@ -238,7 +238,8 @@ const shownTitle = (it: HL) => {
   if (it.language === l) return it.title;
   if (l === "de") return it.title_de || it.title;
   if (l === "en") return it.title_en || it.title;
-  return it.title_ti || it.title;
+  // Tigrinya: Schlagzeilen im Original (Entscheidung 13.10.2026). Maschinelle Übersetzung nur auf Wunsch in der Meldung.
+  return it.title;
 };
 /** Die Schlagzeile, wie die App sie zeigt: in der gewählten Sprache, wenn übersetzt, sonst im Original */
 export const headline = (it: HL) => unshout(shownTitle(it));

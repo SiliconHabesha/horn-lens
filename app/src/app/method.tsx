@@ -3,10 +3,18 @@ import React from "react";
 import { router } from "expo-router";
 import { Pressable, View } from "react-native";
 import { Card, openLink, Screen, T } from "../components/ui";
-import { STATUS, STATUS_ORDER, tzName } from "../lib/de";
+import { tzName } from "../lib/de";
+import { KIND_ORDER, kindLabel } from "../lib/assess";
 import { t as tr } from "../lib/i18n";
 import { space, useTheme } from "../lib/theme";
 
+const KIND_NOTE: Record<string, string> = {
+  contested: "Mindestens eine Meldung berichtet, dass etwas bestritten oder zurückgewiesen wird.",
+  single: "Bisher berichtet nur ein Medium darüber. Grund zur Vorsicht.",
+  oneSide: "Alle Medien gehören zu einer Konfliktseite, etwa nur Eritreas Regierung oder nur Exilmedien.",
+  outside: "Nur Medien von außerhalb berichten; keine Konfliktseite hat sich in unseren Quellen geäußert.",
+  multi: "Medien verschiedener Seiten berichten. Das bestätigt es nicht, oft stützen sich alle auf dieselbe Erklärung.",
+};
 const B = ({ children }: { children: React.ReactNode }) => (
   <View style={{ flexDirection: "row", gap: 8 }}><T v="body">•</T><T v="body" style={{ flex: 1 }}>{children}</T></View>
 );
@@ -30,19 +38,14 @@ export default function Method() {
         <B>{tr("Zeiten sind Berliner Zeit (derzeit {tz}), außer den Aufnahmezeiten der Satelliten in UTC.", { tz: tzName() })}</B>
         <B>{tr("Antwortet eine Messquelle drei Stunden lang nicht, steht dort ein Strich (–) statt einer Null; ebenso, wenn Semay nur eine Auswahl lädt und darin nichts liegt. Erfunden wird nichts.")}</B>
       </View>
-      {(
-        <>
-          <T v="h2" style={{ marginTop: space.xl, marginBottom: space.s }}>{tr("Wie eine Behauptung ihre Stufe bekommt")}</T>
-          <View style={{ gap: 6 }}>
-            {STATUS_ORDER.map((k) => <B key={k}>{`${STATUS[k][0]}: ${STATUS[k][1]}`}</B>)}
-            <B>{tr("Zwei Quellen gelten nur als unabhängig, wenn es verschiedene Organisationen sind. Eine Reuters-Meldung, die ein anderes Medium übernimmt, zählt einmal.")}</B>
-            <B>{tr("Jeder Beleg ist gekennzeichnet: Er stützt die Behauptung, widerspricht ihr oder ordnet sie nur ein. Wo Quellen voneinander abhängen (etwa dieselbe Regierungserklärung), steht das bei der Behauptung.")}</B>
-            <B>{tr("Zu jeder Behauptung stehen, soweit bekannt: wer sie aufgestellt hat, wann sie zuerst gemeldet wurde, wann das Ereignis gewesen sein soll, die Begründung der Stufe, offene Fragen und das Datum der letzten Prüfung.")}</B>
-            <B>{tr("Bis zum 12. Oktober 2026 hießen die Stufen „Bestätigt“, „Wahrscheinlich“, „Unbestätigt“, „Umstritten“ und „Falsch“. Sie wurden umbenannt in „Durch unabhängige Quellen gestützt“, „Teilweise gestützt“, „Ungeprüft“, „Widersprüchliche Beweislage“ und „Widerlegt“; der Verlauf nennt die alte Bezeichnung.")}</B>
-            <B>{tr("Jede Änderung bleibt mit Datum, Notiz und Quellen im Verlauf. Ein berichtigter Wortlaut ist mit „Berichtigt“ markiert.")}</B>
-          </View>
-        </>
-      )}
+      <T v="h2" style={{ marginTop: space.xl, marginBottom: space.s }}>{tr("Wie Semay Geschichten einordnet")}</T>
+      <View style={{ gap: 6 }}>
+        <B>{tr("Semay prüft nichts selbst. Es beschreibt nur, wer berichtet. Eine einzige Quelle ist ein Grund zur Vorsicht; viele Quellen beweisen aber nichts, weil sich oft alle auf dieselbe Erklärung oder Agenturmeldung stützen.")}</B>
+        {KIND_ORDER.map((k) => <B key={k}>{`${kindLabel(k)}: ${tr(KIND_NOTE[k])}`}</B>)}
+        <B>{tr("Jede Quelle ist offen einer Seite zugeordnet: Eritreas Regierung und ihr nahe Medien, eritreische Exilmedien, Äthiopiens Regierung und ihr nahe Medien, Medien aus Tigray, oder von außerhalb. Die Zuordnung steht unter Quellen.")}</B>
+        <B>{tr("Semay sieht nur, was Medien veröffentlichen. Was nur in sozialen Netzwerken oder Chatgruppen kursiert, erscheint erst, wenn ein Medium darüber berichtet.")}</B>
+        <B>{tr("Bis Oktober 2026 hat Semay einzelne Behauptungen von Hand geprüft. Diese Einträge stehen im Archiv und werden nicht mehr aktualisiert.")}</B>
+      </View>
       <T v="h2" style={{ marginTop: space.xl, marginBottom: space.s }}>{tr("Was wir nicht sehen können")}</T>
       <View style={{ gap: 6 }}>
         <B>{tr("In Eritrea gibt es fast keine unabhängigen Medien. Die meisten Berichte stammen von der Regierung, aus der Diaspora oder aus dem Ausland.")}</B>
@@ -53,12 +56,11 @@ export default function Method() {
       </View>
       <T v="h2" style={{ marginTop: space.xl, marginBottom: space.s }}>{tr("Fehler und Widerspruch")}</T>
       <View style={{ gap: 6 }}>
-        <B>{tr("Wer eine Stufe oder einen Wortlaut für falsch hält, schreibt an info@beles.app, am besten mit einem Beleg. Jede Behauptung hat dafür unten den Knopf „Korrektur melden“.")}</B>
-        <B>{tr("Wir prüfen jede Meldung. Ändert sich dadurch etwas, steht es mit Datum im Verlauf der Behauptung und in der Liste der Korrekturen.")}</B>
+        <B>{tr("Wer die Zuordnung einer Quelle oder eine Einordnung für falsch hält, schreibt an info@beles.app. Wir korrigieren dann die Regeln für alle, nicht einzelne Meldungen.")}</B>
       </View>
       <View style={{ flexDirection: "row", gap: space.l, marginTop: space.s, flexWrap: "wrap" }}>
         <Pressable onPress={() => router.push("/corrections")} accessibilityRole="link" style={{ minHeight: 44, justifyContent: "center" }}><T v="smallStrong" color={t.accent}>{tr("Korrekturen ansehen")}</T></Pressable>
-        <Pressable onPress={() => openLink("mailto:info@beles.app?subject=Horn%20Lens")} accessibilityRole="link" style={{ minHeight: 44, justifyContent: "center" }}><T v="smallStrong" color={t.accent}>{tr("E-Mail schreiben")}</T></Pressable>
+        <Pressable onPress={() => openLink("mailto:info@beles.app?subject=Semay")} accessibilityRole="link" style={{ minHeight: 44, justifyContent: "center" }}><T v="smallStrong" color={t.accent}>{tr("E-Mail schreiben")}</T></Pressable>
       </View>
       <T v="h2" style={{ marginTop: space.xl, marginBottom: space.s }}>{tr("Nachweise")}</T>
       <T v="caption" style={{ marginBottom: space.s }}>{tr("In der Originalsprache, wie von den Anbietern verlangt.")}</T>

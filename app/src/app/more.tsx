@@ -53,8 +53,10 @@ export default function More() {
       {/* Sprache: Überschrift immer in allen drei Sprachen, damit jede sie findet */}
       <Head title="Sprache · Language · ቋንቋ" first />
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-        {LANGS.map((l) => <Chip key={l.id} label={l.label} active={lang === l.id} onPress={() => setLang(l.id)} />)}
+        {LANGS.map((l) => <Chip key={l.id} label={l.id === "ti" ? `${l.label} · ${tr("Vorschau")}` : l.label} active={lang === l.id} onPress={() => setLang(l.id)} />)}
       </View>
+      {/* Tigrinya: Bedienung maschinell vorbereitet, noch nicht von Muttersprachlern geprüft. Schlagzeilen bleiben im Original. */}
+      <T v="caption" style={{ marginTop: 6 }}>{tr("Tigrinya ist eine Vorschau: maschinell vorbereitet, wird von Muttersprachlern geprüft. Schlagzeilen erscheinen dort im Original und lassen sich auf Wunsch übersetzen.")}</T>
 
       {session ? (
         <>
@@ -64,7 +66,7 @@ export default function More() {
               <Ionicons name={data?.owner ? "shield-checkmark" : "person-circle-outline"} size={26} color={data?.owner ? t.status.supported : t.ink} />
               <View style={{ flex: 1 }}>
                 <T v="bodyStrong">{email}</T>
-                <T v="caption">{data?.owner ? tr("Angemeldet: Behauptungen pflegen, Tagesbericht") : tr("Angemeldet, ohne Redaktionsrechte")}</T>
+                <T v="caption">{data?.owner ? tr("Angemeldet: Tagesbericht") : tr("Angemeldet, ohne Redaktionsrechte")}</T>
               </View>
             </View>
             <Button label={tr("Abmelden")} kind="secondary" icon="log-out-outline" onPress={confirmSignOut} />
@@ -87,12 +89,12 @@ export default function More() {
         <ListRow first icon="location-outline" label={tr("Orte")} sub={tr("Was Semay zu Asmara, Assab, Adigrat und mehr weiß")} onPress={() => router.push("/places")} />
         <ListRow icon="planet-outline" label={tr("Satellitenbilder")} sub={tr("Vorher und nachher vergleichen")} onPress={() => router.push("/satellite")} />
         <ListRow icon="bookmark-outline" label={tr("Gemerkte Meldungen")} sub={tr("Nur auf diesem Gerät gespeichert")} onPress={() => router.navigate(`/news?mode=saved&k=${Date.now()}`)} />
-        <ListRow icon="search-outline" label={tr("Suchen")} sub={tr("Orte, Meldungen, Behauptungen und Quellen")} onPress={() => router.push("/search")} />
+        <ListRow icon="search-outline" label={tr("Suchen")} sub={tr("Orte, Meldungen und Quellen")} onPress={() => router.push("/search")} />
       </Group>
 
       <Head title={tr("Über Semay")} />
       <Group>
-        <ListRow first icon="book-outline" label={tr("Einführung und Legende")} sub={tr("Farben der Quellen, Stufen der Behauptungen")} onPress={() => router.push("/welcome")} />
+        <ListRow first icon="book-outline" label={tr("Einführung und Legende")} sub={tr("Farben der Quellen, Hinweise zu Geschichten")} onPress={() => router.push("/welcome")} />
         <ListRow icon="compass-outline" label={tr("So arbeitet Semay")} sub={tr("Regeln, Grenzen, Nachweise")} onPress={() => router.push("/method")} />
         <ListRow icon="library-outline" label={tr("Unsere Quellen")} sub={tr("Wer berichtet, wie wir sie einordnen, was noch fehlt")} onPress={() => router.push("/sources")} />
         <ListRow icon="git-compare-outline" label={tr("Korrekturen")} sub={tr("Jede Änderung an einer Behauptung")} onPress={() => router.push("/corrections")} />

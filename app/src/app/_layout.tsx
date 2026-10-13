@@ -104,6 +104,7 @@ function AppStack() {
           <Stack.Screen name="method" options={{ title: tr("So arbeitet Semay") }} />
           <Stack.Screen name="satellite" options={{ title: tr("Satellit") }} />
           <Stack.Screen name="corrections" options={{ title: tr("Korrekturen") }} />
+          <Stack.Screen name="archive" options={{ title: tr("Archiv") }} />
           <Stack.Screen name="login" options={{ title: tr("Redaktion"), presentation: "modal" }} />
           <Stack.Screen name="auth-callback" options={{ headerShown: false }} />
           <Stack.Screen name="welcome" options={{ headerShown: false, presentation: "modal", gestureEnabled: true }} />

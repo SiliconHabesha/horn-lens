@@ -8,6 +8,7 @@ import { toast } from "../../components/Toast";
 import { Button, Empty, openLink, Screen, T, tap } from "../../components/ui";
 import { fmtFull, fmtWhen, headline, plural, REGION_ORDER, REGIONS, srcName, translated, TYPE_NOTE, TYPE_ORDER, TYPES } from "../../lib/de";
 import { eventLabel, eventTypes } from "../../lib/events";
+import { assess, kindColor } from "../../lib/assess";
 import { lang, t as tr } from "../../lib/i18n";
 
 // Sprachnamen auf Deutsch; übersetzt wird beim Zeichnen mit tr()
@@ -24,6 +25,7 @@ export default function ItemDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data, saved, isSaved, toggleSaved } = useData();
   const [how, setHow] = useState(false);
+  const [showTi, setShowTi] = useState(false);
   const pool = data ? data.items : [];
   const it: Item | undefined = pool.find((x) => String(x.id) === String(id)) || saved.find((x) => String(x.id) === String(id)) || knownItem(Number(id));
   const story = useMemo(() => (data && it ? storiesOf(data).find((s) => s.items.some((x) => x.id === it.id)) : undefined), [data, it]);
@@ -62,6 +64,17 @@ export default function ItemDetail() {
           <T v="small" style={titleStyle(it.title)}>{it.title}</T>
         </View>
       ) : null}
+      {/* Tigrinya: Übersetzung nur auf Wunsch, deutlich als maschinell gekennzeichnet */}
+      {lang() === "ti" && it.language !== "ti" && it.title_ti ? (showTi ? (
+        <View style={{ marginTop: space.s, paddingLeft: 10, borderLeftWidth: 2, borderColor: t.status.unverified }}>
+          <T v="caption">{tr("Maschinelle Übersetzung, kann Fehler enthalten:")}</T>
+          <T v="small" color={t.ink} style={titleStyle(it.title_ti)}>{it.title_ti}</T>
+        </View>
+      ) : (
+        <Pressable onPress={() => { tap(); setShowTi(true); }} accessibilityRole="button" style={{ minHeight: 40, justifyContent: "center", alignSelf: "flex-start" }}>
+          <T v="smallStrong" color={t.accent}>{tr("Maschinelle Übersetzung zeigen")}</T>
+        </Pressable>
+      )) : null}
       <View style={{ flexDirection: "row", flexWrap: "wrap", rowGap: 4, marginTop: space.s, alignItems: "center" }}>
         <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: c, marginRight: 8 }} />
         <T v="smallStrong" color={t.ink}>{srcName(it.origin_domain || it.source_name)}</T>
@@ -76,6 +89,13 @@ export default function ItemDetail() {
       {/* Zeiten getrennt: wann die Quelle veröffentlicht hat (laut Feed) und wann Semay die Meldung abgerufen hat */}
       <T v="caption" style={{ marginTop: 2 }}>{it.published_at ? tr("Veröffentlicht {pub} (laut Quelle) · abgerufen {got}", { pub: fmtFull(it.published_at), got: fmtFull(it.fetched_at) })
         : tr("Die Quelle nennt keine Zeit · abgerufen {got}", { got: fmtFull(it.fetched_at) })}</T>
+      {/* Einordnung: wer berichtet, und was das heißt. Automatisch, ohne Urteil über die Wahrheit. */}
+      {(() => { const a = assess(story?.items || [it]); return (
+        <View style={{ marginTop: space.m, paddingLeft: 10, borderLeftWidth: 3, borderColor: kindColor(a.kind, t) }} accessibilityRole="summary">
+          <T v="smallStrong" color={kindColor(a.kind, t)}>{a.label}</T>
+          <T v="small" color={t.ink}>{a.text}</T>
+          <T v="caption" style={{ marginTop: 2 }}>{tr("Automatische Einordnung. Semay prüft nicht, ob es stimmt.")}</T>
+        </View>); })()}
       {placesIn(it.title).length ? (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: space.s, alignItems: "center" }}>
           <Ionicons name="location-outline" size={15} color={t.muted} />
@@ -143,12 +163,6 @@ export default function ItemDetail() {
         </>
       ) : null}
 
-      {data?.owner ? (
-        <View style={{ marginTop: space.xl }}>
-          <Button label={tr("Behauptung daraus anlegen")} icon="add-circle-outline" kind="secondary"
-            onPress={() => router.push({ pathname: "/claim-form", params: { mode: "add", src_title: `${it.origin_domain || it.source_name}: ${it.title}`.slice(0, 300), src_url: it.url } })} />
-        </View>
-      ) : null}
     </Screen>
   );
 }

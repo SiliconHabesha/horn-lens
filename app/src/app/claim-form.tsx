@@ -131,7 +131,7 @@ export default function ClaimForm() {
     if (Platform.OS === "web") { if (window.confirm(`${tr("Verwerfen?")}\n\n${text}`)) close(); return; }
     Alert.alert(tr("Verwerfen?"), text, [{ text: tr("Weiter bearbeiten"), style: "cancel" }, { text: tr("Verwerfen"), style: "destructive", onPress: close }]);
   };
-  const close = () => { try { if (router.canGoBack()) { router.back(); return; } } catch { /* ohne Verlauf */ } router.replace("/claims"); };
+  const close = () => { try { if (router.canGoBack()) { router.back(); return; } } catch { /* ohne Verlauf */ } router.replace("/archive"); };
   const same = mode === "status" && claim && status === claim.status;
   const title = mode === "add" ? tr("Neue Behauptung") : mode === "edit" ? tr("Angaben berichtigen") : same ? tr("Beleg ergänzen") : tr("Stufe ändern");
   return (

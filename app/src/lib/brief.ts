@@ -5,6 +5,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { CORE_REGIONS, fmtShort, fmtWhen, headline, num, plural, REGIONS, TYPES } from "./de";
 import { feedState, NOT_SET_UP } from "./feeds";
+import { assess } from "./assess";
 import { t as tr } from "./i18n";
 import { nearest, RADIUS } from "./places";
 import { VOICE_TYPES, type Story } from "./stories";
@@ -26,7 +27,6 @@ const time = (i: Item) => new Date(i.published_at || i.fetched_at).getTime();
 const media = (n: number) => (n === 1 ? tr("1 Medium") : tr("{n} Medien", { n: num(n) }));
 const typesN = (n: number) => (n === 1 ? tr("1 Quellenart") : tr("{n} Quellenarten", { n: num(n) }));
 const reports = (n: number) => (n === 1 ? tr("1 Meldung") : tr("{n} Meldungen", { n: num(n) }));
-const claimsN = (n: number) => (n === 1 ? tr("1 Behauptung") : tr("{n} Behauptungen", { n: num(n) }));
 // Als Funktion, damit die Überschriften beim Zeichnen in der gewählten Sprache entstehen
 const ALERT = (): Record<string, { head: string; icon: BriefLine["icon"]; to: string }> => ({
   maritime: { head: tr("Auf See"), icon: "boat-outline", to: "/signal/sea" },
@@ -81,18 +81,15 @@ export function briefOf(data: Data, stories: Story[], o: { hours: number; fresh:
       src: tr("Medien verschiedener Art; das heißt nicht, dass es stimmt"), to: `/item/${other.lead.id}` });
   }
 
-  // 4. Behauptungen: neu, umgestuft, widersprüchlich oder widerlegt im Zeitraum
-  const touched = data.claims.filter((c) => c.events.some((e) => inWin(e.at)));
-  if (touched.length) {
-    const added = touched.filter((c) => c.events.length && inWin(c.events[c.events.length - 1].at)).length;
-    const conflicting = touched.filter((c) => c.status === "conflicting").length;
-    const refuted = touched.filter((c) => c.status === "refuted").length;
-    const parts = [added ? tr("{n} neu", { n: num(added) }) : null, conflicting ? tr("{n} mit widersprüchlicher Beweislage", { n: num(conflicting) }) : null,
-      refuted ? tr("{n} widerlegt", { n: num(refuted) }) : null].filter(Boolean);
-    out.push({ icon: "checkmark-done-circle-outline", head: tr("Behauptungen"),
-      text: tr("{count} {period} geprüft oder geändert{parts}.", { count: claimsN(touched.length), period: P, parts: parts.length ? `: ${parts.join(", ")}` : "" }),
-      src: tr("Redaktion Semay, mit Belegen"), to: "/claims" });
-  }
+  // 4. Was kursiert: wie viele Geschichten nur eine Quelle, nur eine Seite haben oder bestritten werden (automatisch, ohne Urteil)
+  const kinds = core.map((st) => assess(st.items).kind);
+  const nK = (k: string) => kinds.filter((x) => x === k).length;
+  const parts = [nK("contested") ? tr("{n} bestritten", { n: num(nK("contested")) }) : null,
+    nK("single") ? tr("{n} nur aus einer Quelle", { n: num(nK("single")) }) : null,
+    nK("oneSide") ? tr("{n} nur von einer Seite", { n: num(nK("oneSide")) }) : null].filter(Boolean);
+  if (parts.length) out.push({ icon: "chatbubbles-outline", head: tr("Was kursiert"),
+    text: tr("Von {count} {period}: {parts}.", { count: core.length === 1 ? tr("1 Geschichte") : tr("{n} Geschichten", { n: num(core.length) }), period: P, parts: parts.join(", ") }),
+    src: tr("Automatisch eingeordnet; Semay prüft nichts selbst"), to: "/claims" });
 
   // 5. Rotes Meer (wenn nicht schon oben)
   const ukmto = feedState(data, "ukmto");

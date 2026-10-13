@@ -48,6 +48,7 @@ function Inner({ data, day, stand, brief, hours, onHours }: Props) {
         )}
         <T v="display" accessibilityRole="header">{tr("Lage")}</T>
         <T v="small" style={{ marginTop: 2 }}>{tr("{day}, Stand {stand} Uhr", { day, stand })}</T>
+        <T v="caption" style={{ marginTop: 6 }}>{tr("Was Medien berichten, nicht, was in sozialen Netzwerken kursiert. Semay prüft nichts selbst.")}</T>
         {/* Zeitraum der Zusammenfassung */}
         <View style={{ flexDirection: "row", gap: 8, marginTop: space.m, flexWrap: "wrap" }} accessibilityRole="radiogroup" accessibilityLabel={tr("Zeitraum der Zusammenfassung")}>
           {PERIODS.map((h) => <Chip key={h} label={periodLabel(h)} active={hours === h} onPress={() => onHours(h)} />)}

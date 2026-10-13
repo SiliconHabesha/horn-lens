@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { normStatus, STATUS, STATUS_ORDER, fmtTime, REGION_ORDER, REGIONS } from "../../app/src/lib/de";
 import { eventTypes, eventCounts } from "../../app/src/lib/events";
 import { briefOf, multiSided } from "../../app/src/lib/brief";
+import { assess, sideOf } from "../../app/src/lib/assess";
 import { sourceState, NOT_SET_UP } from "../../app/src/lib/feeds";
 import { lastDays } from "../../app/src/lib/timeline";
 import { processedOf, copernicusUrl, stacUrl } from "../../app/src/lib/sat";
@@ -94,21 +95,31 @@ test("Lage: gestörte Quellen sind eine Lücke; viele gestörte → nicht verlä
   assert.match(String(b.reason), /2 von 3/);
 });
 
-test("Lage: Behauptungen im Zeitraum, nach Stufe gezählt", () => {
-  const ev = (h: number, status: string) => ({ at: iso(h), status, note: "n", source_title: null, source_url: null, extra: [], admission: false });
-  const claims: any[] = [
-    { id: 1, statement: "a", claimant: "x", disputed_by: null, region: "eritrea", status: "conflicting", party_claim: false, first_reported: "2026-10-12", updated_at: iso(1), events: [ev(1, "conflicting")] },
-    { id: 2, statement: "b", claimant: "x", disputed_by: null, region: "eritrea", status: "refuted", party_claim: false, first_reported: "2026-10-01", updated_at: iso(2), events: [ev(2, "refuted"), ev(200, "unverified")] },
-    { id: 3, statement: "c", claimant: "x", disputed_by: null, region: "eritrea", status: "supported", party_claim: false, first_reported: "2026-09-01", updated_at: iso(300), events: [ev(300, "supported")] },
-  ];
-  const its = [1, 2, 3].map((h) => item(`Eritrea ${h}`, ["eritrea"], h));
-  const d = data(its, { claims });
+test("Einordnung: eine Quelle, eine Seite, bestritten, von außen, verschiedene Seiten", () => {
+  const er = (t2: string, src2: string) => item(t2, ["eritrea"], 1, { source_id: src2, source_name: src2, source_type: "government_er" });
+  assert.equal(assess([item("Troops seen near Adigrat", ["tigray"], 1)]).kind, "single");
+  assert.equal(assess([er("Asmara statement", "shabait"), er("Asmara statement again", "eritreaprofile")]).kind, "oneSide");
+  assert.equal(assess([item("Report A", ["eritrea"], 1, { source_name: "DW" }), item("Report B", ["eritrea"], 2, { source_name: "AJ" })]).kind, "outside");
+  assert.equal(assess([er("Statement", "shabait"), item("Report", ["eritrea"], 2, { source_name: "DW" })]).kind, "multi");
+  // Widerspruch hat Vorrang, auch bei vielen Quellen
+  assert.equal(assess([er("Eritrea denies troop presence", "shabait"), item("Troops reported", ["eritrea"], 2, { source_name: "DW" })]).kind, "contested");
+  assert.equal(assess([item("Ministerium bestreitet Bericht", ["eritrea"], 1, { language: "de" })]).kind, "contested");
+  // Exil und Regierung sind verschiedene Seiten
+  assert.equal(assess([er("A", "shabait"), item("B", ["eritrea"], 1, { source_name: "Awate", source_type: "exile" })]).kind, "multi");
+  assert.equal(sideOf("progov_et"), "et_gov");
+  assert.equal(sideOf("somali_media"), "outside");
+  // Nie ein Wahrheitsurteil in den Texten
+  for (const a of [assess([item("x", ["eritrea"], 1)])]) assert.doesNotMatch(a.text, /\b(stimmt|wahr|bestätigt)\b(?! es nicht)/);
+});
+
+test("Lage: Was kursiert wird gezählt", () => {
+  const its = [item("Eritrea denies border clash", ["eritrea"], 1), item("Tigray leaders meet in Mekelle", ["tigray"], 2), item("Fano fighters in Amhara", ["amhara", "ethiopia"], 3)];
+  const d = data(its);
   const b = briefOf(d, cluster(dedupe(d.items)), { hours: 24, fresh: 0, since: "", now: NOW });
-  const line = b.lines.find((l) => l.head === "Behauptungen")!;
-  assert.match(line.text, /2 Behauptungen/);
-  assert.match(line.text, /1 neu/);
-  assert.match(line.text, /1 mit widersprüchlicher Beweislage/);
-  assert.match(line.text, /1 widerlegt/);
+  const line = b.lines.find((l) => l.head === "Was kursiert")!;
+  assert.ok(line, "Zeile fehlt");
+  assert.match(line.text, /1 bestritten/);
+  assert.match(line.text, /2 nur aus einer Quelle/);
 });
 
 test("Geschichten von mehreren Seiten: verschiedene Quellenarten nötig", () => {

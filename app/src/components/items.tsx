@@ -6,6 +6,7 @@ import { fmtIsoDay, fmtWhen, headline, num, srcName, TYPE_ORDER, TYPE_SHORT, TYP
 import { t as tr } from "../lib/i18n";
 import { font, useTheme } from "../lib/theme";
 import type { Story } from "../lib/stories";
+import { assess, kindColor } from "../lib/assess";
 import type { Item } from "../lib/types";
 import { toast } from "./Toast";
 import { T, tap } from "./ui";
@@ -67,13 +68,15 @@ function Dots({ types }: { types: string[] }) {
 }
 
 /** Eine Zeile für Meldung und Geschichte: Schlagzeile, darunter wer und wann */
-function NewsRow({ title, types, who, when, isNew, onPress, a11y }: { title: string; types: string[]; who: string; when: string; isNew?: boolean; onPress: () => void; a11y: string }) {
+function NewsRow({ title, types, who, when, isNew, onPress, a11y, items }: { title: string; types: string[]; who: string; when: string; isNew?: boolean; onPress: () => void; a11y: string; items?: Item[] }) {
   const t = useTheme();
   return (
     <Pressable onPress={() => { tap(); onPress(); }} accessibilityRole="button" accessibilityLabel={a11y} accessibilityHint={tr("Öffnet Einzelheiten")}
       style={({ pressed }) => ({ paddingVertical: 13, gap: 5, opacity: pressed ? 0.6 : 1 })}>
       {/* Neu seit dem letzten Besuch: Schlagzeile kräftig; Älteres normal */}
       <T v="bodyStrong" color={t.ink} style={titleStyle(title, true)} numberOfLines={3}>{title}</T>
+      {/* Einordnung: wer berichtet (automatisch, ohne Wahrheitsurteil) */}
+      {items?.length ? (() => { const a = assess(items); return <T v="caption" color={kindColor(a.kind, t)} style={{ fontFamily: font.semibold }}>{a.label}</T>; })() : null}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
         {/* Neu seit dem letzten Besuch: ein Wort statt fetter Schrift, damit die Liste ruhig bleibt */}
         {isNew ? <T v="caption" color={t.accent} style={{ fontFamily: font.bold }}>{tr("Neu")}</T> : null}
@@ -86,12 +89,12 @@ function NewsRow({ title, types, who, when, isNew, onPress, a11y }: { title: str
   );
 }
 
-export function ItemRow({ it, isNew, others, onOpen }: { it: Item; isNew?: boolean; translation?: string; others?: number; onOpen?: () => void }) {
+export function ItemRow({ it, isNew, others, onOpen, story }: { it: Item; isNew?: boolean; translation?: string; others?: number; onOpen?: () => void; story?: Item[] }) {
   const name = srcName(it.origin_domain || it.source_name);
   const who = !others ? name : others === 1 ? tr("{name} + 1 weiteres Medium", { name }) : tr("{name} + {n} weitere Medien", { name, n: others });
   const when = whenOf(it);
   return (
-    <NewsRow title={headline(it)} types={[it.source_type]} who={who} when={when} isNew={isNew}
+    <NewsRow title={headline(it)} types={[it.source_type]} who={who} when={when} isNew={isNew} items={story}
       onPress={() => { onOpen?.(); router.push(`/item/${it.id}`); }}
       a11y={`${headline(it)}. ${it.origin_domain || it.source_name}, ${TYPES[it.source_type] || ""}, ${when}${isNew ? `, ${tr("neu")}` : ""}`} />
   );
@@ -139,13 +142,14 @@ export function Voices({ items, counts: given, compact, unit }: { items?: Item[]
 
 /** Eine Geschichte: oberste Schlagzeile und wie viele Medien welcher Art berichten */
 export function StoryCard({ s, seenBefore }: { s: Story; seenBefore?: number }) {
-  if (s.items.length === 1) return <ItemRow it={s.lead} isNew={seenBefore != null && new Date(s.lead.fetched_at).getTime() > seenBefore} others={s.totalSources && s.totalSources > 1 ? s.totalSources - 1 : undefined} />;
+  if (s.items.length === 1) return <ItemRow it={s.lead} isNew={seenBefore != null && new Date(s.lead.fetched_at).getTime() > seenBefore} others={s.totalSources && s.totalSources > 1 ? s.totalSources - 1 : undefined}
+    story={s.all || s.items} />;
   const isNew = seenBefore != null && s.items.some((i) => new Date(i.fetched_at).getTime() > seenBefore);
   const types = TYPE_ORDER.filter((k) => s.types[k]);
   const a11yVars = { count: mediaCount(s.sources), title: headline(s.lead), types: types.map((k) => TYPES[k]).join(", "), when: fmtWhen(s.last) };
   return (
     <NewsRow title={headline(s.lead)} types={types} who={s.total ? tr("{count} · {n} von {total} Meldungen", { count: mediaCount(s.sources), n: s.items.length, total: s.total }) : mediaCount(s.sources)} when={fmtWhen(s.last)} isNew={isNew}
-      onPress={() => router.push(`/item/${s.lead.id}`)}
+      onPress={() => router.push(`/item/${s.lead.id}`)} items={s.all || s.items}
       a11y={isNew ? tr("Geschichte bei {count}: {title}. Quellenarten: {types}. Zuletzt {when}, neu.", a11yVars) : tr("Geschichte bei {count}: {title}. Quellenarten: {types}. Zuletzt {when}.", a11yVars)} />
   );
 }

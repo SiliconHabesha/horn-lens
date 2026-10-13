@@ -53,7 +53,7 @@ export default function TabsLayout() {
     }}>
       <Tabs.Screen name="index" options={{ title: tr("Lage"), tabBarIcon: icon("compass", "compass-outline") }} />
       <Tabs.Screen name="news" options={{ title: tr("Meldungen"), tabBarIcon: icon("newspaper", "newspaper-outline") }} />
-      <Tabs.Screen name="claims" options={{ title: tr("Behauptungen"), tabBarIcon: icon("checkmark-done-circle", "checkmark-done-circle-outline") }} />
+      <Tabs.Screen name="claims" options={{ title: tr("Was kursiert"), tabBarIcon: icon("chatbubbles", "chatbubbles-outline") }} />
       <Tabs.Screen name="map" options={{ title: tr("Karte"), tabBarIcon: icon("map", "map-outline") }} />
     </Tabs>
   );
